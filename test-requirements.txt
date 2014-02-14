@@ -1,0 +1,4 @@
+httpretty
+testtools
+nose
+requests
