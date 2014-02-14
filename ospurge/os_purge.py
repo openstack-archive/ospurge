@@ -162,9 +162,10 @@ class Resources(object):
     def dump(self):
         "Display all available resources."
         c_name = self.__class__.__name__
-        print "Resources type: {}".format(c_name)
+        print "* Resources type: {}".format(c_name)
         for resource in self.list():
             print self.resource_str(resource)
+        print ""
 
 
 class SwiftResources(Resources):
