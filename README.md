@@ -5,6 +5,31 @@ ospurge: OpenStack project resources cleaner
 to cleanup any project, by deleting all of its resources prior to
 deleting the project itself.
 
+Installation
+------------
+
+Get `ospurge` source code:
+
+    $ git clone https://github.com/cloudwatt/ospurge.git
+
+Create a Python virtual environment (requires package virtualenvwrapper):
+
+    $ mkvirtualenv ospurge
+
+Install pbr (Which is not properly installed by the installation script):
+
+    $ pip install pbr
+
+Launch `ospurge` installation:
+
+    $ cd ospurge/
+    $ python setup.py install
+
+The script is installed and can be launched:
+
+    $ os_purge -h
+
+
 Usage
 -----
 
