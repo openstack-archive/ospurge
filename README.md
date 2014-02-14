@@ -205,6 +205,15 @@ The following resources will be removed:
 * volumes / snapshots
 
 
+Notes
+-----
+
+Users can be deleted by using the `python-keystoneclient` CLI:
+
+    $ keystone user-delete <username_or_userid>
+
+
+
 License / Copyright
 -------------------
 
