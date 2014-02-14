@@ -10,7 +10,6 @@ Usage
 
 Available options can be displayed by using `os_purge.py -h`:
 
-    ::::bash
     $ os_purge -h
     usage: os_purge [-h] [--verbose] [--dry_run] [--endpoint_type ENDPOINT_TYPE]
 		    --username USERNAME --password PASSWORD --admin_project
@@ -46,7 +45,6 @@ to be provided, by using the `--cleanup_project` option. When the
 command returns, any resources associated to the project will have
 been definitively deleted.
 
-    ::::bash
     $ export OS_USERNAME=admin
     $ export OS_PASSWORD=password
     $ export OS_TENANT_NAME=admin
