@@ -323,7 +323,13 @@ class NeutronNetworks(NeutronResources):
 class NeutronSecgroups(NeutronResources):
 
     def list(self):
-        return filter(self._owned_resource,
+        # filtering out default security group (cannot be removed)
+        def secgroup_filter(secgroup):
+            if secgroup['name'] == 'default':
+                return False
+            return self._owned_resource(secgroup)
+
+        return filter(secgroup_filter,
                       self.client.list_security_groups()['security_groups'])
 
     def delete(self, secgroup):

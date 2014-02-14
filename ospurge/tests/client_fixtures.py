@@ -407,9 +407,9 @@ NETWORKS_LIST = {
 SECGROUPS_LIST = {
     "security_groups":[
         {
-            "description":"default",
+            "description":"Custom Security Group",
             "id":"85cc3048-abc3-43cc-89b3-377341426ac5",
-            "name":"default",
+            "name":"custom",
             "security_group_rules":[
                 {
                     "direction":"egress",
@@ -457,6 +457,62 @@ SECGROUPS_LIST = {
                     "remote_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
                     "remote_ip_prefix":None,
                     "security_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "tenant_id": PROJECT_ID
+                    }
+                ],
+            "tenant_id": PROJECT_ID
+            },
+        {
+            "description":"default",
+            "id":"12345678-1234-1234-1234-123456789012",
+            "name":"default",
+            "security_group_rules":[
+                {
+                    "direction":"egress",
+                    "ethertype":"IPv6",
+                    "id":"3c0e45ff-adaf-4124-b083-bf390e5482ff",
+                    "port_range_max":None,
+                    "port_range_min":None,
+                    "protocol":None,
+                    "remote_group_id":None,
+                    "remote_ip_prefix":None,
+                    "security_group_id":"12345678-1234-1234-1234-123456789012",
+                    "tenant_id": PROJECT_ID
+                    },
+                {
+                    "direction":"egress",
+                    "ethertype":"IPv4",
+                    "id":"93aa42e5-80db-4581-9391-3a608bd0e448",
+                    "port_range_max":None,
+                    "port_range_min":None,
+                    "protocol":None,
+                    "remote_group_id":None,
+                    "remote_ip_prefix":None,
+                    "security_group_id":"12345678-1234-1234-1234-123456789012",
+                    "tenant_id": PROJECT_ID
+                    },
+                {
+                    "direction":"ingress",
+                    "ethertype":"IPv6",
+                    "id":"c0b09f00-1d49-4e64-a0a7-8a186d928138",
+                    "port_range_max":None,
+                    "port_range_min":None,
+                    "protocol":None,
+                    "remote_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "remote_ip_prefix":None,
+                    "security_group_id":"12345678-1234-1234-1234-123456789012",
+                    "tenant_id": PROJECT_ID
+                    },
+                {
+                    "direction":"ingress",
+                    "ethertype":"IPv4",
+                    "id":"f7d45c89-008e-4bab-88ad-d6811724c51c",
+                    "port_range_max":None,
+                    "port_range_min":None,
+                    "protocol":None,
+                    "remote_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "remote_ip_prefix":None,
+                    "security_group_id":"12345678-1234-1234-1234-123456789012",
                     "tenant_id": PROJECT_ID
                     }
                 ],
