@@ -35,6 +35,21 @@ Available options can be displayed by using `os_purge.py -h`:
       --cleanup_project CLEANUP_PROJECT
 			    Name of project to purge
 
+Error codes
+-----------
+
+The following error codes are returned when `os_purge` encounters
+an error:
+
+* Code 2: Project doesn't exist
+* Code 3: Authentication failed (e.g. Bad username or password)
+* Code 4: Resource deletion failed
+* Code 5: Connection error while deleting a resource (e.g. Service not available)
+* Code 6: Connection to endpoint failed (e.g. authentication url)
+* Code 1: Unknown error
+* Code 0: Process exited sucessfully
+
+
 Example
 -------
 
@@ -45,12 +60,107 @@ to be provided, by using the `--cleanup_project` option. When the
 command returns, any resources associated to the project will have
 been definitively deleted.
 
+Setting OpenStack admin credentials:
+
     $ export OS_USERNAME=admin
     $ export OS_PASSWORD=password
     $ export OS_TENANT_NAME=admin
     $ export OS_AUTH_URL=http://localhost:5000/v2.0
-    $ os_purge.py --cleanup_project demo
-    $
+
+Checking resources of the target project:
+
+    $ ./os_purge.py --dry_run --cleanup_project florent-demo
+    * Resources type: CinderSnapshots
+
+    * Resources type: NovaServers
+    server vm0 (id 8b0896d9-bcf3-4360-824a-a81865ad2385)
+
+    * Resources type: NeutronFloatingIps
+
+    * Resources type: NeutronInterfaces
+
+    * Resources type: NeutronRouters
+
+    * Resources type: NeutronNetworks
+
+    * Resources type: NeutronSecgroups
+    security group custom (id 8c13e635-6fdc-4332-ba19-c22a7a85c7cc)
+
+    * Resources type: GlanceImages
+
+    * Resources type: SwiftObjects
+
+    * Resources type: SwiftContainers
+
+    * Resources type: CinderVolumes
+    volume vol0 (id ce1380ef-2d66-47a2-9dbf-8dd5d9cd506d)
+
+    * Resources type: CeilometerAlarms
+
+Removing resources without deleting the project:
+
+    $ ./os_purge.py --verbose --dont_remove_project --cleanup_project florent-demo
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
+    INFO:root:* Granting role admin to user e7f562a29da3492baba2cc7c5a1f2d84 on project florent-demo.
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
+    INFO:root:* Purging CinderSnapshots
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): cinder.usr.lab0.aub.cw-labs.net
+    INFO:root:* Purging NovaServers
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): nova.usr.lab0.aub.cw-labs.net
+    INFO:root:* Deleting server vm0 (id 8b0896d9-bcf3-4360-824a-a81865ad2385).
+    INFO:root:* Purging NeutronFloatingIps
+    INFO:root:* Purging NeutronInterfaces
+    INFO:root:* Purging NeutronRouters
+    INFO:root:* Purging NeutronNetworks
+    INFO:root:* Purging NeutronSecgroups
+    INFO:root:* Deleting security group custom (id 8c13e635-6fdc-4332-ba19-c22a7a85c7cc).
+    INFO:root:* Purging GlanceImages
+    INFO:root:* Purging SwiftObjects
+    INFO:root:* Purging SwiftContainers
+    INFO:root:* Purging CinderVolumes
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): cinder.usr.lab0.aub.cw-labs.net
+    INFO:root:* Deleting volume vol0 (id ce1380ef-2d66-47a2-9dbf-8dd5d9cd506d).
+    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): cinder.usr.lab0.aub.cw-labs.net
+    INFO:root:* Purging CeilometerAlarms
+
+Checking that resources have been correctly removed:
+
+    $ ./os_purge.py --dry_run --cleanup_project florent-demo
+    * Resources type: CinderSnapshots
+
+    * Resources type: NovaServers
+
+    * Resources type: NeutronFloatingIps
+
+    * Resources type: NeutronInterfaces
+
+    * Resources type: NeutronRouters
+
+    * Resources type: NeutronNetworks
+
+    * Resources type: NeutronSecgroups
+
+    * Resources type: GlanceImages
+
+    * Resources type: SwiftObjects
+
+    * Resources type: SwiftContainers
+
+    * Resources type: CinderVolumes
+
+    * Resources type: CeilometerAlarms
+
+Removing project:
+
+    $ ./os_purge.py --cleanup_project florent-demo
+    $ ./os_purge.py --cleanup_project florent-demo
+    Project florent-demo doesn't exist
 
 
 Deleted resources
@@ -68,21 +178,6 @@ The following resources will be removed:
 * swift containers
 * swift objects
 * volumes / snapshots
-
-
-Error codes
------------
-
-The following error codes are returned when `os_purge` encounters
-an error:
-
-* Code 2: Project doesn't exist
-* Code 3: Authentication failed (e.g. Bad username or password)
-* Code 4: Resource deletion failed
-* Code 5: Connection error while deleting a resource (e.g. Service not available)
-* Code 6: Connection to endpoint failed (e.g. authentication url)
-* Code 1: Unknown error
-* Code 0: Process exited sucessfully
 
 
 License / Copyright
