@@ -514,6 +514,10 @@ def parse_args():
     parser.add_argument("--dry_run", action="store_true",
                         dest="dry_run",
                         help="List project's resources")
+    parser.add_argument("--dont_remove_project", action="store_true",
+                        dest="dont_remove_project",
+                        help="Executes cleanup script without removing the project. "\
+                             "Warning: all project resources will still be deleted.")
     parser.add_argument("--endpoint_type", action=EnvDefault,
                         envvar='OS_ENDPOINT_TYPE', default="publicURL",
                         help="Endpoint type to use. Defaults to " \
@@ -579,7 +583,7 @@ def main():
         print "Deletion of {} failed".format(str(exc))
         sys.exit(DeletionFailed.ERROR_CODE)
 
-    if args.dry_run is False:
+    if (not args.dry_run) and (not args.dont_remove_project):
         keystone_manager.delete_project(args.cleanup_project)
     sys.exit(0)
 
