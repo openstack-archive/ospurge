@@ -98,7 +98,7 @@ Setting OpenStack admin credentials:
 
 Checking resources of the target project:
 
-    $ ./ospurge.py --dry_run --cleanup_project florent-demo
+    $ ./ospurge.py --dry-run --cleanup-project florent-demo
     * Resources type: CinderSnapshots
 
     * Resources type: NovaServers
@@ -128,7 +128,7 @@ Checking resources of the target project:
 
 Removing resources without deleting the project:
 
-    $ ./ospurge.py --verbose --dont_remove_project --cleanup_project florent-demo
+    $ ./ospurge.py --verbose --dont-delete-project --cleanup-project florent-demo
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
     INFO:root:* Granting role admin to user e7f562a29da3492baba2cc7c5a1f2d84 on project florent-demo.
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
@@ -160,7 +160,7 @@ Removing resources without deleting the project:
 
 Checking that resources have been correctly removed:
 
-    $ ./ospurge.py --dry_run --cleanup_project florent-demo
+    $ ./ospurge.py --dry-run --cleanup-project florent-demo
     * Resources type: CinderSnapshots
 
     * Resources type: NovaServers
@@ -187,8 +187,8 @@ Checking that resources have been correctly removed:
 
 Removing project:
 
-    $ ./ospurge.py --cleanup_project florent-demo
-    $ ./ospurge.py --cleanup_project florent-demo
+    $ ./ospurge.py --cleanup-project florent-demo
+    $ ./ospurge.py --cleanup-project florent-demo
     Project florent-demo doesn't exist
 
 
