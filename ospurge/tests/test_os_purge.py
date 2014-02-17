@@ -60,7 +60,7 @@ class SessionTest(HttpTest):
     def test_init(self):
         self.stub_auth()
         session = os_purge.Session(USERNAME, PASSWORD,
-                                   PROJECT_NAME, AUTH_URL)
+                                   client_fixtures.PROJECT_ID, AUTH_URL)
         self.assertEqual(session.token, client_fixtures.TOKEN_ID)
         self.assertEqual(session.user_id, client_fixtures.USER_ID)
         self.assertEqual(session.project_id, client_fixtures.PROJECT_ID)
@@ -69,7 +69,7 @@ class SessionTest(HttpTest):
     def test_get_public_endpoint(self):
         self.stub_auth()
         session = os_purge.Session(USERNAME, PASSWORD,
-                                   PROJECT_NAME, AUTH_URL)
+                                   client_fixtures.PROJECT_ID, AUTH_URL)
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_PUBLIC_ENDPOINT)
         endpoint = session.get_endpoint('image')
@@ -78,7 +78,7 @@ class SessionTest(HttpTest):
     @httpretty.activate
     def test_get_internal_endpoint(self):
         self.stub_auth()
-        session = os_purge.Session(USERNAME, PASSWORD, PROJECT_NAME,
+        session = os_purge.Session(USERNAME, PASSWORD, client_fixtures.PROJECT_ID,
                                    AUTH_URL, endpoint_type='internalURL')
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_INTERNAL_ENDPOINT)
@@ -95,7 +95,7 @@ class TestResourcesBase(HttpTest):
         super(TestResourcesBase, self).setUp()
         self.stub_auth()
         self.session = os_purge.Session(USERNAME, PASSWORD,
-                                   PROJECT_NAME, AUTH_URL)
+                                   client_fixtures.PROJECT_ID, AUTH_URL)
 
     @httpretty.activate
     def _test_list(self):

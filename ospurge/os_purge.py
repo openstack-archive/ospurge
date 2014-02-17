@@ -32,14 +32,16 @@ import sys
 import time
 
 from ceilometerclient.v2 import client as ceilometer_client
+import cinderclient.exceptions
 from cinderclient.v1 import client as cinder_client
 from glanceclient.v1 import client as glance_client
 from keystoneclient.apiclient import exceptions as api_exceptions
 from keystoneclient.v2_0 import client as keystone_client
+import neutronclient.common.exceptions
 from neutronclient.v2_0 import client as neutron_client
+import novaclient.exceptions
 from novaclient.v1_1 import client as nova_client
 from swiftclient import client as swift_client
-
 
 RETRIES = 3
 TIMEOUT = 5 # 5 seconds timeout between retries
@@ -57,8 +59,7 @@ class DeletionFailed(Exception):
 
 CONNECTION_ERROR_CODE = 5
 
-class ConnectionFailed(Exception):
-    ERROR_CODE = 6
+NOT_AUTHORIZED = 6
 
 
 # Available resources classes
@@ -110,21 +111,21 @@ class Session(object):
     * self.catalog - Allowing to retrieve services' endpoints.
     """
 
-    def __init__(self, username, password, project_name,
+    def __init__(self, username, password, project_id,
                  auth_url, endpoint_type="publicURL"):
         client = keystone_client.Client(
             username=username, password=password,
-            tenant_name=project_name, auth_url=auth_url)
-        # Storing username, password, project_name and auth_url for
-        # use by clients librarties that cannot use an existing token.
+            tenant_id=project_id, auth_url=auth_url)
+        # Storing username, password, project_id and auth_url for
+        # use by clients libraries that cannot use an existing token.
         self.username = username
         self.password = password
-        self.project_name = project_name
+        self.project_id = project_id
         self.auth_url = auth_url
         # Session variables to be used by clients when possible
         self.token = client.auth_token
         self.user_id = client.user_id
-        self.project_id = client.project_id
+        self.project_name = client.project_name
         self.endpoint_type = endpoint_type
         self.catalog = client.service_catalog.get_endpoints()
 
@@ -254,7 +255,7 @@ class NeutronResources(Resources):
         super(NeutronResources, self).__init__(session)
         self.client = neutron_client.Client(
             username=session.username, password=session.password,
-            tenant_name=session.project_name, auth_url=session.auth_url,
+            tenant_id=session.project_id, auth_url=session.auth_url,
             endpoint_type=session.endpoint_type)
         self.project_id = session.project_id
 
@@ -433,19 +434,24 @@ class KeystoneManager(object):
             username=username, password=password,
             tenant_name=project, auth_url=auth_url)
 
-    def become_project_admin(self, project_name):
+    def get_project_id(self, project_name_or_id):
+        try:
+            self.client.tenants.get(project_name_or_id)
+            # If it doesn't raise an 404, project_name_or_id is
+            # already the project's id
+            project_id = project_name_or_id
+        except api_exceptions.NotFound:
+            try:
+                tenants = self.client.tenants.list() # Can raise api_exceptions.Forbidden:
+                project_id = filter(lambda x : x.name==project_name_or_id, tenants)[0].id
+            except IndexError:
+                raise NoSuchProject(project_name_or_id)
+        return project_id
+
+    def become_project_admin(self, project_id):
         user_id = self.client.user_id
         logging.info("* Granting role admin to user {} on project {}.".format(
-                user_id, project_name))
-
-        try:
-            tenants = self.client.tenants.list()
-        except Exception as e:
-            raise ConnectionFailed(str(e))
-        try:
-            project_id = filter(lambda x : x.name==project_name, tenants)[0].id
-        except:
-            raise NoSuchProject(project_name)
+                user_id, project_id))
 
         roles = self.client.roles.list()
         role_id = filter(lambda x : x.name=="admin", roles)[0].id
@@ -455,11 +461,31 @@ class KeystoneManager(object):
             # user is already admin on the target project
             pass
 
-    def delete_project(self, project_name):
-        tenants = self.client.tenants.list()
-        project_id = filter(lambda x : x.name==project_name, tenants)[0].id
-        logging.info("* Deleting project {}.".format(project_name))
+    def delete_project(self, project_id):
+        logging.info("* Deleting project {}.".format(project_id))
         self.client.tenants.delete(project_id)
+
+
+def _perform_on_project(admin_name, password, project, auth_url,
+                        endpoint_type='publicURL', action='dump'):
+    """
+    Perform provided action on all resources of project.
+    action can be: 'purge' or 'dump'
+    """
+    session = Session(admin_name, password, project,
+                      auth_url, endpoint_type)
+    for rc in RESOURCES_CLASSES:
+        try:
+            resources = globals()[rc](session)
+            res_actions = { 'purge': resources.purge,
+                            'dump': resources.dump }
+            res_actions[action]()
+        except (EndpointNotFound,
+                neutronclient.common.exceptions.EndpointNotFound,
+                cinderclient.exceptions.EndpointNotFound,
+                novaclient.exceptions.EndpointNotFound):
+            # If service is not in Keystone's services catalog, ignoring it
+            pass
 
 
 def purge_project(admin_name, password, project, auth_url,
@@ -469,31 +495,17 @@ def purge_project(admin_name, password, project, auth_url,
 
     Warning: admin must have access to the project.
     """
-    session = Session(admin_name, password, project,
-                      auth_url, endpoint_type)
-    for rc in RESOURCES_CLASSES:
-        try:
-            resources = globals()[rc](session)
-        except EndpointNotFound:
-            # If service is not in Keystone's services catalog, ignoring it
-            pass
-        else:
-            resources.purge()
+    _perform_on_project(admin_name, password, project, auth_url,
+                        endpoint_type, "purge")
+
 
 def list_resources(admin_name, password, project, auth_url,
                    endpoint_type='publicURL'):
     """
     Listing resources of given project.
     """
-    session = Session(admin_name, password, project,
-                      auth_url, endpoint_type)
-    for rc in RESOURCES_CLASSES:
-        try:
-            resources = globals()[rc](session)
-        except EndpointNotFound:
-            pass
-        else:
-            resources.dump()
+    _perform_on_project(admin_name, password, project, auth_url,
+                        endpoint_type, "dump")
 
 
 # From Russell Heilling
@@ -568,20 +580,21 @@ def main():
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
 
     try:
-        keystone_manager.become_project_admin(args.cleanup_project)
+        cleanup_project_id = keystone_manager.get_project_id(args.cleanup_project)
+        keystone_manager.become_project_admin(cleanup_project_id)
+    except api_exceptions.Forbidden as exc:
+        print "Not authorized: {}".format(str(exc))
+        sys.exit(NOT_AUTHORIZED)
     except NoSuchProject as exc:
         print "Project {} doesn't exist".format(str(exc))
         sys.exit(NoSuchProject.ERROR_CODE)
-    except ConnectionFailed as exc:
-        print "Connection failed: {}".format(str(exc))
-        sys.exit(ConnectionFailed.ERROR_CODE)
 
     try:
         if args.dry_run:
-            list_resources(args.username, args.password, args.cleanup_project,
+            list_resources(args.username, args.password, cleanup_project_id,
                            args.auth_url, args.endpoint_type)
         else:
-            purge_project(args.username, args.password, args.cleanup_project,
+            purge_project(args.username, args.password, cleanup_project_id,
                           args.auth_url, args.endpoint_type)
     except ConnectionError as exc:
         print "Connection error: {}".format(str(exc))
@@ -591,7 +604,7 @@ def main():
         sys.exit(DeletionFailed.ERROR_CODE)
 
     if (not args.dry_run) and (not args.dont_remove_project):
-        keystone_manager.delete_project(args.cleanup_project)
+        keystone_manager.delete_project(cleanup_project_id)
     sys.exit(0)
 
 if __name__ == "__main__":
