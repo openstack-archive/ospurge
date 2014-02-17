@@ -36,29 +36,33 @@ Usage
 Available options can be displayed by using `ospurge.py -h`:
 
     $ ospurge -h
-    usage: ospurge [-h] [--verbose] [--dry_run] [--endpoint_type ENDPOINT_TYPE]
-		    --username USERNAME --password PASSWORD --admin_project
-		    ADMIN_PROJECT --auth_url AUTH_URL --cleanup_project
-		    CLEANUP_PROJECT
+    usage: ospurge.py [-h] [--verbose] [--dry-run] [--dont-delete-project]
+		      [--endpoint-type ENDPOINT_TYPE] [--username USERNAME]
+		      [--password PASSWORD] [--admin-project ADMIN_PROJECT]
+		      [--auth-url AUTH_URL] --cleanup-project CLEANUP_PROJECT
 
     Purge resources from an Openstack project.
 
     optional arguments:
       -h, --help            show this help message and exit
       --verbose             Makes output verbose
-      --dry_run             List project's resources
-      --endpoint_type ENDPOINT_TYPE
+      --dry-run             List project's resources
+      --dont-delete-project
+			    Executes cleanup script without removing the project.
+			    Warning: all project resources will still be deleted.
+      --endpoint-type ENDPOINT_TYPE
 			    Endpoint type to use. Defaults to
 			    env[OS_ENDPOINT_TYPE] or publicURL
       --username USERNAME   A user name with access to the project being purged.
 			    Defaults to env[OS_USERNAME]
       --password PASSWORD   The user's password. Defaults to env[OS_PASSWORD].
-      --admin_project ADMIN_PROJECT
+      --admin-project ADMIN_PROJECT
 			    Name of a project the user is admin on. Defaults to
 			    env[OS_TENANT_NAME].
-      --auth_url AUTH_URL   Authentication URL. Defaults to env[OS_AUTH_URL].
-      --cleanup_project CLEANUP_PROJECT
+      --auth-url AUTH_URL   Authentication URL. Defaults to env[OS_AUTH_URL].
+      --cleanup-project CLEANUP_PROJECT
 			    ID or Name of project to purge
+
 
 Error codes
 -----------

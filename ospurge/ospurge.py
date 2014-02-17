@@ -528,16 +528,13 @@ def parse_args():
     desc = "Purge resources from an Openstack project."
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument("--verbose", action="store_true",
-                        dest="verbose",
                         help="Makes output verbose")
-    parser.add_argument("--dry_run", action="store_true",
-                        dest="dry_run",
+    parser.add_argument("--dry-run", action="store_true",
                         help="List project's resources")
-    parser.add_argument("--dont_remove_project", action="store_true",
-                        dest="dont_remove_project",
+    parser.add_argument("--dont-delete-project", action="store_true",
                         help="Executes cleanup script without removing the project. "\
                              "Warning: all project resources will still be deleted.")
-    parser.add_argument("--endpoint_type", action=EnvDefault,
+    parser.add_argument("--endpoint-type", action=EnvDefault,
                         envvar='OS_ENDPOINT_TYPE', default="publicURL",
                         help="Endpoint type to use. Defaults to " \
                              "env[OS_ENDPOINT_TYPE] or publicURL")
@@ -550,15 +547,15 @@ def parse_args():
                         envvar='OS_PASSWORD', required=True,
                         help="The user's password. Defaults "
                              "to env[OS_PASSWORD].")
-    parser.add_argument("--admin_project", action=EnvDefault,
+    parser.add_argument("--admin-project", action=EnvDefault,
                         envvar='OS_TENANT_NAME', required=True,
                         help="Name of a project the user is admin on. "\
                              "Defaults to env[OS_TENANT_NAME].")
-    parser.add_argument("--auth_url", action=EnvDefault,
+    parser.add_argument("--auth-url", action=EnvDefault,
                         envvar='OS_AUTH_URL', required=True,
                         help="Authentication URL. Defaults to " \
                              "env[OS_AUTH_URL].")
-    parser.add_argument("--cleanup_project", required=True,
+    parser.add_argument("--cleanup-project", required=True,
                         help="ID or Name of project to purge")
     return parser.parse_args()
 
