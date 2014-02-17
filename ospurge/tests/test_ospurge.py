@@ -30,7 +30,7 @@ import httpretty
 import testtools
 
 import client_fixtures
-from ospurge import os_purge
+from ospurge import ospurge
 
 USERNAME = "username"
 PASSWORD = "password"
@@ -59,7 +59,7 @@ class SessionTest(HttpTest):
     @httpretty.activate
     def test_init(self):
         self.stub_auth()
-        session = os_purge.Session(USERNAME, PASSWORD,
+        session = ospurge.Session(USERNAME, PASSWORD,
                                    client_fixtures.PROJECT_ID, AUTH_URL)
         self.assertEqual(session.token, client_fixtures.TOKEN_ID)
         self.assertEqual(session.user_id, client_fixtures.USER_ID)
@@ -68,7 +68,7 @@ class SessionTest(HttpTest):
     @httpretty.activate
     def test_get_public_endpoint(self):
         self.stub_auth()
-        session = os_purge.Session(USERNAME, PASSWORD,
+        session = ospurge.Session(USERNAME, PASSWORD,
                                    client_fixtures.PROJECT_ID, AUTH_URL)
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_PUBLIC_ENDPOINT)
@@ -78,7 +78,7 @@ class SessionTest(HttpTest):
     @httpretty.activate
     def test_get_internal_endpoint(self):
         self.stub_auth()
-        session = os_purge.Session(USERNAME, PASSWORD, client_fixtures.PROJECT_ID,
+        session = ospurge.Session(USERNAME, PASSWORD, client_fixtures.PROJECT_ID,
                                    AUTH_URL, endpoint_type='internalURL')
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_INTERNAL_ENDPOINT)
@@ -94,7 +94,7 @@ class TestResourcesBase(HttpTest):
     def setUp(self):
         super(TestResourcesBase, self).setUp()
         self.stub_auth()
-        self.session = os_purge.Session(USERNAME, PASSWORD,
+        self.session = ospurge.Session(USERNAME, PASSWORD,
                                    client_fixtures.PROJECT_ID, AUTH_URL)
 
     @httpretty.activate
@@ -129,7 +129,7 @@ class TestSwiftResources(TestSwiftBase):
     @httpretty.activate
     def test_list_containers(self):
         self.stub_url('GET', json=client_fixtures.STORAGE_CONTAINERS_LIST)
-        swift = os_purge.SwiftResources(self.session)
+        swift = ospurge.SwiftResources(self.session)
         conts = list(swift.list_containers())
         self.assertEqual(conts, client_fixtures.STORAGE_CONTAINERS)
 
@@ -148,7 +148,7 @@ class  TestSwiftObjects(TestSwiftBase):
 
     def setUp(self):
         super(TestSwiftObjects, self).setUp()
-        self.resources = os_purge.SwiftObjects(self.session)
+        self.resources = ospurge.SwiftObjects(self.session)
 
     @httpretty.activate
     def test_list(self):
@@ -169,7 +169,7 @@ class  TestSwiftContainers(TestSwiftBase):
 
     def setUp(self):
         super(TestSwiftContainers, self).setUp()
-        self.resources = os_purge.SwiftContainers(self.session)
+        self.resources = ospurge.SwiftContainers(self.session)
 
     @httpretty.activate
     def test_list(self):
@@ -197,7 +197,7 @@ class TestCinderSnapshots(TestCinderBase):
 
     def setUp(self):
         super(TestCinderSnapshots, self).setUp()
-        self.resources = os_purge.CinderSnapshots(self.session)
+        self.resources = ospurge.CinderSnapshots(self.session)
 
     def test_list(self):
         self._test_list()
@@ -218,7 +218,7 @@ class TestCinderVolumes(TestCinderBase):
 
     def setUp(self):
         super(TestCinderVolumes, self).setUp()
-        self.resources = os_purge.CinderVolumes(self.session)
+        self.resources = ospurge.CinderVolumes(self.session)
 
     def test_list(self):
         self._test_list()
@@ -251,7 +251,7 @@ class TestNeutronRouters(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronRouters, self).setUp()
-        self.resources = os_purge.NeutronRouters(self.session)
+        self.resources = ospurge.NeutronRouters(self.session)
 
     def test_list(self):
         self._test_list()
@@ -276,7 +276,7 @@ class TestNeutronInterfaces(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronInterfaces, self).setUp()
-        self.resources = os_purge.NeutronInterfaces(self.session)
+        self.resources = ospurge.NeutronInterfaces(self.session)
 
     # Special case there, interfaces ids can be accessed through
     # port['interface_id']['id']
@@ -306,7 +306,7 @@ class TestNeutronNetworks(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronNetworks, self).setUp()
-        self.resources = os_purge.NeutronNetworks(self.session)
+        self.resources = ospurge.NeutronNetworks(self.session)
 
     def test_list(self):
         self._test_list()
@@ -329,7 +329,7 @@ class TestNeutronSecgroups(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronSecgroups, self).setUp()
-        self.resources = os_purge.NeutronSecgroups(self.session)
+        self.resources = ospurge.NeutronSecgroups(self.session)
 
     def test_list(self):
         self._test_list()
@@ -352,7 +352,7 @@ class TestNeutronFloatingIps(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronFloatingIps, self).setUp()
-        self.resources = os_purge.NeutronFloatingIps(self.session)
+        self.resources = ospurge.NeutronFloatingIps(self.session)
 
     def test_list(self):
         self._test_list()
@@ -374,7 +374,7 @@ class TestNovaServers(TestResourcesBase):
 
     def setUp(self):
         super(TestNovaServers, self).setUp()
-        self.resources = os_purge.NovaServers(self.session)
+        self.resources = ospurge.NovaServers(self.session)
 
     def test_list(self):
         self._test_list()
@@ -396,7 +396,7 @@ class TestGlanceImages(TestResourcesBase):
 
     def setUp(self):
         super(TestGlanceImages, self).setUp()
-        self.resources = os_purge.GlanceImages(self.session)
+        self.resources = ospurge.GlanceImages(self.session)
 
     def test_list(self):
         self._test_list()
@@ -417,7 +417,7 @@ class TestCeilometerAlarms(TestResourcesBase):
 
     def setUp(self):
         super(TestCeilometerAlarms, self).setUp()
-        self.resources = os_purge.CeilometerAlarms(self.session)
+        self.resources = ospurge.CeilometerAlarms(self.session)
 
     @httpretty.activate
     def test_list(self):
