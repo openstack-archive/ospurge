@@ -58,7 +58,7 @@ Available options can be displayed by using `os_purge.py -h`:
 			    env[OS_TENANT_NAME].
       --auth_url AUTH_URL   Authentication URL. Defaults to env[OS_AUTH_URL].
       --cleanup_project CLEANUP_PROJECT
-			    Name of project to purge
+			    ID or Name of project to purge
 
 Error codes
 -----------
