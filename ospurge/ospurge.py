@@ -600,7 +600,7 @@ def main():
         print "Deletion of {} failed".format(str(exc))
         sys.exit(DeletionFailed.ERROR_CODE)
 
-    if (not args.dry_run) and (not args.dont_remove_project):
+    if (not args.dry_run) and (not args.dont_delete_project):
         keystone_manager.delete_project(cleanup_project_id)
     sys.exit(0)
 
