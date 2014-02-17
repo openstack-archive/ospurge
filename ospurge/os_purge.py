@@ -559,7 +559,7 @@ def parse_args():
                         help="Authentication URL. Defaults to " \
                              "env[OS_AUTH_URL].")
     parser.add_argument("--cleanup_project", required=True,
-                        help="Name of project to purge")
+                        help="ID or Name of project to purge")
     return parser.parse_args()
 
 
