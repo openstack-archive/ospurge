@@ -8,22 +8,13 @@ deleting the project itself.
 Installation
 ------------
 
-Get `ospurge` source code:
-
-    $ git clone https://github.com/cloudwatt/ospurge.git
-
 Create a Python virtual environment (requires package virtualenvwrapper):
 
     $ mkvirtualenv ospurge
 
-Install pbr (Which is not properly installed by the installation script):
+Install `ospurge`:
 
-    $ pip install pbr
-
-Launch `ospurge` installation:
-
-    $ cd ospurge/
-    $ python setup.py install
+    $ pip install ospurge
 
 The script is installed and can be launched:
 
@@ -33,10 +24,10 @@ The script is installed and can be launched:
 Usage
 -----
 
-Available options can be displayed by using `ospurge.py -h`:
+Available options can be displayed by using `ospurge -h`:
 
     $ ospurge -h
-    usage: ospurge.py [-h] [--verbose] [--dry-run] [--dont-delete-project]
+    usage: ospurge [-h] [--verbose] [--dry-run] [--dont-delete-project]
 		      [--endpoint-type ENDPOINT_TYPE] [--username USERNAME]
 		      [--password PASSWORD] [--admin-project ADMIN_PROJECT]
 		      [--auth-url AUTH_URL] --cleanup-project CLEANUP_PROJECT
@@ -84,8 +75,8 @@ Example
 
 To remove a project, administrator credentials have to be
 provided. The usual OpenStack environment variables can be used. When
-launching the `ospurge.py` script, the project to be cleaned up has
-to be provided, by using the `--cleanup_project` option. When the
+launching the `ospurge` script, the project to be cleaned up has
+to be provided, by using the `--cleanup-project` option. When the
 command returns, any resources associated to the project will have
 been definitively deleted.
 
@@ -98,7 +89,7 @@ Setting OpenStack admin credentials:
 
 Checking resources of the target project:
 
-    $ ./ospurge.py --dry-run --cleanup-project florent-demo
+    $ ./ospurge --dry-run --cleanup-project florent-demo
     * Resources type: CinderSnapshots
 
     * Resources type: NovaServers
@@ -128,7 +119,7 @@ Checking resources of the target project:
 
 Removing resources without deleting the project:
 
-    $ ./ospurge.py --verbose --dont-delete-project --cleanup-project florent-demo
+    $ ./ospurge --verbose --dont-delete-project --cleanup-project florent-demo
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
     INFO:root:* Granting role admin to user e7f562a29da3492baba2cc7c5a1f2d84 on project florent-demo.
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
@@ -160,7 +151,7 @@ Removing resources without deleting the project:
 
 Checking that resources have been correctly removed:
 
-    $ ./ospurge.py --dry-run --cleanup-project florent-demo
+    $ ./ospurge --dry-run --cleanup-project florent-demo
     * Resources type: CinderSnapshots
 
     * Resources type: NovaServers
@@ -187,8 +178,8 @@ Checking that resources have been correctly removed:
 
 Removing project:
 
-    $ ./ospurge.py --cleanup-project florent-demo
-    $ ./ospurge.py --cleanup-project florent-demo
+    $ ./ospurge --cleanup-project florent-demo
+    $ ./ospurge --cleanup-project florent-demo
     Project florent-demo doesn't exist
 
 
