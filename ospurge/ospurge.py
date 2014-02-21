@@ -69,6 +69,7 @@ RESOURCES_CLASSES = ['CinderSnapshots',
                      'NeutronFloatingIps',
                      'NeutronInterfaces',
                      'NeutronRouters',
+                     'NeutronPorts',
                      'NeutronNetworks',
                      'NeutronSecgroups',
                      'GlanceImages',
@@ -180,6 +181,7 @@ class SwiftResources(Resources):
     def list_containers(self):
         containers = swift_client.get_account(self.endpoint, self.token)[1]
         return (cont['name'] for cont in containers)
+
 
 class SwiftObjects(SwiftResources):
 
@@ -304,6 +306,22 @@ class NeutronInterfaces(NeutronResources):
 
     def resource_str(self, interface):
         return "interfaces {} (id)".format(interface['interface_id'])
+
+
+class NeutronPorts(NeutronResources):
+
+    def list(self):
+        all_ports = [port for port in self.client.list_ports()['ports'] 
+                     if port["device_owner"] == ""]
+        return filter(self._owned_resource, all_ports)
+
+    def delete(self, port):
+        super(NeutronPorts, self).delete(port)
+        self.client.delete_port(port['id'])
+
+    def resource_str(self, port):
+        return "port {} (id {})".format(port['name'], port['id'])
+
 
 class NeutronNetworks(NeutronResources):
 

@@ -49,6 +49,7 @@ SERVERS_IDS = ["616fb98f-46ca-475e-917e-2563e5a8cd19"]
 IMAGES_IDS = ["37717f53-3707-49b9-9dd0-fd063e6b9fc5", "4e150966-cbe7-4fd7-a964-41e008d20f10",
               "482fbcc3-d831-411d-a073-ddc828a7a9ed"]
 ALARMS_IDS = ["ca950223-e982-4552-9dec-5dc5d3ea4172"]
+UNBOUND_PORT_ID = "abcdb45e-45fe-4e04-8704-bf6f58760000"
 
 # Simulating JSON sent from the Server
 
@@ -297,7 +298,7 @@ ROUTER0_PORTS = {
             "name":"",
             "admin_state_up":True,
             "network_id":"ebda9658-093b-41ba-80ce-0cf8cb8365d4",
-            "tenant_id":"63878e4c5dd649d2a980e37aefddfa87",
+            "tenant_id": PROJECT_ID,
             "binding:vif_type":"ovs",
             "device_owner":"compute:None",
             "binding:capabilities":{
@@ -323,7 +324,7 @@ ROUTER1_PORTS = {
             "name":"",
             "admin_state_up":True,
             "network_id":"ebda9658-093b-41ba-80ce-0cf8cb8365d4",
-            "tenant_id":"",
+            "tenant_id": PROJECT_ID,
             "binding:vif_type":"ovs",
             "device_owner":"network:router_gateway",
             "binding:capabilities":{
@@ -344,7 +345,7 @@ ROUTER1_PORTS = {
             "name":"",
             "admin_state_up":True,
             "network_id":"9d83c053-b0a4-4682-ae80-c00df269ce0a",
-            "tenant_id":"625887121e364204873d362b553ab171",
+            "tenant_id": PROJECT_ID,
             "binding:vif_type":"ovs",
             "device_owner":"network:router_interface",
             "binding:capabilities":{
@@ -363,6 +364,64 @@ ROUTER1_PORTS = {
         ]
     }
 
+
+NEUTRON_PORTS = {
+    'ports': ROUTER0_PORTS['ports'] + ROUTER1_PORTS['ports'] + [
+        {
+            "admin_state_up": True, 
+            "allowed_address_pairs": [], 
+            "binding:capabilities": {
+                "port_filter": False
+            }, 
+            "binding:host_id": "", 
+            "binding:vif_type": "unbound", 
+            "device_id": "", 
+            "device_owner": "", 
+            "extra_dhcp_opts": [], 
+            "fixed_ips": [
+                {
+                    "ip_address": "10.0.0.4", 
+                    "subnet_id": "51351eb9-7ce5-42cf-89cd-cea0b0fc510f"
+                }
+            ], 
+            "id": UNBOUND_PORT_ID, 
+            "mac_address": "fa:16:3e:f5:62:22", 
+            "name": "custom unbound port", 
+            "network_id": "bf8d2e1f-221e-4908-a4ed-b6c0fd06e518", 
+            "security_groups": [
+                "766110ac-0fde-4c31-aed7-72a97e78310b"
+            ], 
+            "status": "DOWN", 
+            "tenant_id": PROJECT_ID
+            },
+        {
+            "admin_state_up": True, 
+            "allowed_address_pairs": [], 
+            "binding:capabilities": {
+                "port_filter": False
+            }, 
+            "binding:host_id": "", 
+            "binding:vif_type": "unbound", 
+            "device_id": "", 
+            "device_owner": "", 
+            "extra_dhcp_opts": [], 
+            "fixed_ips": [
+                {
+                    "ip_address": "10.0.0.4", 
+                    "subnet_id": "51351eb9-7ce5-42cf-89cd-cea0b0fc510f"
+                }
+            ], 
+            "id": "61c1b45e-45fe-4e04-8704-bf6f5876607d", 
+            "mac_address": "fa:16:3e:f5:62:22", 
+            "name": "custom unbound port", 
+            "network_id": "bf8d2e1f-221e-4908-a4ed-b6c0fd06e518", 
+            "security_groups": [
+                "766110ac-0fde-4c31-aed7-72a97e78310b"
+            ], 
+            "status": "DOWN", 
+            "tenant_id": "ANOTHER_PROJECT"
+            }
+        ]}
 
 REMOVE_ROUTER_INTERFACE = {
     "id": "8604a0de-7f6b-409a-a47c-a1cc7bc77b2e",

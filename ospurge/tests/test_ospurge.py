@@ -292,6 +292,29 @@ class TestNeutronInterfaces(TestNeutronBase):
         self._test_delete()
 
 
+class TestNeutronPorts(TestNeutronBase):
+    IDS = [client_fixtures.UNBOUND_PORT_ID]
+
+    def stub_list(self):
+        self.stub_url('GET', parts=['v2.0', "ports.json"],
+                      json=client_fixtures.NEUTRON_PORTS)
+
+    def stub_delete(self):
+        port_id = client_fixtures.UNBOUND_PORT_ID
+        self.stub_url('DELETE', parts=['v2.0', 'ports', "{}.json".format(port_id)],
+                      json={})
+
+    def setUp(self):
+        super(TestNeutronPorts, self).setUp()
+        self.resources = ospurge.NeutronPorts(self.session)
+
+    def test_list(self):
+        self._test_list()
+
+    def test_delete(self):
+        self._test_delete()
+
+
 class TestNeutronNetworks(TestNeutronBase):
     IDS = client_fixtures.NETWORKS_IDS
 
