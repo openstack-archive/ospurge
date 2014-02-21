@@ -261,6 +261,8 @@ class TestNeutronRouters(TestNeutronBase):
 
 
 class TestNeutronInterfaces(TestNeutronBase):
+    IDS = client_fixtures.PORTS_IDS
+
     def stub_list(self):
         self.stub_list_routers()
         self.stub_url('GET', parts=['v2.0', "ports.json?device_id={}".format(client_fixtures.ROUTERS_IDS[0])],
@@ -278,15 +280,8 @@ class TestNeutronInterfaces(TestNeutronBase):
         super(TestNeutronInterfaces, self).setUp()
         self.resources = ospurge.NeutronInterfaces(self.session)
 
-    # Special case there, interfaces ids can be accessed through
-    # port['interface_id']['id']
-    @httpretty.activate
     def test_list(self):
-        self.stub_auth()
-        self.stub_list()
-        ids = [port['interface_id'] for port in self.resources.list()]
-        # Converting lists to sets, because order of element may have change
-        self.assertEqual(set(ids), set(client_fixtures.PORTS_IDS))
+        self._test_list()
 
     def test_delete(self):
         self._test_delete()

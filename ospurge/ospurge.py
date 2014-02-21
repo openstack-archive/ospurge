@@ -289,23 +289,19 @@ class NeutronRouters(NeutronResources):
 class NeutronInterfaces(NeutronResources):
 
     def list(self):
-        def get_ports(router):
-            # Only considering "router_interface" ports (not gateways)
-            ports = [port for port in
-                     self.client.list_ports(device_id=router['id'])['ports']
+        # Only considering "router_interface" ports
+        # (not gateways, neither unbound ports)
+        all_ports = [port for port in self.client.list_ports()['ports'] 
                      if port["device_owner"] == "network:router_interface"]
-            return [{'router_id': router['id'], 'interface_id': port['id']}
-                    for port in ports ]
-        interfaces = [get_ports(rout) for rout in self.list_routers()]
-        return itertools.chain(*interfaces)
+        return filter(self._owned_resource, all_ports)
 
     def delete(self, interface):
         super(NeutronInterfaces, self).delete(interface)
-        self.client.remove_interface_router(interface['router_id'],
-                                            {'port_id':interface['interface_id']})
+        self.client.remove_interface_router(interface['device_id'],
+                                            {'port_id':interface['id']})
 
     def resource_str(self, interface):
-        return "interfaces {} (id)".format(interface['interface_id'])
+        return "interfaces {} (id)".format(interface['id'])
 
 
 class NeutronPorts(NeutronResources):
