@@ -306,9 +306,13 @@ class NeutronInterfaces(NeutronResources):
 
 class NeutronPorts(NeutronResources):
 
+    # When created, unbound ports' device_owner are "". device_owner
+    # is of the form" compute:*" if it has been bound to some vm in
+    # the past.
     def list(self):
         all_ports = [port for port in self.client.list_ports()['ports'] 
-                     if port["device_owner"] == ""]
+                     if port["device_owner"] == "" 
+                     or port["device_owner"].startswith("compute:")]
         return filter(self._owned_resource, all_ports)
 
     def delete(self, port):

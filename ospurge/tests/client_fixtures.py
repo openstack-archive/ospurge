@@ -300,7 +300,7 @@ ROUTER0_PORTS = {
             "network_id":"ebda9658-093b-41ba-80ce-0cf8cb8365d4",
             "tenant_id": PROJECT_ID,
             "binding:vif_type":"ovs",
-            "device_owner":"compute:None",
+            "device_owner":"network:router_gateway",
             "binding:capabilities":{
                 "port_filter":False
                 },
@@ -376,7 +376,7 @@ NEUTRON_PORTS = {
             "binding:host_id": "", 
             "binding:vif_type": "unbound", 
             "device_id": "", 
-            "device_owner": "", 
+            "device_owner": "compute:azerty", 
             "extra_dhcp_opts": [], 
             "fixed_ips": [
                 {
