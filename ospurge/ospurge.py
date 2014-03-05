@@ -574,6 +574,7 @@ def parse_args():
                         help="Authentication URL. Defaults to " \
                              "env[OS_AUTH_URL].")
     parser.add_argument("--cleanup-project", required=True,
+                        dest="project_to_cleanup",
                         help="ID or Name of project to purge")
     return parser.parse_args()
 
@@ -595,8 +596,8 @@ def main():
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
 
     try:
-        cleanup_project_id = keystone_manager.get_project_id(args.cleanup_project)
-        keystone_manager.become_project_admin(cleanup_project_id)
+        project_id_to_cleanup = keystone_manager.get_project_id(args.project_to_cleanup)
+        keystone_manager.become_project_admin(project_id_to_cleanup)
     except api_exceptions.Forbidden as exc:
         print "Not authorized: {}".format(str(exc))
         sys.exit(NOT_AUTHORIZED)
@@ -606,10 +607,10 @@ def main():
 
     try:
         if args.dry_run:
-            list_resources(args.username, args.password, cleanup_project_id,
+            list_resources(args.username, args.password, project_id_to_cleanup,
                            args.auth_url, args.endpoint_type)
         else:
-            purge_project(args.username, args.password, cleanup_project_id,
+            purge_project(args.username, args.password, project_id_to_cleanup,
                           args.auth_url, args.endpoint_type)
     except ConnectionError as exc:
         print "Connection error: {}".format(str(exc))
@@ -619,7 +620,7 @@ def main():
         sys.exit(DeletionFailed.ERROR_CODE)
 
     if (not args.dry_run) and (not args.dont_delete_project):
-        keystone_manager.delete_project(cleanup_project_id)
+        keystone_manager.delete_project(project_id_to_cleanup)
     sys.exit(0)
 
 if __name__ == "__main__":
