@@ -616,6 +616,7 @@ def main():
         sys.exit(CONNECTION_ERROR_CODE)
     except DeletionFailed as exc:
         print "Deletion of {} failed".format(str(exc))
+        print "*Warning* Remaining resources have not been cleaned up"
         sys.exit(DeletionFailed.ERROR_CODE)
 
     if (not args.dry_run) and (not args.dont_delete_project):
