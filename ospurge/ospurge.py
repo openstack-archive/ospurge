@@ -44,15 +44,18 @@ from novaclient.v1_1 import client as nova_client
 from swiftclient import client as swift_client
 
 RETRIES = 3
-TIMEOUT = 5 # 5 seconds timeout between retries
+TIMEOUT = 5  # 5 seconds timeout between retries
+
 
 class EndpointNotFound(Exception):
     pass
+
 
 class NoSuchProject(Exception):
     ERROR_CODE = 2
 
 AUTHENTICATION_FAILED_ERROR_CODE = 3
+
 
 class DeletionFailed(Exception):
     ERROR_CODE = 4
@@ -79,14 +82,14 @@ RESOURCES_CLASSES = ['CinderSnapshots',
                      'CeilometerAlarms']
 
 
-### Decorators
+# Decorators
 
 def retry(service_name):
     def factory(func):
         """Decorator allowing to retry in case of failure"""
         def wrapper(*args, **kwargs):
             n = 0
-            while True :
+            while True:
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
@@ -101,10 +104,9 @@ def retry(service_name):
     return factory
 
 
-
-### Classes
-
+# Classes
 class Session(object):
+
     """
     A Session stores information that can be used by the different
     Openstack Clients. The most important data is:
@@ -139,9 +141,11 @@ class Session(object):
 
 
 class Resources(object):
+
     """
     Abstract base class for all resources to be removed.
     """
+
     def __init__(self, session):
         self.session = session
 
@@ -217,6 +221,7 @@ class SwiftContainers(SwiftResources):
 
 
 class CinderResources(Resources):
+
     def __init__(self, session):
         super(CinderResources, self).__init__(session)
         # Cinder client library can't use an existing token. When
@@ -228,6 +233,7 @@ class CinderResources(Resources):
 
 
 class CinderSnapshots(CinderResources):
+
     def list(self):
         return self.client.volume_snapshots.list()
 
@@ -240,6 +246,7 @@ class CinderSnapshots(CinderResources):
 
 
 class CinderVolumes(CinderResources):
+
     def list(self):
         return self.client.volumes.list()
 
@@ -253,6 +260,7 @@ class CinderVolumes(CinderResources):
 
 
 class NeutronResources(Resources):
+
     def __init__(self, session):
         super(NeutronResources, self).__init__(session)
         self.client = neutron_client.Client(
@@ -291,14 +299,14 @@ class NeutronInterfaces(NeutronResources):
     def list(self):
         # Only considering "router_interface" ports
         # (not gateways, neither unbound ports)
-        all_ports = [port for port in self.client.list_ports()['ports'] 
+        all_ports = [port for port in self.client.list_ports()['ports']
                      if port["device_owner"] == "network:router_interface"]
         return filter(self._owned_resource, all_ports)
 
     def delete(self, interface):
         super(NeutronInterfaces, self).delete(interface)
         self.client.remove_interface_router(interface['device_id'],
-                                            {'port_id':interface['id']})
+                                            {'port_id': interface['id']})
 
     def resource_str(self, interface):
         return "interfaces {} (id)".format(interface['id'])
@@ -310,8 +318,8 @@ class NeutronPorts(NeutronResources):
     # is of the form" compute:*" if it has been bound to some vm in
     # the past.
     def list(self):
-        all_ports = [port for port in self.client.list_ports()['ports'] 
-                     if port["device_owner"] == "" 
+        all_ports = [port for port in self.client.list_ports()['ports']
+                     if port["device_owner"] == ""
                      or port["device_owner"].startswith("compute:")]
         return filter(self._owned_resource, all_ports)
 
@@ -340,6 +348,7 @@ class NeutronNetworks(NeutronResources):
     def resource_str(self, net):
         return "network {} (id {})".format(net['name'], net['id'])
 
+
 class NeutronSecgroups(NeutronResources):
 
     def list(self):
@@ -363,6 +372,7 @@ class NeutronSecgroups(NeutronResources):
 
 
 class NeutronFloatingIps(NeutronResources):
+
     def list(self):
         return filter(self._owned_resource,
                       self.client.list_floatingips()['floatingips'])
@@ -377,6 +387,7 @@ class NeutronFloatingIps(NeutronResources):
 
 
 class NovaServers(Resources):
+
     def __init__(self, session):
         super(NovaServers, self).__init__(session)
         self.client = nova_client.Client(
@@ -386,6 +397,7 @@ class NovaServers(Resources):
         self.project_id = session.project_id
 
     """Manage nova resources"""
+
     def list(self):
         return self.client.servers.list()
 
@@ -398,6 +410,7 @@ class NovaServers(Resources):
 
 
 class GlanceImages(Resources):
+
     def __init__(self, session):
         self.client = glance_client.Client(
             endpoint=session.get_endpoint("image"),
@@ -445,6 +458,7 @@ class CeilometerAlarms(Resources):
 
 
 class KeystoneManager(object):
+
     """Manages Keystone queries"""
 
     def __init__(self, username, password, project, auth_url):
@@ -460,8 +474,10 @@ class KeystoneManager(object):
             project_id = project_name_or_id
         except api_exceptions.NotFound:
             try:
-                tenants = self.client.tenants.list() # Can raise api_exceptions.Forbidden:
-                project_id = filter(lambda x : x.name==project_name_or_id, tenants)[0].id
+                # Can raise api_exceptions.Forbidden:
+                tenants = self.client.tenants.list()
+                project_id = filter(
+                    lambda x: x.name == project_name_or_id, tenants)[0].id
             except IndexError:
                 raise NoSuchProject(project_name_or_id)
         return project_id
@@ -469,10 +485,10 @@ class KeystoneManager(object):
     def become_project_admin(self, project_id):
         user_id = self.client.user_id
         logging.info("* Granting role admin to user {} on project {}.".format(
-                user_id, project_id))
+            user_id, project_id))
 
         roles = self.client.roles.list()
-        role_id = filter(lambda x : x.name=="admin", roles)[0].id
+        role_id = filter(lambda x: x.name == "admin", roles)[0].id
         try:
             return self.client.roles.add_user_role(user_id, role_id, project_id)
         except api_exceptions.Conflict:
@@ -495,8 +511,8 @@ def _perform_on_project(admin_name, password, project, auth_url,
     for rc in RESOURCES_CLASSES:
         try:
             resources = globals()[rc](session)
-            res_actions = { 'purge': resources.purge,
-                            'dump': resources.dump }
+            res_actions = {'purge': resources.purge,
+                           'dump': resources.dump}
             res_actions[action]()
         except (EndpointNotFound,
                 neutronclient.common.exceptions.EndpointNotFound,
@@ -529,6 +545,7 @@ def list_resources(admin_name, password, project, auth_url,
 # From Russell Heilling
 # http://stackoverflow.com/questions/10551117/setting-options-from-environment-variables-when-using-argparse
 class EnvDefault(argparse.Action):
+
     def __init__(self, envvar, required=True, default=None, **kwargs):
         # Overriding default with environment variable if available
         if envvar in os.environ:
@@ -550,16 +567,16 @@ def parse_args():
     parser.add_argument("--dry-run", action="store_true",
                         help="List project's resources")
     parser.add_argument("--dont-delete-project", action="store_true",
-                        help="Executes cleanup script without removing the project. "\
+                        help="Executes cleanup script without removing the project. "
                              "Warning: all project resources will still be deleted.")
     parser.add_argument("--endpoint-type", action=EnvDefault,
                         envvar='OS_ENDPOINT_TYPE', default="publicURL",
-                        help="Endpoint type to use. Defaults to " \
+                        help="Endpoint type to use. Defaults to "
                              "env[OS_ENDPOINT_TYPE] or publicURL")
     parser.add_argument("--username", action=EnvDefault,
                         envvar='OS_USERNAME', required=True,
-                        help="A user name with access to the " \
-                             "project being purged. Defaults " \
+                        help="A user name with access to the "
+                             "project being purged. Defaults "
                              "to env[OS_USERNAME]")
     parser.add_argument("--password", action=EnvDefault,
                         envvar='OS_PASSWORD', required=True,
@@ -567,11 +584,11 @@ def parse_args():
                              "to env[OS_PASSWORD].")
     parser.add_argument("--admin-project", action=EnvDefault,
                         envvar='OS_TENANT_NAME', required=True,
-                        help="Name of a project the user is admin on. "\
+                        help="Name of a project the user is admin on. "
                              "Defaults to env[OS_TENANT_NAME].")
     parser.add_argument("--auth-url", action=EnvDefault,
                         envvar='OS_AUTH_URL', required=True,
-                        help="Authentication URL. Defaults to " \
+                        help="Authentication URL. Defaults to "
                              "env[OS_AUTH_URL].")
     parser.add_argument("--cleanup-project", required=True,
                         help="ID or Name of project to purge")
@@ -595,7 +612,8 @@ def main():
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
 
     try:
-        cleanup_project_id = keystone_manager.get_project_id(args.cleanup_project)
+        cleanup_project_id = keystone_manager.get_project_id(
+            args.cleanup_project)
         keystone_manager.become_project_admin(cleanup_project_id)
     except api_exceptions.Forbidden as exc:
         print "Not authorized: {}".format(str(exc))
@@ -625,4 +643,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
