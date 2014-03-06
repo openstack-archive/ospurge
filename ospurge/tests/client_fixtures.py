@@ -38,13 +38,18 @@ STORAGE_OBJECTS = [{'container': 'janeausten', 'name': 'foo'},
                    {'container': 'janeausten', 'name': 'bar'},
                    {'container': 'marktwain', 'name': 'hello world'}]
 
-VOLUMES_IDS = ["45baf976-c20a-4894-a7c3-c94b7376bf55", "5aa119a8-d25b-45a7-8d1b-88e127885635"]
-SNAPSHOTS_IDS = ["3fbbcccf-d058-4502-8844-6feeffdf4cb5", "e479997c-650b-40a4-9dfe-77655818b0d2"]
-ROUTERS_IDS = ["7177abc4-5ae9-4bb7-b0d4-89e94a4abf3b", "a9254bdb-2613-4a13-ac4c-adc581fba50d"]
+VOLUMES_IDS = ["45baf976-c20a-4894-a7c3-c94b7376bf55",
+               "5aa119a8-d25b-45a7-8d1b-88e127885635"]
+SNAPSHOTS_IDS = ["3fbbcccf-d058-4502-8844-6feeffdf4cb5",
+                 "e479997c-650b-40a4-9dfe-77655818b0d2"]
+ROUTERS_IDS = ["7177abc4-5ae9-4bb7-b0d4-89e94a4abf3b",
+               "a9254bdb-2613-4a13-ac4c-adc581fba50d"]
 PORTS_IDS = ["d7815f5b-a228-47bb-a5e5-f139c4e476f6"]
-NETWORKS_IDS = ["9d83c053-b0a4-4682-ae80-c00df269ce0a", "ebda9658-093b-41ba-80ce-0cf8cb8365d4"]
+NETWORKS_IDS = ["9d83c053-b0a4-4682-ae80-c00df269ce0a",
+                "ebda9658-093b-41ba-80ce-0cf8cb8365d4"]
 SECGROUPS_IDS = ["85cc3048-abc3-43cc-89b3-377341426ac5"]
-FLOATING_IPS_IDS = ["2f245a7b-796b-4f26-9cf9-9e82d248fda7", "61cea855-49cb-4846-997d-801b70c71bdd"]
+FLOATING_IPS_IDS = ["2f245a7b-796b-4f26-9cf9-9e82d248fda7",
+                    "61cea855-49cb-4846-997d-801b70c71bdd"]
 SERVERS_IDS = ["616fb98f-46ca-475e-917e-2563e5a8cd19"]
 IMAGES_IDS = ["37717f53-3707-49b9-9dd0-fd063e6b9fc5", "4e150966-cbe7-4fd7-a964-41e008d20f10",
               "482fbcc3-d831-411d-a073-ddc828a7a9ed"]
@@ -56,79 +61,79 @@ UNBOUND_PORT_ID = "abcdb45e-45fe-4e04-8704-bf6f58760000"
 PROJECT_SCOPED_TOKEN = {
     'access': {
         'serviceCatalog':
-            [{
-                'endpoints': [{
-                    'adminURL': 'http://admin:8776/v1/225da22d3ce34b15877ea70b2a575f58',
-                    'internalURL': VOLUME_INTERNAL_ENDPOINT,
-                    'publicURL': VOLUME_PUBLIC_ENDPOINT,
-                    'region': 'RegionOne'}],
-                'endpoints_links': [],
-                'name': 'Volume Service',
-                'type': 'volume'
-            }, {
-                'endpoints': [{
-                    'adminURL': 'http://admin:9292/v1',
-                    'internalURL': IMAGE_INTERNAL_ENDPOINT,
-                    'publicURL': IMAGE_PUBLIC_ENDPOINT,
-                    'region': 'RegionOne'}],
-                'endpoints_links': [],
-                'name': 'Image Service',
-                'type': 'image'
-            }, {
-                'endpoints': [{
-                    'adminURL': 'http://admin:8774/v2/225da22d3ce34b15877ea70b2a575f58',
-                    'internalURL': COMPUTE_INTERNAL_ENDPOINT,
-                    'publicURL': COMPUTE_PUBLIC_ENDPOINT,
-                    'region': 'RegionOne'}],
-                'endpoints_links': [],
-                'name': 'Compute Service',
-                'type': 'compute'
-            }, {
-                'endpoints': [{
-                    'adminURL': 'http://admin:8773/services/Admin',
-                    'internalURL': 'http://internal:8773/services/Cloud',
-                    'publicURL': 'http://public:8773/services/Cloud',
-                    'region': 'RegionOne'}],
-                'endpoints_links': [],
-                'name': 'EC2 Service',
-                'type': 'ec2'
-            }, {
-                'endpoints': [{
-                    'adminURL': 'http://admin:35357/v2.0',
-                    'internalURL': 'http://internal:5000/v2.0',
-                    'publicURL': 'http://public:5000/v2.0',
-                    'region': 'RegionOne'}],
-                'endpoints_links': [],
-                'name': 'Identity Service',
-                'type': 'identity'
-            }, {
-                'endpoints': [{
-                    'adminURL': 'http://admin:8080',
-                    'internalURL': STORAGE_INTERNAL_ENDPOINT,
-                    'publicURL': STORAGE_PUBLIC_ENDPOINT,
-                    'region': 'RegionOne'}],
-                'endpoints_links': [],
-                'name': 'Object Storage Service',
-                'type': 'object-store'
-            }, {
-                'endpoints': [{
-                    'adminURL': 'http://neutron.usr.lab0.aub.cw-labs.net:9696',
-                    'internalURL': NETWORK_INTERNAL_ENDPOINT,
-                    'publicURL': NETWORK_PUBLIC_ENDPOINT,
-                    'region': 'RegionOne'}],
-                'endpoints_links': [],
-                'name': 'Network Service',
-                'type': 'network'
-            }, {
-                'endpoints': [{
-                    'adminURL': 'http://ceilometer.usr.lab0.aub.cw-labs.net:8777',
-                    'internalURL': METERING_INTERNAL_ENDPOINT,
-                    'publicURL': METERING_PUBLIC_ENDPOINT,
-                    'region': 'RegionOne'}],
-                'endpoints_links': [],
-                'name': 'Metering service',
-                'type': 'metering'
-            }],
+        [{
+            'endpoints': [{
+                'adminURL': 'http://admin:8776/v1/225da22d3ce34b15877ea70b2a575f58',
+                'internalURL': VOLUME_INTERNAL_ENDPOINT,
+                'publicURL': VOLUME_PUBLIC_ENDPOINT,
+                'region': 'RegionOne'}],
+            'endpoints_links': [],
+            'name': 'Volume Service',
+            'type': 'volume'
+        }, {
+            'endpoints': [{
+                'adminURL': 'http://admin:9292/v1',
+                'internalURL': IMAGE_INTERNAL_ENDPOINT,
+                'publicURL': IMAGE_PUBLIC_ENDPOINT,
+                'region': 'RegionOne'}],
+            'endpoints_links': [],
+            'name': 'Image Service',
+            'type': 'image'
+        }, {
+            'endpoints': [{
+                'adminURL': 'http://admin:8774/v2/225da22d3ce34b15877ea70b2a575f58',
+                'internalURL': COMPUTE_INTERNAL_ENDPOINT,
+                'publicURL': COMPUTE_PUBLIC_ENDPOINT,
+                'region': 'RegionOne'}],
+            'endpoints_links': [],
+            'name': 'Compute Service',
+            'type': 'compute'
+        }, {
+            'endpoints': [{
+                'adminURL': 'http://admin:8773/services/Admin',
+                'internalURL': 'http://internal:8773/services/Cloud',
+                'publicURL': 'http://public:8773/services/Cloud',
+                'region': 'RegionOne'}],
+            'endpoints_links': [],
+            'name': 'EC2 Service',
+            'type': 'ec2'
+        }, {
+            'endpoints': [{
+                'adminURL': 'http://admin:35357/v2.0',
+                'internalURL': 'http://internal:5000/v2.0',
+                'publicURL': 'http://public:5000/v2.0',
+                'region': 'RegionOne'}],
+            'endpoints_links': [],
+            'name': 'Identity Service',
+            'type': 'identity'
+        }, {
+            'endpoints': [{
+                'adminURL': 'http://admin:8080',
+                'internalURL': STORAGE_INTERNAL_ENDPOINT,
+                'publicURL': STORAGE_PUBLIC_ENDPOINT,
+                'region': 'RegionOne'}],
+            'endpoints_links': [],
+            'name': 'Object Storage Service',
+            'type': 'object-store'
+        }, {
+            'endpoints': [{
+                'adminURL': 'http://neutron.usr.lab0.aub.cw-labs.net:9696',
+                'internalURL': NETWORK_INTERNAL_ENDPOINT,
+                'publicURL': NETWORK_PUBLIC_ENDPOINT,
+                'region': 'RegionOne'}],
+            'endpoints_links': [],
+            'name': 'Network Service',
+            'type': 'network'
+        }, {
+            'endpoints': [{
+                'adminURL': 'http://ceilometer.usr.lab0.aub.cw-labs.net:8777',
+                'internalURL': METERING_INTERNAL_ENDPOINT,
+                'publicURL': METERING_PUBLIC_ENDPOINT,
+                'region': 'RegionOne'}],
+            'endpoints_links': [],
+            'name': 'Metering service',
+            'type': 'metering'
+        }],
         'token': {
             'expires': '2012-10-03T16:53:36Z',
             'id': TOKEN_ID,
@@ -152,44 +157,44 @@ PROJECT_SCOPED_TOKEN = {
 }
 
 STORAGE_CONTAINERS_LIST = [
-   {
-      "count": 0,
-      "bytes": 0,
-      "name": STORAGE_CONTAINERS[0]
-   },
-   {
-      "count": 1,
-      "bytes": 14,
-      "name": STORAGE_CONTAINERS[1]
-   }
+    {
+        "count": 0,
+        "bytes": 0,
+        "name": STORAGE_CONTAINERS[0]
+    },
+    {
+        "count": 1,
+        "bytes": 14,
+        "name": STORAGE_CONTAINERS[1]
+    }
 ]
 
 
 STORAGE_OBJECTS_LIST_0 = [
-   {
-      "hash":"451e372e48e0f6b1114fa0724aa79fa1",
-      "last_modified":"2014-01-15T16:41:49.390270",
-      "bytes":14,
-      "name":STORAGE_OBJECTS[0]['name'],
-      "content_type":"application/octet-stream"
-   },
-   {
-      "hash":"ed076287532e86365e841e92bfc50d8c",
-      "last_modified":"2014-01-15T16:37:43.427570",
-      "bytes":12,
-      "name":STORAGE_OBJECTS[1]['name'],
-      "content_type":"application/octet-stream"
-   }
+    {
+        "hash": "451e372e48e0f6b1114fa0724aa79fa1",
+        "last_modified": "2014-01-15T16:41:49.390270",
+        "bytes": 14,
+        "name": STORAGE_OBJECTS[0]['name'],
+        "content_type":"application/octet-stream"
+    },
+    {
+        "hash": "ed076287532e86365e841e92bfc50d8c",
+        "last_modified": "2014-01-15T16:37:43.427570",
+        "bytes": 12,
+        "name": STORAGE_OBJECTS[1]['name'],
+        "content_type":"application/octet-stream"
+    }
 ]
 
 STORAGE_OBJECTS_LIST_1 = [
-   {
-      "hash":"451e372e48e0f6b1114fa0724aa7AAAA",
-      "last_modified":"2014-01-15T16:41:49.390270",
-      "bytes":14,
-      "name":STORAGE_OBJECTS[2]['name'],
-      "content_type":"application/octet-stream"
-   }
+    {
+        "hash": "451e372e48e0f6b1114fa0724aa7AAAA",
+        "last_modified": "2014-01-15T16:41:49.390270",
+        "bytes": 14,
+        "name": STORAGE_OBJECTS[2]['name'],
+        "content_type":"application/octet-stream"
+    }
 ]
 
 
@@ -254,174 +259,174 @@ SNAPSHOTS_LIST = {
 
 ROUTERS_LIST = {
     "routers": [{
-            "status": "ACTIVE",
-            "external_gateway_info":
+        "status": "ACTIVE",
+        "external_gateway_info":
                 {"network_id": "3c5bcddd-6af9-4e6b-9c3e-c153e521cab8"},
-            "name": "second_routers",
-            "admin_state_up": True,
-            "tenant_id": PROJECT_ID,
-            "id": ROUTERS_IDS[0]
-    }, {
-            "status": "ACTIVE",
-            "external_gateway_info":
+                "name": "second_routers",
+                "admin_state_up": True,
+                "tenant_id": PROJECT_ID,
+                "id": ROUTERS_IDS[0]
+                }, {
+        "status": "ACTIVE",
+        "external_gateway_info":
                 {"network_id": "3c5bcddd-6af9-4e6b-9c3e-c153e521cab8"},
-            "name": "router1",
-            "admin_state_up": True,
-            "tenant_id": PROJECT_ID,
-            "id": ROUTERS_IDS[1]
-    }, {
-            "status": "ACTIVE",
-            "external_gateway_info":
+                "name": "router1",
+                "admin_state_up": True,
+                "tenant_id": PROJECT_ID,
+                "id": ROUTERS_IDS[1]
+                }, {
+        "status": "ACTIVE",
+        "external_gateway_info":
                 {"network_id": "3c5bcddd-6af9-4e6b-9c3e-c153e521cab8"},
-            "name": "another_router",
-            "admin_state_up": True,
-            "tenant_id": "6b96ff0cb17a4b859e1e575d221683d3",
-            "id": "7177abc4-5ae9-4bb7-b0d4-89e94a4abf3b"
-    }]
+                "name": "another_router",
+                "admin_state_up": True,
+                "tenant_id": "6b96ff0cb17a4b859e1e575d221683d3",
+                "id": "7177abc4-5ae9-4bb7-b0d4-89e94a4abf3b"
+                }]
 }
 
 ROUTER_CLEAR_GATEWAY = {
     "router": {
-            "status": "ACTIVE",
-            "external_gateway_info": None,
-            "name": "second_routers",
-            "admin_state_up": True,
-            "tenant_id": PROJECT_ID,
-            "id": ROUTERS_IDS[0]
+        "status": "ACTIVE",
+        "external_gateway_info": None,
+        "name": "second_routers",
+        "admin_state_up": True,
+        "tenant_id": PROJECT_ID,
+        "id": ROUTERS_IDS[0]
     }
 }
 
 ROUTER0_PORTS = {
-    "ports":[
+    "ports": [
         {
-            "status":"ACTIVE",
-            "name":"",
-            "admin_state_up":True,
-            "network_id":"ebda9658-093b-41ba-80ce-0cf8cb8365d4",
+            "status": "ACTIVE",
+            "name": "",
+            "admin_state_up": True,
+            "network_id": "ebda9658-093b-41ba-80ce-0cf8cb8365d4",
             "tenant_id": PROJECT_ID,
-            "binding:vif_type":"ovs",
-            "device_owner":"network:router_gateway",
-            "binding:capabilities":{
-                "port_filter":False
-                },
-            "mac_address":"fa:16:3e:b9:ef:05",
-            "fixed_ips":[
+            "binding:vif_type": "ovs",
+            "device_owner": "network:router_gateway",
+            "binding:capabilities": {
+                "port_filter": False
+            },
+            "mac_address": "fa:16:3e:b9:ef:05",
+            "fixed_ips": [
                 {
-                    "subnet_id":"aca4d43c-c48c-4a2c-9bb6-ba374ef7e135",
-                    "ip_address":"172.24.4.227"
-                    }
-                ],
+                    "subnet_id": "aca4d43c-c48c-4a2c-9bb6-ba374ef7e135",
+                    "ip_address": "172.24.4.227"
+                }
+            ],
             "id": "664ebd1a-facd-4c20-948c-07a784475ab0",
             "device_id": ROUTERS_IDS[0]
-            }
-        ]
-    }
+        }
+    ]
+}
 
 ROUTER1_PORTS = {
-    "ports":[
+    "ports": [
         {
-            "status":"DOWN",
-            "name":"",
-            "admin_state_up":True,
-            "network_id":"ebda9658-093b-41ba-80ce-0cf8cb8365d4",
+            "status": "DOWN",
+            "name": "",
+            "admin_state_up": True,
+            "network_id": "ebda9658-093b-41ba-80ce-0cf8cb8365d4",
             "tenant_id": PROJECT_ID,
-            "binding:vif_type":"ovs",
-            "device_owner":"network:router_gateway",
-            "binding:capabilities":{
-                "port_filter":False
-                },
-            "mac_address":"fa:16:3e:4a:3a:a2",
-            "fixed_ips":[
+            "binding:vif_type": "ovs",
+            "device_owner": "network:router_gateway",
+            "binding:capabilities": {
+                "port_filter": False
+            },
+            "mac_address": "fa:16:3e:4a:3a:a2",
+            "fixed_ips": [
                 {
-                    "subnet_id":"aca4d43c-c48c-4a2c-9bb6-ba374ef7e135",
-                    "ip_address":"172.24.4.226"
-                    }
-                ],
+                    "subnet_id": "aca4d43c-c48c-4a2c-9bb6-ba374ef7e135",
+                    "ip_address": "172.24.4.226"
+                }
+            ],
             "id": "c5ca7017-c390-4ccc-8cd7-333747e57fef",
             "device_id": ROUTERS_IDS[1]
-            },
+        },
         {
-            "status":"ACTIVE",
-            "name":"",
-            "admin_state_up":True,
-            "network_id":"9d83c053-b0a4-4682-ae80-c00df269ce0a",
+            "status": "ACTIVE",
+            "name": "",
+            "admin_state_up": True,
+            "network_id": "9d83c053-b0a4-4682-ae80-c00df269ce0a",
             "tenant_id": PROJECT_ID,
-            "binding:vif_type":"ovs",
-            "device_owner":"network:router_interface",
-            "binding:capabilities":{
-                "port_filter":False
-                },
-            "mac_address":"fa:16:3e:2d:dc:7e",
-            "fixed_ips":[
+            "binding:vif_type": "ovs",
+            "device_owner": "network:router_interface",
+            "binding:capabilities": {
+                "port_filter": False
+            },
+            "mac_address": "fa:16:3e:2d:dc:7e",
+            "fixed_ips": [
                 {
-                    "subnet_id":"a318fcb4-9ff0-4485-b78c-9e6738c21b26",
-                    "ip_address":"10.0.0.1"
-                    }
-                ],
+                    "subnet_id": "a318fcb4-9ff0-4485-b78c-9e6738c21b26",
+                    "ip_address": "10.0.0.1"
+                }
+            ],
             "id": PORTS_IDS[0],
             "device_id": ROUTERS_IDS[1]
-            }
-        ]
-    }
+        }
+    ]
+}
 
 
 NEUTRON_PORTS = {
     'ports': ROUTER0_PORTS['ports'] + ROUTER1_PORTS['ports'] + [
         {
-            "admin_state_up": True, 
-            "allowed_address_pairs": [], 
+            "admin_state_up": True,
+            "allowed_address_pairs": [],
             "binding:capabilities": {
                 "port_filter": False
-            }, 
-            "binding:host_id": "", 
-            "binding:vif_type": "unbound", 
-            "device_id": "", 
-            "device_owner": "compute:azerty", 
-            "extra_dhcp_opts": [], 
-            "fixed_ips": [
-                {
-                    "ip_address": "10.0.0.4", 
-                    "subnet_id": "51351eb9-7ce5-42cf-89cd-cea0b0fc510f"
-                }
-            ], 
-            "id": UNBOUND_PORT_ID, 
-            "mac_address": "fa:16:3e:f5:62:22", 
-            "name": "custom unbound port", 
-            "network_id": "bf8d2e1f-221e-4908-a4ed-b6c0fd06e518", 
-            "security_groups": [
-                "766110ac-0fde-4c31-aed7-72a97e78310b"
-            ], 
-            "status": "DOWN", 
-            "tenant_id": PROJECT_ID
             },
-        {
-            "admin_state_up": True, 
-            "allowed_address_pairs": [], 
-            "binding:capabilities": {
-                "port_filter": False
-            }, 
-            "binding:host_id": "", 
-            "binding:vif_type": "unbound", 
-            "device_id": "", 
-            "device_owner": "", 
-            "extra_dhcp_opts": [], 
+            "binding:host_id": "",
+            "binding:vif_type": "unbound",
+            "device_id": "",
+            "device_owner": "compute:azerty",
+            "extra_dhcp_opts": [],
             "fixed_ips": [
                 {
-                    "ip_address": "10.0.0.4", 
+                    "ip_address": "10.0.0.4",
                     "subnet_id": "51351eb9-7ce5-42cf-89cd-cea0b0fc510f"
                 }
-            ], 
-            "id": "61c1b45e-45fe-4e04-8704-bf6f5876607d", 
-            "mac_address": "fa:16:3e:f5:62:22", 
-            "name": "custom unbound port", 
-            "network_id": "bf8d2e1f-221e-4908-a4ed-b6c0fd06e518", 
+            ],
+            "id": UNBOUND_PORT_ID,
+            "mac_address": "fa:16:3e:f5:62:22",
+            "name": "custom unbound port",
+            "network_id": "bf8d2e1f-221e-4908-a4ed-b6c0fd06e518",
             "security_groups": [
                 "766110ac-0fde-4c31-aed7-72a97e78310b"
-            ], 
-            "status": "DOWN", 
+            ],
+            "status": "DOWN",
+            "tenant_id": PROJECT_ID
+        },
+        {
+            "admin_state_up": True,
+            "allowed_address_pairs": [],
+            "binding:capabilities": {
+                "port_filter": False
+            },
+            "binding:host_id": "",
+            "binding:vif_type": "unbound",
+            "device_id": "",
+            "device_owner": "",
+            "extra_dhcp_opts": [],
+            "fixed_ips": [
+                {
+                    "ip_address": "10.0.0.4",
+                    "subnet_id": "51351eb9-7ce5-42cf-89cd-cea0b0fc510f"
+                }
+            ],
+            "id": "61c1b45e-45fe-4e04-8704-bf6f5876607d",
+            "mac_address": "fa:16:3e:f5:62:22",
+            "name": "custom unbound port",
+            "network_id": "bf8d2e1f-221e-4908-a4ed-b6c0fd06e518",
+            "security_groups": [
+                "766110ac-0fde-4c31-aed7-72a97e78310b"
+            ],
+            "status": "DOWN",
             "tenant_id": "ANOTHER_PROJECT"
-            }
-        ]}
+        }
+    ]}
 
 REMOVE_ROUTER_INTERFACE = {
     "id": "8604a0de-7f6b-409a-a47c-a1cc7bc77b2e",
@@ -441,7 +446,7 @@ NETWORKS_LIST = {
             "tenant_id": PROJECT_ID,
             "id": NETWORKS_IDS[0],
             "shared": False
-            },
+        },
         {
             "status": "ACTIVE",
             "subnets": ["aca4d43c-c48c-4a2c-9bb6-ba374ef7e135"],
@@ -450,7 +455,7 @@ NETWORKS_LIST = {
             "tenant_id": PROJECT_ID,
             "id": NETWORKS_IDS[1],
             "shared": False
-            },
+        },
         {
             "status": "ACTIVE",
             "subnets": ["e12f0c45-46e3-446a-b207-9474b27687a6"],
@@ -459,131 +464,131 @@ NETWORKS_LIST = {
             "tenant_id": "ed680f49ff714162ab3612d7876ffce5",
             "id": "afc75773-640e-403c-9fff-62ba98db1f19",
             "shared": True
-            }
-        ]
-    }
+        }
+    ]
+}
 
 SECGROUPS_LIST = {
-    "security_groups":[
+    "security_groups": [
         {
-            "description":"Custom Security Group",
-            "id":"85cc3048-abc3-43cc-89b3-377341426ac5",
-            "name":"custom",
-            "security_group_rules":[
+            "description": "Custom Security Group",
+            "id": "85cc3048-abc3-43cc-89b3-377341426ac5",
+            "name": "custom",
+            "security_group_rules": [
                 {
-                    "direction":"egress",
-                    "ethertype":"IPv6",
-                    "id":"3c0e45ff-adaf-4124-b083-bf390e5482ff",
-                    "port_range_max":None,
-                    "port_range_min":None,
-                    "protocol":None,
-                    "remote_group_id":None,
-                    "remote_ip_prefix":None,
-                    "security_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "direction": "egress",
+                    "ethertype": "IPv6",
+                    "id": "3c0e45ff-adaf-4124-b083-bf390e5482ff",
+                    "port_range_max": None,
+                    "port_range_min": None,
+                    "protocol": None,
+                    "remote_group_id": None,
+                    "remote_ip_prefix": None,
+                    "security_group_id": "85cc3048-abc3-43cc-89b3-377341426ac5",
                     "tenant_id": PROJECT_ID
-                    },
+                },
                 {
-                    "direction":"egress",
-                    "ethertype":"IPv4",
-                    "id":"93aa42e5-80db-4581-9391-3a608bd0e448",
-                    "port_range_max":None,
-                    "port_range_min":None,
-                    "protocol":None,
-                    "remote_group_id":None,
-                    "remote_ip_prefix":None,
-                    "security_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "direction": "egress",
+                    "ethertype": "IPv4",
+                    "id": "93aa42e5-80db-4581-9391-3a608bd0e448",
+                    "port_range_max": None,
+                    "port_range_min": None,
+                    "protocol": None,
+                    "remote_group_id": None,
+                    "remote_ip_prefix": None,
+                    "security_group_id": "85cc3048-abc3-43cc-89b3-377341426ac5",
                     "tenant_id": PROJECT_ID
-                    },
+                },
                 {
-                    "direction":"ingress",
-                    "ethertype":"IPv6",
-                    "id":"c0b09f00-1d49-4e64-a0a7-8a186d928138",
-                    "port_range_max":None,
-                    "port_range_min":None,
-                    "protocol":None,
-                    "remote_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
-                    "remote_ip_prefix":None,
-                    "security_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "direction": "ingress",
+                    "ethertype": "IPv6",
+                    "id": "c0b09f00-1d49-4e64-a0a7-8a186d928138",
+                    "port_range_max": None,
+                    "port_range_min": None,
+                    "protocol": None,
+                    "remote_group_id": "85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "remote_ip_prefix": None,
+                    "security_group_id": "85cc3048-abc3-43cc-89b3-377341426ac5",
                     "tenant_id": PROJECT_ID
-                    },
+                },
                 {
-                    "direction":"ingress",
-                    "ethertype":"IPv4",
-                    "id":"f7d45c89-008e-4bab-88ad-d6811724c51c",
-                    "port_range_max":None,
-                    "port_range_min":None,
-                    "protocol":None,
-                    "remote_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
-                    "remote_ip_prefix":None,
-                    "security_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "direction": "ingress",
+                    "ethertype": "IPv4",
+                    "id": "f7d45c89-008e-4bab-88ad-d6811724c51c",
+                    "port_range_max": None,
+                    "port_range_min": None,
+                    "protocol": None,
+                    "remote_group_id": "85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "remote_ip_prefix": None,
+                    "security_group_id": "85cc3048-abc3-43cc-89b3-377341426ac5",
                     "tenant_id": PROJECT_ID
-                    }
-                ],
+                }
+            ],
             "tenant_id": PROJECT_ID
-            },
+        },
         {
-            "description":"default",
-            "id":"12345678-1234-1234-1234-123456789012",
-            "name":"default",
-            "security_group_rules":[
+            "description": "default",
+            "id": "12345678-1234-1234-1234-123456789012",
+            "name": "default",
+            "security_group_rules": [
                 {
-                    "direction":"egress",
-                    "ethertype":"IPv6",
-                    "id":"3c0e45ff-adaf-4124-b083-bf390e5482ff",
-                    "port_range_max":None,
-                    "port_range_min":None,
-                    "protocol":None,
-                    "remote_group_id":None,
-                    "remote_ip_prefix":None,
-                    "security_group_id":"12345678-1234-1234-1234-123456789012",
+                    "direction": "egress",
+                    "ethertype": "IPv6",
+                    "id": "3c0e45ff-adaf-4124-b083-bf390e5482ff",
+                    "port_range_max": None,
+                    "port_range_min": None,
+                    "protocol": None,
+                    "remote_group_id": None,
+                    "remote_ip_prefix": None,
+                    "security_group_id": "12345678-1234-1234-1234-123456789012",
                     "tenant_id": PROJECT_ID
-                    },
+                },
                 {
-                    "direction":"egress",
-                    "ethertype":"IPv4",
-                    "id":"93aa42e5-80db-4581-9391-3a608bd0e448",
-                    "port_range_max":None,
-                    "port_range_min":None,
-                    "protocol":None,
-                    "remote_group_id":None,
-                    "remote_ip_prefix":None,
-                    "security_group_id":"12345678-1234-1234-1234-123456789012",
+                    "direction": "egress",
+                    "ethertype": "IPv4",
+                    "id": "93aa42e5-80db-4581-9391-3a608bd0e448",
+                    "port_range_max": None,
+                    "port_range_min": None,
+                    "protocol": None,
+                    "remote_group_id": None,
+                    "remote_ip_prefix": None,
+                    "security_group_id": "12345678-1234-1234-1234-123456789012",
                     "tenant_id": PROJECT_ID
-                    },
+                },
                 {
-                    "direction":"ingress",
-                    "ethertype":"IPv6",
-                    "id":"c0b09f00-1d49-4e64-a0a7-8a186d928138",
-                    "port_range_max":None,
-                    "port_range_min":None,
-                    "protocol":None,
-                    "remote_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
-                    "remote_ip_prefix":None,
-                    "security_group_id":"12345678-1234-1234-1234-123456789012",
+                    "direction": "ingress",
+                    "ethertype": "IPv6",
+                    "id": "c0b09f00-1d49-4e64-a0a7-8a186d928138",
+                    "port_range_max": None,
+                    "port_range_min": None,
+                    "protocol": None,
+                    "remote_group_id": "85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "remote_ip_prefix": None,
+                    "security_group_id": "12345678-1234-1234-1234-123456789012",
                     "tenant_id": PROJECT_ID
-                    },
+                },
                 {
-                    "direction":"ingress",
-                    "ethertype":"IPv4",
-                    "id":"f7d45c89-008e-4bab-88ad-d6811724c51c",
-                    "port_range_max":None,
-                    "port_range_min":None,
-                    "protocol":None,
-                    "remote_group_id":"85cc3048-abc3-43cc-89b3-377341426ac5",
-                    "remote_ip_prefix":None,
-                    "security_group_id":"12345678-1234-1234-1234-123456789012",
+                    "direction": "ingress",
+                    "ethertype": "IPv4",
+                    "id": "f7d45c89-008e-4bab-88ad-d6811724c51c",
+                    "port_range_max": None,
+                    "port_range_min": None,
+                    "protocol": None,
+                    "remote_group_id": "85cc3048-abc3-43cc-89b3-377341426ac5",
+                    "remote_ip_prefix": None,
+                    "security_group_id": "12345678-1234-1234-1234-123456789012",
                     "tenant_id": PROJECT_ID
-                    }
-                ],
+                }
+            ],
             "tenant_id": PROJECT_ID
-            }
-        ]
-    }
+        }
+    ]
+}
 
 
 FLOATING_IPS_LIST = {
     "floatingips":
-        [
+    [
         {
             "router_id": "d23abc8d-2991-4a55-ba98-2aaea84cc72f",
             "tenant_id": PROJECT_ID,
@@ -592,7 +597,7 @@ FLOATING_IPS_LIST = {
             "floating_ip_address": "172.24.4.228",
             "port_id": "ce705c24-c1ef-408a-bda3-7bbd946164ab",
             "id": FLOATING_IPS_IDS[0]
-            },
+        },
         {
             "router_id": None,
             "tenant_id": PROJECT_ID,
@@ -601,9 +606,9 @@ FLOATING_IPS_LIST = {
             "floating_ip_address": "172.24.4.227",
             "port_id": None,
             "id": FLOATING_IPS_IDS[1]
-            }
-        ]
-    }
+        }
+    ]
+}
 
 
 SERVERS_LIST = {
@@ -616,9 +621,9 @@ SERVERS_LIST = {
                     {
                         "addr": "192.168.0.3",
                         "version": 4
-                        }
-                    ]
-                },
+                    }
+                ]
+            },
             "created": "2012-09-07T16:56:37Z",
             "flavor": {
                 "id": "1",
@@ -626,9 +631,9 @@ SERVERS_LIST = {
                     {
                         "href": "http://openstack.example.com/openstack/flavors/1",
                         "rel": "bookmark"
-                        }
-                    ]
-                },
+                    }
+                ]
+            },
             "hostId": "16d193736a5cfdb60c697ca27ad071d6126fa13baeb670fc9d10645e",
             "id": SERVERS_IDS[0],
             "image": {
@@ -637,31 +642,31 @@ SERVERS_LIST = {
                     {
                         "href": "http://openstack.example.com/openstack/images/70a599e0-31e7-49b7-b260-868f441e862b",
                         "rel": "bookmark"
-                        }
-                    ]
-                },
+                    }
+                ]
+            },
             "links": [
                 {
                     "href": "http://openstack.example.com/v2/openstack/servers/05184ba3-00ba-4fbc-b7a2-03b62b884931",
                     "rel": "self"
-                    },
+                },
                 {
                     "href": "http://openstack.example.com/openstack/servers/05184ba3-00ba-4fbc-b7a2-03b62b884931",
                     "rel": "bookmark"
-                    }
-                ],
+                }
+            ],
             "metadata": {
                 "My Server Name": "Apache1"
-                },
+            },
             "name": "new-server-test",
             "progress": 0,
             "status": "ACTIVE",
             "tenant_id": "openstack",
             "updated": "2012-09-07T16:56:37Z",
             "user_id": "fake"
-            }
-        ]
-    }
+        }
+    ]
+}
 
 IMAGES_LIST = {
     "images": [
@@ -729,28 +734,28 @@ IMAGES_LIST = {
 }
 
 ALARMS_LIST = [
-  {
-      "alarm_actions": [
-          "http://site:8000/alarm"
-      ],
-      "alarm_id": ALARMS_IDS[0],
-      "combination_rule": None,
-      "description": "An alarm",
-      "enabled": True,
-      "insufficient_data_actions": [
-          "http://site:8000/nodata"
-      ],
-      "name": "SwiftObjectAlarm",
-      "ok_actions": [
-          "http://site:8000/ok"
-      ],
-      "project_id": "c96c887c216949acbdfbd8b494863567",
-      "repeat_actions": False,
-      "state": "ok",
-      "state_timestamp": "2013-11-21T12:33:08.486228",
-      "threshold_rule": None,
-      "timestamp": "2013-11-21T12:33:08.486221",
-      "type": "threshold",
-      "user_id": "c96c887c216949acbdfbd8b494863567"
-  }
+    {
+        "alarm_actions": [
+            "http://site:8000/alarm"
+        ],
+        "alarm_id": ALARMS_IDS[0],
+        "combination_rule": None,
+        "description": "An alarm",
+        "enabled": True,
+        "insufficient_data_actions": [
+            "http://site:8000/nodata"
+        ],
+        "name": "SwiftObjectAlarm",
+        "ok_actions": [
+            "http://site:8000/ok"
+        ],
+        "project_id": "c96c887c216949acbdfbd8b494863567",
+        "repeat_actions": False,
+        "state": "ok",
+        "state_timestamp": "2013-11-21T12:33:08.486228",
+        "threshold_rule": None,
+        "timestamp": "2013-11-21T12:33:08.486221",
+        "type": "threshold",
+        "user_id": "c96c887c216949acbdfbd8b494863567"
+    }
 ]

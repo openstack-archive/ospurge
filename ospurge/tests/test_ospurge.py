@@ -37,7 +37,9 @@ PASSWORD = "password"
 PROJECT_NAME = "project"
 AUTH_URL = "http://localhost:5000/v2.0"
 
+
 class HttpTest(testtools.TestCase):
+
     def stub_url(self, method, parts=None, base_url=None, json=None, **kwargs):
         if not base_url:
             base_url = self.TEST_URL
@@ -56,11 +58,12 @@ class HttpTest(testtools.TestCase):
 
 
 class SessionTest(HttpTest):
+
     @httpretty.activate
     def test_init(self):
         self.stub_auth()
         session = ospurge.Session(USERNAME, PASSWORD,
-                                   client_fixtures.PROJECT_ID, AUTH_URL)
+                                  client_fixtures.PROJECT_ID, AUTH_URL)
         self.assertEqual(session.token, client_fixtures.TOKEN_ID)
         self.assertEqual(session.user_id, client_fixtures.USER_ID)
         self.assertEqual(session.project_id, client_fixtures.PROJECT_ID)
@@ -69,7 +72,7 @@ class SessionTest(HttpTest):
     def test_get_public_endpoint(self):
         self.stub_auth()
         session = ospurge.Session(USERNAME, PASSWORD,
-                                   client_fixtures.PROJECT_ID, AUTH_URL)
+                                  client_fixtures.PROJECT_ID, AUTH_URL)
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_PUBLIC_ENDPOINT)
         endpoint = session.get_endpoint('image')
@@ -79,14 +82,17 @@ class SessionTest(HttpTest):
     def test_get_internal_endpoint(self):
         self.stub_auth()
         session = ospurge.Session(USERNAME, PASSWORD, client_fixtures.PROJECT_ID,
-                                   AUTH_URL, endpoint_type='internalURL')
+                                  AUTH_URL, endpoint_type='internalURL')
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_INTERNAL_ENDPOINT)
         endpoint = session.get_endpoint('image')
         self.assertEqual(endpoint, client_fixtures.IMAGE_INTERNAL_ENDPOINT)
 
 # Abstract class
+
+
 class TestResourcesBase(HttpTest):
+
     """
     Creates a session object that can be used to test any service.
     """
@@ -95,7 +101,7 @@ class TestResourcesBase(HttpTest):
         super(TestResourcesBase, self).setUp()
         self.stub_auth()
         self.session = ospurge.Session(USERNAME, PASSWORD,
-                                   client_fixtures.PROJECT_ID, AUTH_URL)
+                                       client_fixtures.PROJECT_ID, AUTH_URL)
 
     @httpretty.activate
     def _test_list(self):
@@ -117,7 +123,7 @@ class TestResourcesBase(HttpTest):
         elts = self.resources.list()
         # List() must return an iterable
         res = itertools.islice(elts, 1).next()
-        self.resources.delete(res) # Checks this doesn't raise an exception
+        self.resources.delete(res)  # Checks this doesn't raise an exception
 
 
 class TestSwiftBase(TestResourcesBase):
@@ -134,7 +140,8 @@ class TestSwiftResources(TestSwiftBase):
         self.assertEqual(conts, client_fixtures.STORAGE_CONTAINERS)
 
 
-class  TestSwiftObjects(TestSwiftBase):
+class TestSwiftObjects(TestSwiftBase):
+
     def stub_list(self):
         self.stub_url('GET', json=client_fixtures.STORAGE_CONTAINERS_LIST)
         self.stub_url('GET', parts=[client_fixtures.STORAGE_CONTAINERS[0]],
@@ -160,7 +167,8 @@ class  TestSwiftObjects(TestSwiftBase):
         self._test_delete()
 
 
-class  TestSwiftContainers(TestSwiftBase):
+class TestSwiftContainers(TestSwiftBase):
+
     def stub_list(self):
         self.stub_url('GET', json=client_fixtures.STORAGE_CONTAINERS_LIST)
 
@@ -193,7 +201,8 @@ class TestCinderSnapshots(TestCinderBase):
                       json=client_fixtures.SNAPSHOTS_LIST)
 
     def stub_delete(self):
-        self.stub_url('DELETE', parts=['snapshots', client_fixtures.SNAPSHOTS_IDS[0]])
+        self.stub_url(
+            'DELETE', parts=['snapshots', client_fixtures.SNAPSHOTS_IDS[0]])
 
     def setUp(self):
         super(TestCinderSnapshots, self).setUp()
@@ -214,7 +223,8 @@ class TestCinderVolumes(TestCinderBase):
                       json=client_fixtures.VOLUMES_LIST)
 
     def stub_delete(self):
-        self.stub_url('DELETE', parts=['volumes', client_fixtures.VOLUMES_IDS[0]])
+        self.stub_url(
+            'DELETE', parts=['volumes', client_fixtures.VOLUMES_IDS[0]])
 
     def setUp(self):
         super(TestCinderVolumes, self).setUp()
@@ -244,9 +254,9 @@ class TestNeutronRouters(TestNeutronBase):
 
     def stub_delete(self):
         routid = client_fixtures.ROUTERS_IDS[0]
-        self.stub_url('PUT', parts=['v2.0', 'routers', "%s.json"%routid],
+        self.stub_url('PUT', parts=['v2.0', 'routers', "%s.json" % routid],
                       json=client_fixtures.ROUTER_CLEAR_GATEWAY)
-        self.stub_url('DELETE', parts=['v2.0', 'routers', "%s.json"%routid],
+        self.stub_url('DELETE', parts=['v2.0', 'routers', "%s.json" % routid],
                       json={})
 
     def setUp(self):
@@ -388,7 +398,8 @@ class TestNovaServers(TestResourcesBase):
                       json=client_fixtures.SERVERS_LIST)
 
     def stub_delete(self):
-        self.stub_url('DELETE', parts=['servers', client_fixtures.SERVERS_IDS[0]])
+        self.stub_url(
+            'DELETE', parts=['servers', client_fixtures.SERVERS_IDS[0]])
 
     def setUp(self):
         super(TestNovaServers, self).setUp()
@@ -410,7 +421,8 @@ class TestGlanceImages(TestResourcesBase):
                       json=client_fixtures.IMAGES_LIST)
 
     def stub_delete(self):
-        self.stub_url('DELETE', parts=['v1', 'images', client_fixtures.IMAGES_IDS[0]])
+        self.stub_url(
+            'DELETE', parts=['v1', 'images', client_fixtures.IMAGES_IDS[0]])
 
     def setUp(self):
         super(TestGlanceImages, self).setUp()
@@ -431,7 +443,8 @@ class TestCeilometerAlarms(TestResourcesBase):
                       json=client_fixtures.ALARMS_LIST)
 
     def stub_delete(self):
-        self.stub_url('DELETE', parts=['v2', 'alarms', client_fixtures.ALARMS_IDS[0]])
+        self.stub_url(
+            'DELETE', parts=['v2', 'alarms', client_fixtures.ALARMS_IDS[0]])
 
     def setUp(self):
         super(TestCeilometerAlarms, self).setUp()
