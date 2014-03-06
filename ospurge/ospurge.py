@@ -106,7 +106,7 @@ def retry(service_name):
 
 class Session(object):
     """
-    A Session stores information that can be user by the different
+    A Session stores information that can be used by the different
     Openstack Clients. The most important data is:
     * self.token - The Openstack token to be used accross services;
     * self.catalog - Allowing to retrieve services' endpoints.
