@@ -208,6 +208,13 @@ Users can be deleted by using the `python-keystoneclient` CLI:
     $ keystone user-delete <username_or_userid>
 
 
+How to contribute
+-----------------
+
+Ospurge is hosted on Stackforge and is using Gerrit to manage
+contributions. You can contribute to the project by following the
+following workflow: https://wiki.openstack.org/wiki/Gerrit_Workflow
+
 
 License / Copyright
 -------------------
