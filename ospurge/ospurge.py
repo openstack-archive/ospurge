@@ -566,6 +566,8 @@ def parse_args():
                         help="Makes output verbose")
     parser.add_argument("--dry-run", action="store_true",
                         help="List project's resources")
+    parser.add_argument("--own-project", action="store_true",
+                        help="Delete resources of the project used to authenticate.")
     parser.add_argument("--dont-delete-project", action="store_true",
                         help="Executes cleanup script without removing the project. "
                              "Warning: all project resources will still be deleted.")
@@ -590,8 +592,9 @@ def parse_args():
                         envvar='OS_AUTH_URL', required=True,
                         help="Authentication URL. Defaults to "
                              "env[OS_AUTH_URL].")
-    parser.add_argument("--cleanup-project", required=True,
-                        help="ID or Name of project to purge")
+    parser.add_argument("--cleanup-project", required=False,
+                        help="ID or Name of project to purge. "
+                             "Not required is --own-project has been set.")
     return parser.parse_args()
 
 
@@ -612,12 +615,16 @@ def main():
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
 
     try:
-        cleanup_project_id = keystone_manager.get_project_id(
-            args.cleanup_project)
-        keystone_manager.become_project_admin(cleanup_project_id)
-    except api_exceptions.Forbidden as exc:
-        print "Not authorized: {}".format(str(exc))
-        sys.exit(NOT_AUTHORIZED)
+        if args.own_project:
+            cleanup_project_id = keystone_manager.get_project_id(
+                args.admin_project)
+        else:
+            cleanup_project_id = keystone_manager.get_project_id(
+                args.cleanup_project)
+            keystone_manager.become_project_admin(cleanup_project_id)
+#    except api_exceptions.Forbidden as exc:
+#        print "Not authorized: {}".format(str(exc))
+#        sys.exit(NOT_AUTHORIZED)
     except NoSuchProject as exc:
         print "Project {} doesn't exist".format(str(exc))
         sys.exit(NoSuchProject.ERROR_CODE)
