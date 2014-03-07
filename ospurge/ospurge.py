@@ -24,7 +24,6 @@
 # SOFTWARE.
 
 import argparse
-import itertools
 import logging
 import os
 from requests.exceptions import ConnectionError
@@ -32,9 +31,11 @@ import sys
 import time
 
 from ceilometerclient.v2 import client as ceilometer_client
+import ceilometerclient.exc
 import cinderclient.exceptions
 from cinderclient.v1 import client as cinder_client
 from glanceclient.v1 import client as glance_client
+import glanceclient.exc
 from keystoneclient.apiclient import exceptions as api_exceptions
 from keystoneclient.v2_0 import client as keystone_client
 import neutronclient.common.exceptions
@@ -48,6 +49,10 @@ TIMEOUT = 5  # 5 seconds timeout between retries
 
 
 class EndpointNotFound(Exception):
+    pass
+
+
+class InvalidEndpoint(Exception):
     pass
 
 
@@ -467,7 +472,6 @@ class KeystoneManager(object):
             tenant_name=project, auth_url=auth_url)
 
     def get_project_id(self, project_name_or_id=None):
-
         """
         Returns:
         * ID of current project if called without parameter,
@@ -518,6 +522,7 @@ def _perform_on_project(admin_name, password, project, auth_url,
     """
     session = Session(admin_name, password, project,
                       auth_url, endpoint_type)
+    error = None
     for rc in RESOURCES_CLASSES:
         try:
             resources = globals()[rc](session)
@@ -530,6 +535,12 @@ def _perform_on_project(admin_name, password, project, auth_url,
                 novaclient.exceptions.EndpointNotFound):
             # If service is not in Keystone's services catalog, ignoring it
             pass
+        except (ceilometerclient.exc.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
+            logging.warning(
+                "Unable to connect to {} endpoint : {}".format(rc, e.message))
+            error = InvalidEndpoint(rc)
+    if error:
+        raise error
 
 
 def purge_project(admin_name, password, project, auth_url,
@@ -652,9 +663,9 @@ def main():
     except ConnectionError as exc:
         print "Connection error: {}".format(str(exc))
         sys.exit(CONNECTION_ERROR_CODE)
-    except DeletionFailed as exc:
+    except (DeletionFailed, InvalidEndpoint) as exc:
         print "Deletion of {} failed".format(str(exc))
-        print "*Warning* Remaining resources have not been cleaned up"
+        print "*Warning* Some resources may not have been cleaned up"
         sys.exit(DeletionFailed.ERROR_CODE)
 
     if (not args.dry_run) and (not args.dont_delete_project) and (not args.own_project):
