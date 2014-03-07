@@ -466,7 +466,17 @@ class KeystoneManager(object):
             username=username, password=password,
             tenant_name=project, auth_url=auth_url)
 
-    def get_project_id(self, project_name_or_id):
+    def get_project_id(self, project_name_or_id=None):
+
+        """
+        Returns:
+        * ID of current project if called without parameter,
+        * ID of project given as parameter if one is given.
+        """
+
+        if project_name_or_id is None:
+            return self.client.tenant_id
+
         try:
             self.client.tenants.get(project_name_or_id)
             # If it doesn't raise an 404, project_name_or_id is
@@ -566,6 +576,8 @@ def parse_args():
                         help="Makes output verbose")
     parser.add_argument("--dry-run", action="store_true",
                         help="List project's resources")
+    parser.add_argument("--own-project", action="store_true",
+                        help="Delete resources of the project used to authenticate.")
     parser.add_argument("--dont-delete-project", action="store_true",
                         help="Executes cleanup script without removing the project. "
                              "Warning: all project resources will still be deleted.")
@@ -590,9 +602,15 @@ def parse_args():
                         envvar='OS_AUTH_URL', required=True,
                         help="Authentication URL. Defaults to "
                              "env[OS_AUTH_URL].")
-    parser.add_argument("--cleanup-project", required=True,
-                        help="ID or Name of project to purge")
-    return parser.parse_args()
+    parser.add_argument("--cleanup-project", required=False, default=None,
+                        help="ID or Name of project to purge. "
+                             "Not required is --own-project has been set.")
+
+    args = parser.parse_args()
+    if not (args.cleanup_project or args.own_project):
+        parser.error('Either --cleanup-project '
+                     'or --own-project has to be set')
+    return args
 
 
 def main():
@@ -614,7 +632,8 @@ def main():
     try:
         cleanup_project_id = keystone_manager.get_project_id(
             args.cleanup_project)
-        keystone_manager.become_project_admin(cleanup_project_id)
+        if not args.own_project:
+            keystone_manager.become_project_admin(cleanup_project_id)
     except api_exceptions.Forbidden as exc:
         print "Not authorized: {}".format(str(exc))
         sys.exit(NOT_AUTHORIZED)
@@ -622,6 +641,7 @@ def main():
         print "Project {} doesn't exist".format(str(exc))
         sys.exit(NoSuchProject.ERROR_CODE)
 
+    # Proper cleanup
     try:
         if args.dry_run:
             list_resources(args.username, args.password, cleanup_project_id,
@@ -637,7 +657,7 @@ def main():
         print "*Warning* Remaining resources have not been cleaned up"
         sys.exit(DeletionFailed.ERROR_CODE)
 
-    if (not args.dry_run) and (not args.dont_delete_project):
+    if (not args.dry_run) and (not args.dont_delete_project) and (not args.own_project):
         keystone_manager.delete_project(cleanup_project_id)
     sys.exit(0)
 
