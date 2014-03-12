@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Jordan Pittier <jordan.pittier@cloudwatt.com>
+Code-Review+2: Jordan Pittier <jordan.pittier@cloudwatt.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 12 Mar 2014 11:10:27 +0000
+Reviewed-on: https://review.openstack.org/78923
+Project: stackforge/ospurge
+Branch: refs/heads/master
