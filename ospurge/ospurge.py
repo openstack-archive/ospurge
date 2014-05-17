@@ -587,8 +587,6 @@ def parse_args():
                         help="Makes output verbose")
     parser.add_argument("--dry-run", action="store_true",
                         help="List project's resources")
-    parser.add_argument("--own-project", action="store_true",
-                        help="Delete resources of the project used to authenticate.")
     parser.add_argument("--dont-delete-project", action="store_true",
                         help="Executes cleanup script without removing the project. "
                              "Warning: all project resources will still be deleted.")
@@ -598,29 +596,39 @@ def parse_args():
                              "env[OS_ENDPOINT_TYPE] or publicURL")
     parser.add_argument("--username", action=EnvDefault,
                         envvar='OS_USERNAME', required=True,
-                        help="A user name with access to the "
-                             "project being purged. Defaults "
-                             "to env[OS_USERNAME]")
+                        help="If --own-project is set : a user name with access to the "
+                             "project being purged. If --cleanup-project is set : "
+                             "a user name with admin role in project specified in --admin-project. "
+                             "Defaults to env[OS_USERNAME]")
     parser.add_argument("--password", action=EnvDefault,
                         envvar='OS_PASSWORD', required=True,
                         help="The user's password. Defaults "
                              "to env[OS_PASSWORD].")
     parser.add_argument("--admin-project", action=EnvDefault,
                         envvar='OS_TENANT_NAME', required=True,
-                        help="Name of a project the user is admin on. "
+                        help="Project name used for authentication. This project "
+                             "will be purged if --own-project is set. "
                              "Defaults to env[OS_TENANT_NAME].")
     parser.add_argument("--auth-url", action=EnvDefault,
                         envvar='OS_AUTH_URL', required=True,
                         help="Authentication URL. Defaults to "
                              "env[OS_AUTH_URL].")
     parser.add_argument("--cleanup-project", required=False, default=None,
-                        help="ID or Name of project to purge. "
-                             "Not required is --own-project has been set.")
+                        help="ID or Name of project to purge. Not required "
+                             "if --own-project has been set. Using --cleanup-project "
+                             "requires to authenticate with admin credentials.")
+    parser.add_argument("--own-project", action="store_true",
+                        help="Delete resources of the project used to "
+                             "authenticate. Useful if you don't have the "
+                             "admin credentials of the platform.")
 
     args = parser.parse_args()
     if not (args.cleanup_project or args.own_project):
         parser.error('Either --cleanup-project '
                      'or --own-project has to be set')
+    if args.cleanup_project and args.own_project:
+        parser.error('Both --cleanup-project '
+                     'and --own-project can not be set')
     return args
 
 
