@@ -480,6 +480,7 @@ class KeystoneManager(object):
         self.client = keystone_client.Client(
             username=username, password=password,
             tenant_name=project, auth_url=auth_url, **kwargs)
+        self.admin_role_id = None
 
     def get_project_id(self, project_name_or_id=None):
         """
@@ -506,18 +507,28 @@ class KeystoneManager(object):
                 raise NoSuchProject(project_name_or_id)
         return project_id
 
+    def get_admin_role_id(self):
+        roles = self.client.roles.list()
+        role_id = filter(lambda x: x.name == "admin", roles)[0].id
+        return role_id
+
     def become_project_admin(self, project_id):
         user_id = self.client.user_id
+        if not self.admin_role_id:
+            self.admin_role_id = self.get_admin_role_id()
         logging.info("* Granting role admin to user {} on project {}.".format(
             user_id, project_id))
 
-        roles = self.client.roles.list()
-        role_id = filter(lambda x: x.name == "admin", roles)[0].id
-        try:
-            return self.client.roles.add_user_role(user_id, role_id, project_id)
-        except api_exceptions.Conflict:
-            # user is already admin on the target project
-            pass
+        return self.client.roles.add_user_role(user_id, self.admin_role_id, project_id)
+
+    def undo_become_project_admin(self, project_id):
+        user_id = self.client.user_id
+        if not self.admin_role_id:
+            self.admin_role_id = self.get_admin_role_id()
+        logging.info("* Removing role admin to user {} on project {}.".format(
+            user_id, project_id))
+
+        return self.client.roles.remove_user_role(user_id, self.admin_role_id, project_id)
 
     def delete_project(self, project_id):
         logging.info("* Deleting project {}.".format(project_id))
@@ -665,11 +676,18 @@ def main():
         print "Authentication failed: {}".format(str(exc))
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
 
+    remove_admin_role_after_purge = False
     try:
         cleanup_project_id = keystone_manager.get_project_id(
             args.cleanup_project)
         if not args.own_project:
-            keystone_manager.become_project_admin(cleanup_project_id)
+            try:
+                keystone_manager.become_project_admin(cleanup_project_id)
+            except api_exceptions.Conflict:
+                # user was already admin on the target project.
+                pass
+            else:
+                remove_admin_role_after_purge = True
     except api_exceptions.Forbidden as exc:
         print "Not authorized: {}".format(str(exc))
         sys.exit(NOT_AUTHORIZED)
@@ -695,6 +713,10 @@ def main():
 
     if (not args.dry_run) and (not args.dont_delete_project) and (not args.own_project):
         keystone_manager.delete_project(cleanup_project_id)
+    else:
+        # Project is not deleted, we may want to remove ourself from the purged project
+        if remove_admin_role_after_purge:
+            keystone_manager.undo_become_project_admin(cleanup_project_id)
     sys.exit(0)
 
 if __name__ == "__main__":
