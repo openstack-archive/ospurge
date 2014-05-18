@@ -48,6 +48,10 @@ RETRIES = 3
 TIMEOUT = 5  # 5 seconds timeout between retries
 
 
+class ResourceNotEnabled(Exception):
+    pass
+
+
 class EndpointNotFound(Exception):
     pass
 
@@ -165,16 +169,20 @@ class Resources(object):
 
     def purge(self):
         "Delete all resources."
+        # Purging is displayed and done only if self.list succeeds
+        resources = self.list()
         c_name = self.__class__.__name__
         logging.info("* Purging {}".format(c_name))
-        for resource in self.list():
+        for resource in resources:
             retry(c_name)(self.delete)(resource)
 
     def dump(self):
         "Display all available resources."
+        # Resources type and resources are displayed only if self.list succeeds
+        resources = self.list()
         c_name = self.__class__.__name__
         print "* Resources type: {}".format(c_name)
-        for resource in self.list():
+        for resource in resources:
             print self.resource_str(resource)
         print ""
 
@@ -368,7 +376,7 @@ class NeutronSecgroups(NeutronResources):
             return filter(secgroup_filter, sgs)
         except neutronclient.common.exceptions.NeutronClientException as err:
             if getattr(err, "status_code", None) == 404:
-                return []
+                raise ResourceNotEnabled
             raise
 
     def delete(self, secgroup):
@@ -537,7 +545,8 @@ def _perform_on_project(admin_name, password, project, auth_url,
         except (EndpointNotFound,
                 neutronclient.common.exceptions.EndpointNotFound,
                 cinderclient.exceptions.EndpointNotFound,
-                novaclient.exceptions.EndpointNotFound):
+                novaclient.exceptions.EndpointNotFound,
+                ResourceNotEnabled):
             # If service is not in Keystone's services catalog, ignoring it
             pass
         except (ceilometerclient.exc.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
