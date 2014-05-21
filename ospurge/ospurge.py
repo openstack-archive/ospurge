@@ -121,16 +121,17 @@ class Session(object):
     """
 
     def __init__(self, username, password, project_id,
-                 auth_url, endpoint_type="publicURL"):
+                 auth_url, endpoint_type="publicURL", region_name=None):
         client = keystone_client.Client(
-            username=username, password=password,
-            tenant_id=project_id, auth_url=auth_url)
+            username=username, password=password, tenant_id=project_id,
+            auth_url=auth_url, region_name=region_name)
         # Storing username, password, project_id and auth_url for
         # use by clients libraries that cannot use an existing token.
         self.username = username
         self.password = password
         self.project_id = project_id
         self.auth_url = auth_url
+        self.region_name = region_name
         # Session variables to be used by clients when possible
         self.token = client.auth_token
         self.user_id = client.user_id
@@ -235,7 +236,8 @@ class CinderResources(Resources):
         self.client = cinder_client.Client(
             session.username, session.password,
             session.project_name, session.auth_url,
-            endpoint_type=session.endpoint_type)
+            endpoint_type=session.endpoint_type,
+            region_name=session.region_name)
 
 
 class CinderSnapshots(CinderResources):
@@ -272,7 +274,8 @@ class NeutronResources(Resources):
         self.client = neutron_client.Client(
             username=session.username, password=session.password,
             tenant_id=session.project_id, auth_url=session.auth_url,
-            endpoint_type=session.endpoint_type)
+            endpoint_type=session.endpoint_type,
+            region_name=session.region_name)
         self.project_id = session.project_id
 
     # This method is used for routers and interfaces removal
@@ -399,7 +402,8 @@ class NovaServers(Resources):
         self.client = nova_client.Client(
             session.username, session.password,
             session.project_name, auth_url=session.auth_url,
-            endpoint_type=session.endpoint_type)
+            endpoint_type=session.endpoint_type,
+            region_name=session.region_name)
         self.project_id = session.project_id
 
     """Manage nova resources"""
@@ -467,10 +471,10 @@ class KeystoneManager(object):
 
     """Manages Keystone queries"""
 
-    def __init__(self, username, password, project, auth_url):
+    def __init__(self, username, password, project, auth_url, **kwargs):
         self.client = keystone_client.Client(
             username=username, password=password,
-            tenant_name=project, auth_url=auth_url)
+            tenant_name=project, auth_url=auth_url, **kwargs)
 
     def get_project_id(self, project_name_or_id=None):
         """
@@ -516,13 +520,14 @@ class KeystoneManager(object):
 
 
 def _perform_on_project(admin_name, password, project, auth_url,
-                        endpoint_type='publicURL', action='dump'):
+                        endpoint_type='publicURL', region_name=None,
+                        action='dump'):
     """
     Perform provided action on all resources of project.
     action can be: 'purge' or 'dump'
     """
     session = Session(admin_name, password, project,
-                      auth_url, endpoint_type)
+                      auth_url, endpoint_type, region_name)
     error = None
     for rc in RESOURCES_CLASSES:
         try:
@@ -546,23 +551,23 @@ def _perform_on_project(admin_name, password, project, auth_url,
 
 
 def purge_project(admin_name, password, project, auth_url,
-                  endpoint_type='publicURL'):
+                  endpoint_type='publicURL', region_name=None):
     """
     project is the project that will be purged.
 
     Warning: admin must have access to the project.
     """
     _perform_on_project(admin_name, password, project, auth_url,
-                        endpoint_type, "purge")
+                        endpoint_type, region_name, "purge")
 
 
 def list_resources(admin_name, password, project, auth_url,
-                   endpoint_type='publicURL'):
+                   endpoint_type='publicURL', region_name=None):
     """
     Listing resources of given project.
     """
     _perform_on_project(admin_name, password, project, auth_url,
-                        endpoint_type, "dump")
+                        endpoint_type, region_name, "dump")
 
 
 # From Russell Heilling
@@ -592,6 +597,10 @@ def parse_args():
     parser.add_argument("--dont-delete-project", action="store_true",
                         help="Executes cleanup script without removing the project. "
                              "Warning: all project resources will still be deleted.")
+    parser.add_argument("--region-name", action=EnvDefault, required=False,
+                        envvar='OS_REGION_NAME', default=None,
+                        help="Region to use. Defaults to env[OS_REGION_NAME] "
+                             "or None")
     parser.add_argument("--endpoint-type", action=EnvDefault,
                         envvar='OS_ENDPOINT_TYPE', default="publicURL",
                         help="Endpoint type to use. Defaults to "
@@ -645,7 +654,8 @@ def main():
 
     try:
         keystone_manager = KeystoneManager(args.username, args.password,
-                                           args.admin_project, args.auth_url)
+                                           args.admin_project, args.auth_url,
+                                           region_name=args.region_name)
     except api_exceptions.Unauthorized as exc:
         print "Authentication failed: {}".format(str(exc))
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
@@ -666,10 +676,10 @@ def main():
     try:
         if args.dry_run:
             list_resources(args.username, args.password, cleanup_project_id,
-                           args.auth_url, args.endpoint_type)
+                           args.auth_url, args.endpoint_type, args.region_name)
         else:
             purge_project(args.username, args.password, cleanup_project_id,
-                          args.auth_url, args.endpoint_type)
+                          args.auth_url, args.endpoint_type, args.region_name)
     except ConnectionError as exc:
         print "Connection error: {}".format(str(exc))
         sys.exit(CONNECTION_ERROR_CODE)
