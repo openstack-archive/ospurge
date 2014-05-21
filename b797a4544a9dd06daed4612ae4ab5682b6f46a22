@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: Florent Flament <florent.flament-ext@cloudwatt.com>
+Workflow+1: Florent Flament <florent.flament-ext@cloudwatt.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 21 May 2014 21:03:30 +0000
+Reviewed-on: https://review.openstack.org/94040
+Project: stackforge/ospurge
+Branch: refs/heads/master
