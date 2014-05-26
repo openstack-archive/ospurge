@@ -367,8 +367,13 @@ class NeutronSecgroups(NeutronResources):
                 return False
             return self._owned_resource(secgroup)
 
-        return filter(secgroup_filter,
-                      self.client.list_security_groups()['security_groups'])
+        try:
+            sgs = self.client.list_security_groups()['security_groups']
+            return filter(secgroup_filter, sgs)
+        except neutronclient.common.exceptions.NeutronClientException as err:
+            if getattr(err, "status_code", None) == 404:
+                return []
+            raise
 
     def delete(self, secgroup):
         """VMs using the security group should be deleted first"""
