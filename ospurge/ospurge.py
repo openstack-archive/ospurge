@@ -103,8 +103,8 @@ def retry(service_name):
                         raise DeletionFailed(service_name)
                     n += 1
                     logging.info("* Deletion failed - "
-                                 "Retrying in {} seconds - "
-                                 "Retry count {}".format(TIMEOUT, n))
+                                 "Retrying in {0} seconds - "
+                                 "Retry count {1}".format(TIMEOUT, n))
                     time.sleep(TIMEOUT)
         return wrapper
     return factory
@@ -163,19 +163,19 @@ class Resources(object):
         """
         Displays informational message about a resource deletion.
         """
-        logging.info("* Deleting {}.".format(self.resource_str(resource)))
+        logging.info("* Deleting {0}.".format(self.resource_str(resource)))
 
     def purge(self):
         "Delete all resources."
         c_name = self.__class__.__name__
-        logging.info("* Purging {}".format(c_name))
+        logging.info("* Purging {0}".format(c_name))
         for resource in self.list():
             retry(c_name)(self.delete)(resource)
 
     def dump(self):
         "Display all available resources."
         c_name = self.__class__.__name__
-        print "* Resources type: {}".format(c_name)
+        print "* Resources type: {0}".format(c_name)
         for resource in self.list():
             print self.resource_str(resource)
         print ""
@@ -210,7 +210,7 @@ class SwiftObjects(SwiftResources):
                                    container=obj['container'], name=obj['name'])
 
     def resource_str(self, obj):
-        return "object {} in container {}".format(obj['name'], obj['container'])
+        return "object {0} in container {1}".format(obj['name'], obj['container'])
 
 
 class SwiftContainers(SwiftResources):
@@ -224,7 +224,7 @@ class SwiftContainers(SwiftResources):
         swift_client.delete_container(self.endpoint, self.token, container)
 
     def resource_str(self, obj):
-        return "container {}".format(obj)
+        return "container {0}".format(obj)
 
 
 class CinderResources(Resources):
@@ -250,7 +250,7 @@ class CinderSnapshots(CinderResources):
         self.client.volume_snapshots.delete(snap)
 
     def resource_str(self, snap):
-        return "snapshot {} (id {})".format(snap.display_name, snap.id)
+        return "snapshot {0} (id {1})".format(snap.display_name, snap.id)
 
 
 class CinderVolumes(CinderResources):
@@ -264,7 +264,7 @@ class CinderVolumes(CinderResources):
         self.client.volumes.delete(vol)
 
     def resource_str(self, vol):
-        return "volume {} (id {})".format(vol.display_name, vol.id)
+        return "volume {0} (id {1})".format(vol.display_name, vol.id)
 
 
 class NeutronResources(Resources):
@@ -300,7 +300,7 @@ class NeutronRouters(NeutronResources):
         self.client.delete_router(router['id'])
 
     def resource_str(self, router):
-        return "router {} (id {})".format(router['name'], router['id'])
+        return "router {0} (id {1})".format(router['name'], router['id'])
 
 
 class NeutronInterfaces(NeutronResources):
@@ -318,7 +318,7 @@ class NeutronInterfaces(NeutronResources):
                                             {'port_id': interface['id']})
 
     def resource_str(self, interface):
-        return "interfaces {} (id)".format(interface['id'])
+        return "interfaces {0} (id)".format(interface['id'])
 
 
 class NeutronPorts(NeutronResources):
@@ -337,7 +337,7 @@ class NeutronPorts(NeutronResources):
         self.client.delete_port(port['id'])
 
     def resource_str(self, port):
-        return "port {} (id {})".format(port['name'], port['id'])
+        return "port {0} (id {1})".format(port['name'], port['id'])
 
 
 class NeutronNetworks(NeutronResources):
@@ -355,7 +355,7 @@ class NeutronNetworks(NeutronResources):
         self.client.delete_network(net['id'])
 
     def resource_str(self, net):
-        return "network {} (id {})".format(net['name'], net['id'])
+        return "network {0} (id {1})".format(net['name'], net['id'])
 
 
 class NeutronSecgroups(NeutronResources):
@@ -381,7 +381,7 @@ class NeutronSecgroups(NeutronResources):
         self.client.delete_security_group(secgroup['id'])
 
     def resource_str(self, secgroup):
-        return "security group {} (id {})".format(
+        return "security group {0} (id {1})".format(
             secgroup['name'], secgroup['id'])
 
 
@@ -396,7 +396,7 @@ class NeutronFloatingIps(NeutronResources):
         self.client.delete_floatingip(floating_ip['id'])
 
     def resource_str(self, floating_ip):
-        return "floating ip {} (id {})".format(
+        return "floating ip {0} (id {1})".format(
             floating_ip['floating_ip_address'], floating_ip['id'])
 
 
@@ -421,7 +421,7 @@ class NovaServers(Resources):
         self.client.servers.delete(server)
 
     def resource_str(self, server):
-        return "server {} (id {})".format(server.name, server.id)
+        return "server {0} (id {1})".format(server.name, server.id)
 
 
 class GlanceImages(Resources):
@@ -440,7 +440,7 @@ class GlanceImages(Resources):
         self.client.images.delete(image.id)
 
     def resource_str(self, image):
-        return "image {} (id {})".format(image.name, image.id)
+        return "image {0} (id {1})".format(image.name, image.id)
 
     def _owned_resource(self, res):
         # Only considering resources owned by project
@@ -469,7 +469,7 @@ class CeilometerAlarms(Resources):
         self.client.alarms.delete(alarm.alarm_id)
 
     def resource_str(self, alarm):
-        return "alarm {}".format(alarm.name)
+        return "alarm {0}".format(alarm.name)
 
 
 class KeystoneManager(object):
@@ -508,7 +508,7 @@ class KeystoneManager(object):
 
     def become_project_admin(self, project_id):
         user_id = self.client.user_id
-        logging.info("* Granting role admin to user {} on project {}.".format(
+        logging.info("* Granting role admin to user {0} on project {1}.".format(
             user_id, project_id))
 
         roles = self.client.roles.list()
@@ -520,7 +520,7 @@ class KeystoneManager(object):
             pass
 
     def delete_project(self, project_id):
-        logging.info("* Deleting project {}.".format(project_id))
+        logging.info("* Deleting project {0}.".format(project_id))
         self.client.tenants.delete(project_id)
 
 
@@ -549,7 +549,7 @@ def _perform_on_project(admin_name, password, project, auth_url,
             pass
         except (ceilometerclient.exc.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
             logging.warning(
-                "Unable to connect to {} endpoint : {}".format(rc, e.message))
+                "Unable to connect to {0} endpoint : {1}".format(rc, e.message))
             error = InvalidEndpoint(rc)
     if error:
         raise error
@@ -662,7 +662,7 @@ def main():
                                            args.admin_project, args.auth_url,
                                            region_name=args.region_name)
     except api_exceptions.Unauthorized as exc:
-        print "Authentication failed: {}".format(str(exc))
+        print "Authentication failed: {0}".format(str(exc))
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
 
     try:
@@ -671,10 +671,10 @@ def main():
         if not args.own_project:
             keystone_manager.become_project_admin(cleanup_project_id)
     except api_exceptions.Forbidden as exc:
-        print "Not authorized: {}".format(str(exc))
+        print "Not authorized: {0}".format(str(exc))
         sys.exit(NOT_AUTHORIZED)
     except NoSuchProject as exc:
-        print "Project {} doesn't exist".format(str(exc))
+        print "Project {0} doesn't exist".format(str(exc))
         sys.exit(NoSuchProject.ERROR_CODE)
 
     # Proper cleanup
@@ -686,10 +686,10 @@ def main():
             purge_project(args.username, args.password, cleanup_project_id,
                           args.auth_url, args.endpoint_type, args.region_name)
     except ConnectionError as exc:
-        print "Connection error: {}".format(str(exc))
+        print "Connection error: {0}".format(str(exc))
         sys.exit(CONNECTION_ERROR_CODE)
     except (DeletionFailed, InvalidEndpoint) as exc:
-        print "Deletion of {} failed".format(str(exc))
+        print "Deletion of {0} failed".format(str(exc))
         print "*Warning* Some resources may not have been cleaned up"
         sys.exit(DeletionFailed.ERROR_CODE)
 
