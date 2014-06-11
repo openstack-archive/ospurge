@@ -45,7 +45,7 @@ import novaclient.exceptions
 from novaclient.v1_1 import client as nova_client
 from swiftclient import client as swift_client
 
-RETRIES = 3
+RETRIES = 10 # Retry a delete operation 10 times before exiting
 TIMEOUT = 5  # 5 seconds timeout between retries
 
 
