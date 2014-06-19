@@ -124,11 +124,11 @@ class Session(object):
     * self.catalog - Allowing to retrieve services' endpoints.
     """
 
-    def __init__(self, username, password, project_id,
-                 auth_url, endpoint_type="publicURL", region_name=None):
+    def __init__(self, username, password, project_id, auth_url,
+                 endpoint_type="publicURL", region_name=None, insecure=False):
         client = keystone_client.Client(
             username=username, password=password, tenant_id=project_id,
-            auth_url=auth_url, region_name=region_name)
+            auth_url=auth_url, region_name=region_name, insecure=insecure)
         # Storing username, password, project_id and auth_url for
         # use by clients libraries that cannot use an existing token.
         self.username = username
@@ -136,6 +136,7 @@ class Session(object):
         self.project_id = project_id
         self.auth_url = auth_url
         self.region_name = region_name
+        self.insecure = insecure
         # Session variables to be used by clients when possible
         self.token = client.auth_token
         self.user_id = client.user_id
@@ -195,10 +196,12 @@ class SwiftResources(Resources):
         super(SwiftResources, self).__init__(session)
         self.endpoint = self.session.get_endpoint("object-store")
         self.token = self.session.token
+        conn = swift_client.HTTPConnection(self.endpoint, insecure=self.session.insecure)
+        self.http_conn = conn.parsed_url, conn
 
     # This method is used to retrieve Objects as well as Containers.
     def list_containers(self):
-        containers = swift_client.get_account(self.endpoint, self.token)[1]
+        containers = swift_client.get_account(self.endpoint, self.token, http_conn=self.http_conn)[1]
         return (cont['name'] for cont in containers)
 
 
@@ -208,13 +211,13 @@ class SwiftObjects(SwiftResources):
         swift_objects = []
         for cont in self.list_containers():
             objs = [{'container': cont, 'name': obj['name']} for obj in
-                    swift_client.get_container(self.endpoint, self.token, cont)[1]]
+                    swift_client.get_container(self.endpoint, self.token, cont, http_conn=self.http_conn)[1]]
             swift_objects.extend(objs)
         return swift_objects
 
     def delete(self, obj):
         super(SwiftObjects, self).delete(obj)
-        swift_client.delete_object(self.endpoint, token=self.token,
+        swift_client.delete_object(self.endpoint, token=self.token, http_conn=self.http_conn,
                                    container=obj['container'], name=obj['name'])
 
     def resource_str(self, obj):
@@ -229,7 +232,7 @@ class SwiftContainers(SwiftResources):
     def delete(self, container):
         """Container must be empty for deletion to succeed."""
         super(SwiftContainers, self).delete(container)
-        swift_client.delete_container(self.endpoint, self.token, container)
+        swift_client.delete_container(self.endpoint, self.token, container, http_conn=self.http_conn)
 
     def resource_str(self, obj):
         return "container {}".format(obj)
@@ -243,7 +246,7 @@ class CinderResources(Resources):
         # using this library, we have to reauthenticate.
         self.client = cinder_client.Client(
             session.username, session.password,
-            session.project_name, session.auth_url,
+            session.project_name, session.auth_url, session.insecure,
             endpoint_type=session.endpoint_type,
             region_name=session.region_name)
 
@@ -283,7 +286,7 @@ class NeutronResources(Resources):
             username=session.username, password=session.password,
             tenant_id=session.project_id, auth_url=session.auth_url,
             endpoint_type=session.endpoint_type,
-            region_name=session.region_name)
+            region_name=session.region_name, insecure=session.insecure)
         self.project_id = session.project_id
 
     # This method is used for routers and interfaces removal
@@ -416,7 +419,7 @@ class NovaServers(Resources):
             session.username, session.password,
             session.project_name, auth_url=session.auth_url,
             endpoint_type=session.endpoint_type,
-            region_name=session.region_name)
+            region_name=session.region_name, insecure=session.insecure)
         self.project_id = session.project_id
 
     """Manage nova resources"""
@@ -437,7 +440,7 @@ class GlanceImages(Resources):
     def __init__(self, session):
         self.client = glance_client.Client(
             endpoint=session.get_endpoint("image"),
-            token=session.token)
+            token=session.token, insecure=session.insecure)
         self.project_id = session.project_id
 
     def list(self):
@@ -463,7 +466,7 @@ class CeilometerAlarms(Resources):
             return session.token
         self.client = ceilometer_client.Client(
             endpoint=session.get_endpoint("metering"),
-            token=get_token)
+            token=get_token, insecure=session.insecure)
         self.project_id = session.project_id
 
     def list(self):
@@ -484,10 +487,11 @@ class KeystoneManager(object):
 
     """Manages Keystone queries"""
 
-    def __init__(self, username, password, project, auth_url, **kwargs):
+    def __init__(self, username, password, project, auth_url, insecure, **kwargs):
         self.client = keystone_client.Client(
             username=username, password=password,
-            tenant_name=project, auth_url=auth_url, **kwargs)
+            tenant_name=project, auth_url=auth_url,
+            insecure=insecure, **kwargs)
         self.admin_role_id = None
 
     def get_project_id(self, project_name_or_id=None):
@@ -544,13 +548,13 @@ class KeystoneManager(object):
 
 def _perform_on_project(admin_name, password, project, auth_url,
                         endpoint_type='publicURL', region_name=None,
-                        action='dump'):
+                        action='dump', insecure=False):
     """
     Perform provided action on all resources of project.
     action can be: 'purge' or 'dump'
     """
-    session = Session(admin_name, password, project,
-                      auth_url, endpoint_type, region_name)
+    session = Session(admin_name, password, project, auth_url,
+                      endpoint_type, region_name, insecure)
     error = None
     for rc in RESOURCES_CLASSES:
         try:
@@ -575,23 +579,23 @@ def _perform_on_project(admin_name, password, project, auth_url,
 
 
 def purge_project(admin_name, password, project, auth_url,
-                  endpoint_type='publicURL', region_name=None):
+                  endpoint_type='publicURL', region_name=None, insecure=False):
     """
     project is the project that will be purged.
 
     Warning: admin must have access to the project.
     """
     _perform_on_project(admin_name, password, project, auth_url,
-                        endpoint_type, region_name, "purge")
+                        endpoint_type, region_name, "purge", insecure)
 
 
 def list_resources(admin_name, password, project, auth_url,
-                   endpoint_type='publicURL', region_name=None):
+                   endpoint_type='publicURL', region_name=None, insecure=False):
     """
     Listing resources of given project.
     """
     _perform_on_project(admin_name, password, project, auth_url,
-                        endpoint_type, region_name, "dump")
+                        endpoint_type, region_name, "dump", insecure)
 
 
 # From Russell Heilling
@@ -656,6 +660,12 @@ def parse_args():
                         help="Delete resources of the project used to "
                              "authenticate. Useful if you don't have the "
                              "admin credentials of the platform.")
+    parser.add_argument("--insecure", action="store_true",
+                        help="Explicitly allow all OpenStack clients to perform "
+                             "insecure SSL (https) requests. The server's "
+                             "certificate will not be verified against any "
+                             "certificate authorities. This option should be "
+                             "used with caution.")
 
     args = parser.parse_args()
     if not (args.cleanup_project or args.own_project):
@@ -679,7 +689,7 @@ def main():
     try:
         keystone_manager = KeystoneManager(args.username, args.password,
                                            args.admin_project, args.auth_url,
-                                           region_name=args.region_name)
+                                           args.insecure, region_name=args.region_name)
     except api_exceptions.Unauthorized as exc:
         print "Authentication failed: {}".format(str(exc))
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
@@ -707,10 +717,12 @@ def main():
     try:
         if args.dry_run:
             list_resources(args.username, args.password, cleanup_project_id,
-                           args.auth_url, args.endpoint_type, args.region_name)
+                           args.auth_url, args.endpoint_type, args.region_name,
+                           args.insecure)
         else:
             purge_project(args.username, args.password, cleanup_project_id,
-                          args.auth_url, args.endpoint_type, args.region_name)
+                          args.auth_url, args.endpoint_type, args.region_name,
+                          args.insecure)
     except ConnectionError as exc:
         print "Connection error: {}".format(str(exc))
         sys.exit(CONNECTION_ERROR_CODE)
