@@ -45,8 +45,8 @@ import novaclient.exceptions
 from novaclient.v1_1 import client as nova_client
 from swiftclient import client as swift_client
 
-RETRIES = 10 # Retry a delete operation 10 times before exiting
-TIMEOUT = 5  # 5 seconds timeout between retries
+RETRIES = 10  # Retry a delete operation 10 times before exiting
+TIMEOUT = 5   # 5 seconds timeout between retries
 
 
 class ResourceNotEnabled(Exception):
@@ -546,9 +546,9 @@ class KeystoneManager(object):
         self.client.tenants.delete(project_id)
 
 
-def _perform_on_project(admin_name, password, project, auth_url,
-                        endpoint_type='publicURL', region_name=None,
-                        action='dump', insecure=False):
+def perform_on_project(admin_name, password, project, auth_url,
+                       endpoint_type='publicURL', region_name=None,
+                       action='dump', insecure=False):
     """
     Perform provided action on all resources of project.
     action can be: 'purge' or 'dump'
@@ -576,26 +576,6 @@ def _perform_on_project(admin_name, password, project, auth_url,
             error = InvalidEndpoint(rc)
     if error:
         raise error
-
-
-def purge_project(admin_name, password, project, auth_url,
-                  endpoint_type='publicURL', region_name=None, insecure=False):
-    """
-    project is the project that will be purged.
-
-    Warning: admin must have access to the project.
-    """
-    _perform_on_project(admin_name, password, project, auth_url,
-                        endpoint_type, region_name, "purge", insecure)
-
-
-def list_resources(admin_name, password, project, auth_url,
-                   endpoint_type='publicURL', region_name=None, insecure=False):
-    """
-    Listing resources of given project.
-    """
-    _perform_on_project(admin_name, password, project, auth_url,
-                        endpoint_type, region_name, "dump", insecure)
 
 
 # From Russell Heilling
@@ -715,14 +695,10 @@ def main():
 
     # Proper cleanup
     try:
-        if args.dry_run:
-            list_resources(args.username, args.password, cleanup_project_id,
+        action = "dump" if args.dry_run else "purge"
+        perform_on_project(args.username, args.password, cleanup_project_id,
                            args.auth_url, args.endpoint_type, args.region_name,
-                           args.insecure)
-        else:
-            purge_project(args.username, args.password, cleanup_project_id,
-                          args.auth_url, args.endpoint_type, args.region_name,
-                          args.insecure)
+                           action, args.insecure)
     except ConnectionError as exc:
         print "Connection error: {}".format(str(exc))
         sys.exit(CONNECTION_ERROR_CODE)
