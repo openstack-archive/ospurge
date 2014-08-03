@@ -1,9 +1,9 @@
 ospurge: OpenStack project resources cleaner
 ============================================
 
-`ospurge` is a client side script allowing an OpenStack administrator
-to cleanup any project, by deleting all of its resources prior to
-deleting the project itself.
+`ospurge` is a standalone, client-side, Python script that aims at deleting all resources (taking into account their interdependencies) in a specified OpenStack project. OSPurge ensures in a quick and automated way that no resource is left behind when a project is deleted.
+
+`ospurge` can be used by a cloud administrator (with the admin role) to cleanup any project or by a non-privileged user to cleanup his own project.
 
 Installation
 ------------
@@ -28,9 +28,11 @@ Available options can be displayed by using `ospurge -h`:
 
     $ ospurge -h
     usage: ospurge [-h] [--verbose] [--dry-run] [--dont-delete-project]
-		      [--endpoint-type ENDPOINT_TYPE] [--username USERNAME]
-		      [--password PASSWORD] [--admin-project ADMIN_PROJECT]
-		      [--auth-url AUTH_URL] --cleanup-project CLEANUP_PROJECT
+                   [--region-name REGION_NAME] [--endpoint-type ENDPOINT_TYPE]
+                   --username USERNAME --password PASSWORD --admin-project
+                   ADMIN_PROJECT --auth-url AUTH_URL
+                   [--cleanup-project CLEANUP_PROJECT] [--own-project]
+                   [--insecure]
 
     Purge resources from an Openstack project.
 
@@ -39,20 +41,36 @@ Available options can be displayed by using `ospurge -h`:
       --verbose             Makes output verbose
       --dry-run             List project's resources
       --dont-delete-project
-			    Executes cleanup script without removing the project.
-			    Warning: all project resources will still be deleted.
+                            Executes cleanup script without removing the project.
+                            Warning: all project resources will still be deleted.
+      --region-name REGION_NAME
+                            Region to use. Defaults to env[OS_REGION_NAME] or None
       --endpoint-type ENDPOINT_TYPE
-			    Endpoint type to use. Defaults to
-			    env[OS_ENDPOINT_TYPE] or publicURL
-      --username USERNAME   A user name with access to the project being purged.
-			    Defaults to env[OS_USERNAME]
+                            Endpoint type to use. Defaults to
+                            env[OS_ENDPOINT_TYPE] or publicURL
+      --username USERNAME   If --own-project is set : a user name with access to
+                            the project being purged. If --cleanup-project is set
+                            : a user name with admin role in project specified in
+                            --admin-project. Defaults to env[OS_USERNAME]
       --password PASSWORD   The user's password. Defaults to env[OS_PASSWORD].
       --admin-project ADMIN_PROJECT
-			    Name of a project the user is admin on. Defaults to
-			    env[OS_TENANT_NAME].
+                            Project name used for authentication. This project
+                            will be purged if --own-project is set. Defaults to
+                            env[OS_TENANT_NAME].
       --auth-url AUTH_URL   Authentication URL. Defaults to env[OS_AUTH_URL].
       --cleanup-project CLEANUP_PROJECT
-			    ID or Name of project to purge
+                            ID or Name of project to purge. Not required if --own-
+                            project has been set. Using --cleanup-project requires
+                            to authenticate with admin credentials.
+      --own-project         Delete resources of the project used to authenticate.
+                            Useful if you don't have the admin credentials of the
+                            platform.
+      --insecure            Explicitly allow all OpenStack clients to perform
+                            insecure SSL (https) requests. The server's
+                            certificate will not be verified against any
+                            certificate authorities. This option should be used
+                            with caution.
+
 
 
 Error codes
@@ -73,14 +91,14 @@ an error:
 Example
 -------
 
-To remove a project, administrator credentials have to be
+To remove a project, credentials have to be
 provided. The usual OpenStack environment variables can be used. When
 launching the `ospurge` script, the project to be cleaned up has
-to be provided, by using the `--cleanup-project` option. When the
-command returns, any resources associated to the project will have
-been definitively deleted.
+to be provided, by using either the `--cleanup-project` option or the
+`--own-project` option. When the command returns, any resources associated
+to the project will have been definitively deleted.
 
-Setting OpenStack admin credentials:
+Setting OpenStack credentials:
 
     $ export OS_USERNAME=admin
     $ export OS_PASSWORD=password
