@@ -78,6 +78,7 @@ NOT_AUTHORIZED = 6
 # Available resources classes
 
 RESOURCES_CLASSES = ['CinderSnapshots',
+                     'CinderBackups',
                      'NovaServers',
                      'NeutronFloatingIps',
                      'NeutronInterfaces',
@@ -184,10 +185,10 @@ class Resources(object):
         # Resources type and resources are displayed only if self.list succeeds
         resources = self.list()
         c_name = self.__class__.__name__
-        print "* Resources type: {}".format(c_name)
+        print("* Resources type: {}".format(c_name))
         for resource in resources:
-            print self.resource_str(resource)
-        print ""
+            print(self.resource_str(resource))
+        print("")
 
 
 class SwiftResources(Resources):
@@ -257,7 +258,7 @@ class CinderSnapshots(CinderResources):
         return self.client.volume_snapshots.list()
 
     def delete(self, snap):
-        super(CinderResources, self).delete(snap)
+        super(CinderSnapshots, self).delete(snap)
         self.client.volume_snapshots.delete(snap)
 
     def resource_str(self, snap):
@@ -276,6 +277,19 @@ class CinderVolumes(CinderResources):
 
     def resource_str(self, vol):
         return "volume {} (id {})".format(vol.display_name, vol.id)
+
+
+class CinderBackups(CinderResources):
+
+    def list(self):
+        return self.client.backups.list()
+
+    def delete(self, backup):
+        super(CinderBackups, self).delete(backup)
+        self.client.backups.delete(backup)
+
+    def resource_str(self, backup):
+        return "backup {} (id {}) of volume {}".format(backup.name, backup.id, backup.volume_id)
 
 
 class NeutronResources(Resources):
@@ -671,7 +685,7 @@ def main():
                                            args.admin_project, args.auth_url,
                                            args.insecure, region_name=args.region_name)
     except api_exceptions.Unauthorized as exc:
-        print "Authentication failed: {}".format(str(exc))
+        print("Authentication failed: {}".format(str(exc)))
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
 
     remove_admin_role_after_purge = False
@@ -687,10 +701,10 @@ def main():
             else:
                 remove_admin_role_after_purge = True
     except api_exceptions.Forbidden as exc:
-        print "Not authorized: {}".format(str(exc))
+        print("Not authorized: {}".format(str(exc)))
         sys.exit(NOT_AUTHORIZED)
     except NoSuchProject as exc:
-        print "Project {} doesn't exist".format(str(exc))
+        print("Project {} doesn't exist".format(str(exc)))
         sys.exit(NoSuchProject.ERROR_CODE)
 
     # Proper cleanup
@@ -700,11 +714,11 @@ def main():
                            args.auth_url, args.endpoint_type, args.region_name,
                            action, args.insecure)
     except ConnectionError as exc:
-        print "Connection error: {}".format(str(exc))
+        print("Connection error: {}".format(str(exc)))
         sys.exit(CONNECTION_ERROR_CODE)
     except (DeletionFailed, InvalidEndpoint) as exc:
-        print "Deletion of {} failed".format(str(exc))
-        print "*Warning* Some resources may not have been cleaned up"
+        print("Deletion of {} failed".format(str(exc)))
+        print("*Warning* Some resources may not have been cleaned up")
         sys.exit(DeletionFailed.ERROR_CODE)
 
     if (not args.dry_run) and (not args.dont_delete_project) and (not args.own_project):
