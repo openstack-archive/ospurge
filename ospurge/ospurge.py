@@ -343,7 +343,8 @@ class NeutronInterfaces(NeutronResources):
                                             {'port_id': interface['id']})
 
     def resource_str(self, interface):
-        return "interfaces {} (id)".format(interface['id'])
+        return "interface {} (id {})".format(interface['name'],
+                                             interface['id'])
 
 
 class NeutronPorts(NeutronResources):
