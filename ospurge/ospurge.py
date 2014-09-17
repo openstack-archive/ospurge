@@ -148,7 +148,7 @@ class Session(object):
     def get_endpoint(self, service_type):
         try:
             return self.catalog[service_type][0][self.endpoint_type]
-        except KeyError:
+        except (KeyError, IndexError):
             # Endpoint could not be found
             raise EndpointNotFound(service_type)
 
