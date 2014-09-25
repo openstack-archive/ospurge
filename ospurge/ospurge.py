@@ -103,7 +103,7 @@ def retry(service_name):
             while True:
                 try:
                     return func(*args, **kwargs)
-                except Exception as e:
+                except Exception:
                     if n == RETRIES:
                         raise DeletionFailed(service_name)
                     n += 1
