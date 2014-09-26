@@ -508,6 +508,7 @@ class KeystoneManager(object):
             tenant_name=project, auth_url=auth_url,
             insecure=insecure, **kwargs)
         self.admin_role_id = None
+        self.tenant_info = None
 
     def get_project_id(self, project_name_or_id=None):
         """
@@ -520,7 +521,7 @@ class KeystoneManager(object):
             return self.client.tenant_id
 
         try:
-            self.client.tenants.get(project_name_or_id)
+            self.tenant_info = self.client.tenants.get(project_name_or_id)
             # If it doesn't raise an 404, project_name_or_id is
             # already the project's id
             project_id = project_name_or_id
@@ -532,7 +533,18 @@ class KeystoneManager(object):
                     lambda x: x.name == project_name_or_id, tenants)[0].id
             except IndexError:
                 raise NoSuchProject(project_name_or_id)
+
+        if not self.tenant_info:
+            self.tenant_info = self.client.tenants.get(project_id)
         return project_id
+
+    def enable_project(self, project_id):
+        logging.info("* Enabling project {}.".format(project_id))
+        self.tenant_info = self.client.tenants.update(project_id, enabled=True)
+
+    def disable_project(self, project_id):
+        logging.info("* Disabling project {}.".format(project_id))
+        self.tenant_info = self.client.tenants.update(project_id, enabled=False)
 
     def get_admin_role_id(self):
         if not self.admin_role_id:
@@ -690,6 +702,7 @@ def main():
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
 
     remove_admin_role_after_purge = False
+    disable_project_after_purge = False
     try:
         cleanup_project_id = keystone_manager.get_project_id(
             args.cleanup_project)
@@ -701,6 +714,14 @@ def main():
                 pass
             else:
                 remove_admin_role_after_purge = True
+
+            # If the project was enabled before the purge, do not disable it after the purge
+            disable_project_after_purge = not keystone_manager.tenant_info.enabled
+            if disable_project_after_purge:
+                # The project is currently disabled so we need to enable it
+                # in order to delete resources of the project
+                keystone_manager.enable_project(cleanup_project_id)
+
     except api_exceptions.Forbidden as exc:
         print("Not authorized: {}".format(str(exc)))
         sys.exit(NOT_AUTHORIZED)
@@ -725,7 +746,11 @@ def main():
     if (not args.dry_run) and (not args.dont_delete_project) and (not args.own_project):
         keystone_manager.delete_project(cleanup_project_id)
     else:
-        # Project is not deleted, we may want to remove ourself from the purged project
+        # Project is not deleted, we may want to disable the project
+        # this must happen before we remove the admin role
+        if disable_project_after_purge:
+            keystone_manager.disable_project(cleanup_project_id)
+        # We may also want to remove ourself from the purged project
         if remove_admin_role_after_purge:
             keystone_manager.undo_become_project_admin(cleanup_project_id)
     sys.exit(0)
