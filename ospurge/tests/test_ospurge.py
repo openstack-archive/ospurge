@@ -29,8 +29,9 @@ import json as jsonutils
 import httpretty
 import testtools
 
-import client_fixtures
+
 from ospurge import ospurge
+from ospurge.tests import client_fixtures
 
 USERNAME = "username"
 PASSWORD = "password"
@@ -93,9 +94,7 @@ class SessionTest(HttpTest):
 
 class TestResourcesBase(HttpTest):
 
-    """
-    Creates a session object that can be used to test any service.
-    """
+    """Creates a session object that can be used to test any service."""
     @httpretty.activate
     def setUp(self):
         super(TestResourcesBase, self).setUp()
