@@ -26,23 +26,23 @@
 import argparse
 import logging
 import os
-from requests.exceptions import ConnectionError
 import sys
 import time
 
-from ceilometerclient.v2 import client as ceilometer_client
 import ceilometerclient.exc
+from ceilometerclient.v2 import client as ceilometer_client
 import cinderclient.exceptions
 from cinderclient.v1 import client as cinder_client
-from glanceclient.v1 import client as glance_client
 import glanceclient.exc
+from glanceclient.v1 import client as glance_client
 from keystoneclient.apiclient import exceptions as api_exceptions
-from keystoneclient.v2_0 import client as keystone_client
 import keystoneclient.openstack.common.apiclient.exceptions
+from keystoneclient.v2_0 import client as keystone_client
 import neutronclient.common.exceptions
 from neutronclient.v2_0 import client as neutron_client
 import novaclient.exceptions
 from novaclient.v1_1 import client as nova_client
+import requests
 from swiftclient import client as swift_client
 
 RETRIES = 10  # Retry a delete operation 10 times before exiting
@@ -97,7 +97,7 @@ RESOURCES_CLASSES = ['CinderSnapshots',
 
 def retry(service_name):
     def factory(func):
-        """Decorator allowing to retry in case of failure"""
+        """Decorator allowing to retry in case of failure."""
         def wrapper(*args, **kwargs):
             n = 0
             while True:
@@ -118,9 +118,9 @@ def retry(service_name):
 # Classes
 class Session(object):
 
-    """
-    A Session stores information that can be used by the different
-    Openstack Clients. The most important data is:
+    """A Session stores information that can be used by the different Openstack Clients.
+
+    The most important data is:
     * self.token - The Openstack token to be used accross services;
     * self.catalog - Allowing to retrieve services' endpoints.
     """
@@ -155,9 +155,7 @@ class Session(object):
 
 class Resources(object):
 
-    """
-    Abstract base class for all resources to be removed.
-    """
+    """Abstract base class for all resources to be removed."""
 
     def __init__(self, session):
         self.session = session
@@ -166,13 +164,11 @@ class Resources(object):
         pass
 
     def delete(self, resource):
-        """
-        Displays informational message about a resource deletion.
-        """
+        """Displays informational message about a resource deletion."""
         logging.info("* Deleting {}.".format(self.resource_str(resource)))
 
     def purge(self):
-        "Delete all resources."
+        """Delete all resources."""
         # Purging is displayed and done only if self.list succeeds
         resources = self.list()
         c_name = self.__class__.__name__
@@ -181,7 +177,7 @@ class Resources(object):
             retry(c_name)(self.delete)(resource)
 
     def dump(self):
-        "Display all available resources."
+        """Display all available resources."""
         # Resources type and resources are displayed only if self.list succeeds
         resources = self.list()
         c_name = self.__class__.__name__
@@ -271,7 +267,7 @@ class CinderVolumes(CinderResources):
         return self.client.volumes.list()
 
     def delete(self, vol):
-        """Snapshots created from the volume must be deleted first"""
+        """Snapshots created from the volume must be deleted first."""
         super(CinderVolumes, self).delete(vol)
         self.client.volumes.delete(vol)
 
@@ -318,7 +314,7 @@ class NeutronRouters(NeutronResources):
         return self.list_routers()
 
     def delete(self, router):
-        """interfaces must be deleted first"""
+        """Interfaces must be deleted first."""
         super(NeutronRouters, self).delete(router)
         # Remove router gateway prior to remove the router itself
         self.client.remove_gateway_router(router['id'])
@@ -373,7 +369,8 @@ class NeutronNetworks(NeutronResources):
                       self.client.list_networks()['networks'])
 
     def delete(self, net):
-        """
+        """Delete a Neutron network
+
         Interfaces connected to the network must be deleted first.
         Implying there must not be any VM on the network.
         """
@@ -402,7 +399,7 @@ class NeutronSecgroups(NeutronResources):
             raise
 
     def delete(self, secgroup):
-        """VMs using the security group should be deleted first"""
+        """VMs using the security group should be deleted first."""
         super(NeutronSecgroups, self).delete(secgroup)
         self.client.delete_security_group(secgroup['id'])
 
@@ -500,7 +497,7 @@ class CeilometerAlarms(Resources):
 
 class KeystoneManager(object):
 
-    """Manages Keystone queries"""
+    """Manages Keystone queries."""
 
     def __init__(self, username, password, project, auth_url, insecure, **kwargs):
         self.client = keystone_client.Client(
@@ -511,7 +508,8 @@ class KeystoneManager(object):
         self.tenant_info = None
 
     def get_project_id(self, project_name_or_id=None):
-        """
+        """Get a project by its id
+
         Returns:
         * ID of current project if called without parameter,
         * ID of project given as parameter if one is given.
@@ -576,8 +574,8 @@ class KeystoneManager(object):
 def perform_on_project(admin_name, password, project, auth_url,
                        endpoint_type='publicURL', region_name=None,
                        action='dump', insecure=False):
-    """
-    Perform provided action on all resources of project.
+    """Perform provided action on all resources of project.
+
     action can be: 'purge' or 'dump'
     """
     session = Session(admin_name, password, project, auth_url,
@@ -735,7 +733,7 @@ def main():
         perform_on_project(args.username, args.password, cleanup_project_id,
                            args.auth_url, args.endpoint_type, args.region_name,
                            action, args.insecure)
-    except ConnectionError as exc:
+    except requests.exceptions.ConnectionError as exc:
         print("Connection error: {}".format(str(exc)))
         sys.exit(CONNECTION_ERROR_CODE)
     except (DeletionFailed, InvalidEndpoint) as exc:
