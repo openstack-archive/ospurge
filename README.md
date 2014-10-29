@@ -1,9 +1,15 @@
 ospurge: OpenStack project resources cleaner
 ============================================
 
-`ospurge` is a standalone, client-side, Python script that aims at deleting all resources (taking into account their interdependencies) in a specified OpenStack project. OSPurge ensures in a quick and automated way that no resource is left behind when a project is deleted.
+`ospurge` is a standalone, client-side, Python script that aims at
+deleting all resources (taking into account their interdependencies)
+in a specified OpenStack project. OSPurge ensures in a quick and
+automated way that no resource is left behind when a project is
+deleted.
 
-`ospurge` can be used by a cloud administrator (with the admin role) to cleanup any project or by a non-privileged user to cleanup his own project.
+`ospurge` can be used by a cloud administrator (with the admin role)
+to cleanup any project or by a non-privileged user to cleanup his own
+project.
 
 Installation
 ------------
