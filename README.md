@@ -213,6 +213,7 @@ Deleted resources
 The following resources will be removed:
 
 * ceilometer alarms
+* flavors
 * floating IPs
 * images / snapshots
 * instances
