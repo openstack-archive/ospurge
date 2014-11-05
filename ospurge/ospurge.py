@@ -79,6 +79,7 @@ NOT_AUTHORIZED = 6
 
 RESOURCES_CLASSES = ['CinderSnapshots',
                      'CinderBackups',
+                     'NovaFlavors',
                      'NovaServers',
                      'NeutronFloatingIps',
                      'NeutronInterfaces',
@@ -423,10 +424,12 @@ class NeutronFloatingIps(NeutronResources):
             floating_ip['floating_ip_address'], floating_ip['id'])
 
 
-class NovaServers(Resources):
+class NovaResources(Resources):
+
+    """Manage nova resources."""
 
     def __init__(self, session):
-        super(NovaServers, self).__init__(session)
+        super(NovaResources, self).__init__(session)
         self.client = nova_client.Client(
             session.username, session.password,
             session.project_name, auth_url=session.auth_url,
@@ -434,7 +437,8 @@ class NovaServers(Resources):
             region_name=session.region_name, insecure=session.insecure)
         self.project_id = session.project_id
 
-    """Manage nova resources"""
+
+class NovaServers(NovaResources):
 
     def list(self):
         return self.client.servers.list()
@@ -445,6 +449,19 @@ class NovaServers(Resources):
 
     def resource_str(self, server):
         return "server {} (id {})".format(server.name, server.id)
+
+
+class NovaFlavors(NovaResources):
+
+    def list(self):
+        return self.client.flavors.list()
+
+    def delete(self, flavor):
+        super(NovaFlavors, self).delete(flavor)
+        self.client.flavors.delete(flavor)
+
+    def resource_str(self, flavor):
+        return "flavor {} (id {})".format(flavor.name, flavor.id)
 
 
 class GlanceImages(Resources):

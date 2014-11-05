@@ -388,8 +388,11 @@ class TestNeutronFloatingIps(TestNeutronBase):
         self._test_delete()
 
 
-class TestNovaServers(TestResourcesBase):
+class TestNovaBase(TestResourcesBase):
     TEST_URL = client_fixtures.COMPUTE_PUBLIC_ENDPOINT
+
+
+class TestNovaServers(TestNovaBase):
     IDS = client_fixtures.SERVERS_IDS
 
     def stub_list(self):
@@ -403,6 +406,28 @@ class TestNovaServers(TestResourcesBase):
     def setUp(self):
         super(TestNovaServers, self).setUp()
         self.resources = ospurge.NovaServers(self.session)
+
+    def test_list(self):
+        self._test_list()
+
+    def test_delete(self):
+        self._test_delete()
+
+
+class TestNovaFlavors(TestNovaBase):
+    IDS = client_fixtures.FLAVORS_IDS
+
+    def stub_list(self):
+        self.stub_url('GET', parts=['flavors', 'detail'],
+                      json=client_fixtures.FLAVORS_LIST)
+
+    def stub_delete(self):
+        self.stub_url(
+            'DELETE', parts=['flavors', client_fixtures.FLAVORS_IDS[0]])
+
+    def setUp(self):
+        super(TestNovaFlavors, self).setUp()
+        self.resources = ospurge.NovaFlavors(self.session)
 
     def test_list(self):
         self._test_list()

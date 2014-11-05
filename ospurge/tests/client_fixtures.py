@@ -51,6 +51,7 @@ SECGROUPS_IDS = ["85cc3048-abc3-43cc-89b3-377341426ac5"]
 FLOATING_IPS_IDS = ["2f245a7b-796b-4f26-9cf9-9e82d248fda7",
                     "61cea855-49cb-4846-997d-801b70c71bdd"]
 SERVERS_IDS = ["616fb98f-46ca-475e-917e-2563e5a8cd19"]
+FLAVORS_IDS = ["1"]
 IMAGES_IDS = ["37717f53-3707-49b9-9dd0-fd063e6b9fc5", "4e150966-cbe7-4fd7-a964-41e008d20f10",
               "482fbcc3-d831-411d-a073-ddc828a7a9ed"]
 ALARMS_IDS = ["ca950223-e982-4552-9dec-5dc5d3ea4172"]
@@ -665,6 +666,25 @@ SERVERS_LIST = {
             "updated": "2012-09-07T16:56:37Z",
             "user_id": "fake"
         }
+    ]
+}
+
+FLAVORS_LIST = {
+    "flavors": [
+        {
+            "id": "1",
+            "links": [
+                {
+                    "href": "http://openstack.example.com/v2/openstack/flavors/1",
+                    "rel": "self"
+                },
+                {
+                    "href": "http://openstack.example.com/openstack/flavors/1",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "m1.tiny"
+        },
     ]
 }
 
