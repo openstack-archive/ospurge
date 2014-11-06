@@ -459,3 +459,33 @@ class TestCeilometerAlarms(TestResourcesBase):
 
     def test_delete(self):
         self._test_delete()
+
+
+class TestResources(testtools.TestCase):
+    def test_all_resources(self):
+        class Base(ospurge.Resources):
+            pass
+
+        class FooBase(Base):
+            pass
+
+        class Foo(FooBase):
+            DEPENDS = []
+            pass
+
+        class Foo2(FooBase):
+            DEPENDS = []
+            pass
+
+        class Bar(Base):
+            DEPENDS = []
+            pass
+
+        # We must put this here instead of inside the Foo class, because:
+        # 1) we cannot use "Foo2" before it is declared
+        # 2) we want to have "Foo" declared before "Foo2", so that it appears
+        #    first in the output of Base.__subclasses__() and that we can check
+        #    that Base.all_resources() reorders them.
+        Foo.DEPENDS.append(Foo2)
+
+        self.assertTrue(Base.all_resources() == [Bar, Foo2, Foo])

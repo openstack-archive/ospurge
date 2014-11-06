@@ -75,24 +75,6 @@ CONNECTION_ERROR_CODE = 5
 NOT_AUTHORIZED = 6
 
 
-# Available resources classes
-
-RESOURCES_CLASSES = ['CinderSnapshots',
-                     'CinderBackups',
-                     'NovaServers',
-                     'NeutronFloatingIps',
-                     'NeutronInterfaces',
-                     'NeutronRouters',
-                     'NeutronPorts',
-                     'NeutronNetworks',
-                     'NeutronSecgroups',
-                     'GlanceImages',
-                     'SwiftObjects',
-                     'SwiftContainers',
-                     'CinderVolumes',
-                     'CeilometerAlarms']
-
-
 # Decorators
 
 def retry(service_name):
@@ -185,6 +167,46 @@ class Resources(object):
         for resource in resources:
             print(self.resource_str(resource))
         print("")
+
+    @classmethod
+    def all_resources(cls):
+        def sort(classes):
+            """Breadth-first search amongst a graph of Resources classes.
+
+            All classes __must__ have a DEPENDS class attribute, which is a
+            list (possibly empty) of all the other classes that should be
+            treated before them.
+
+            In order to have a graph of classes, we use a "virtual" class,
+            represented by the "None" vertex, as the root.
+            """
+            done = {}
+            fifo = []
+            s = None
+            fifo.append(s)
+            done[s] = True
+            ret = []
+            while len(fifo) != 0:
+                s = fifo.pop(0)
+                if s is not None:
+                    ret.append(s)
+                neighbours = filter(lambda c: s in c.DEPENDS
+                                    if s is not None else c.DEPENDS == [],
+                                    classes)
+                for neighbour in neighbours:
+                    if not done.setdefault(neighbour, False):
+                        fifo.append(neighbour)
+                        done[neighbour] = True
+            return ret
+
+        def _all_resources(cls):
+            subclasses = cls.__subclasses__()
+            return ([s for s in subclasses if len(s.__subclasses__()) == 0] +
+                    [subclass for s in subclasses
+                     for subclass in s.all_resources()
+                     if len(subclass.__subclasses__()) == 0])
+
+        return sort(_all_resources(cls))
 
 
 class SwiftResources(Resources):
@@ -495,6 +517,29 @@ class CeilometerAlarms(Resources):
         return "alarm {}".format(alarm.name)
 
 
+def load_dependencies():
+    """Create all the dependencies between the Resource classes.
+
+    This is easier to do it here, since it allows us not to declare the classes
+    in a particular order.
+    """
+
+    SwiftObjects.DEPENDS = [CinderBackups]
+    SwiftContainers.DEPENDS = [SwiftObjects]
+    CinderSnapshots.DEPENDS = []
+    CinderBackups.DEPENDS = []
+    CinderVolumes.DEPENDS = [CinderSnapshots]
+    NeutronRouters.DEPENDS = [NeutronInterfaces]
+    NeutronInterfaces.DEPENDS = []
+    NeutronPorts.DEPENDS = [NeutronFloatingIps]
+    NeutronNetworks.DEPENDS = []
+    NeutronSecgroups.DEPENDS = []
+    NeutronFloatingIps.DEPENDS = []
+    NovaServers.DEPENDS = []
+    GlanceImages.DEPENDS = []
+    CeilometerAlarms.DEPENDS = []
+
+
 class KeystoneManager(object):
 
     """Manages Keystone queries."""
@@ -581,9 +626,9 @@ def perform_on_project(admin_name, password, project, auth_url,
     session = Session(admin_name, password, project, auth_url,
                       endpoint_type, region_name, insecure)
     error = None
-    for rc in RESOURCES_CLASSES:
+    for rc in Resources.all_resources():
         try:
-            resources = globals()[rc](session)
+            resources = rc(session)
             res_actions = {'purge': resources.purge,
                            'dump': resources.dump}
             res_actions[action]()
@@ -726,6 +771,9 @@ def main():
     except NoSuchProject as exc:
         print("Project {} doesn't exist".format(str(exc)))
         sys.exit(NoSuchProject.ERROR_CODE)
+
+    # Load dependencies between our Resources-derived classes.
+    load_dependencies()
 
     # Proper cleanup
     try:
