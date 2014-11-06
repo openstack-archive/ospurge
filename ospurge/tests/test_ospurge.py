@@ -459,3 +459,23 @@ class TestCeilometerAlarms(TestResourcesBase):
 
     def test_delete(self):
         self._test_delete()
+
+
+class TestResources(testtools.TestCase):
+    def test_all_resources(self):
+        class Base(ospurge.Resources):
+            pass
+
+        class FooBase(Base):
+            pass
+
+        class Foo(FooBase):
+            pass
+
+        class Foo2(FooBase):
+            pass
+
+        class Bar(Base):
+            pass
+
+        self.assertTrue(set(Base.all_resources()) == set([Foo, Foo2, Bar]))

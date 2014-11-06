@@ -75,24 +75,6 @@ CONNECTION_ERROR_CODE = 5
 NOT_AUTHORIZED = 6
 
 
-# Available resources classes
-
-RESOURCES_CLASSES = ['CinderSnapshots',
-                     'CinderBackups',
-                     'NovaServers',
-                     'NeutronFloatingIps',
-                     'NeutronInterfaces',
-                     'NeutronRouters',
-                     'NeutronPorts',
-                     'NeutronNetworks',
-                     'NeutronSecgroups',
-                     'GlanceImages',
-                     'SwiftObjects',
-                     'SwiftContainers',
-                     'CinderVolumes',
-                     'CeilometerAlarms']
-
-
 # Decorators
 
 def retry(service_name):
@@ -185,6 +167,14 @@ class Resources(object):
         for resource in resources:
             print(self.resource_str(resource))
         print("")
+
+    @classmethod
+    def all_resources(cls):
+        subclasses = cls.__subclasses__()
+        return ([s for s in subclasses if len(s.__subclasses__()) == 0] +
+                [subclass for s in subclasses
+                 for subclass in s.all_resources()
+                 if len(subclass.__subclasses__()) == 0])
 
 
 class SwiftResources(Resources):
@@ -581,9 +571,9 @@ def perform_on_project(admin_name, password, project, auth_url,
     session = Session(admin_name, password, project, auth_url,
                       endpoint_type, region_name, insecure)
     error = None
-    for rc in RESOURCES_CLASSES:
+    for rc in Resources.all_resources():
         try:
-            resources = globals()[rc](session)
+            resources = rc(session)
             res_actions = {'purge': resources.purge,
                            'dump': resources.dump}
             res_actions[action]()
