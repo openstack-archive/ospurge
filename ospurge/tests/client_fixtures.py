@@ -55,6 +55,7 @@ IMAGES_IDS = ["37717f53-3707-49b9-9dd0-fd063e6b9fc5", "4e150966-cbe7-4fd7-a964-4
               "482fbcc3-d831-411d-a073-ddc828a7a9ed"]
 ALARMS_IDS = ["ca950223-e982-4552-9dec-5dc5d3ea4172"]
 UNBOUND_PORT_ID = "abcdb45e-45fe-4e04-8704-bf6f58760000"
+COMPUTE_SECURITY_GROUPS_IDS = [1]
 
 # Simulating JSON sent from the Server
 
@@ -759,3 +760,23 @@ ALARMS_LIST = [
         "user_id": "c96c887c216949acbdfbd8b494863567"
     }
 ]
+
+COMPUTE_SECURITY_GROUPS_LIST = {
+    "security_groups": [
+        {
+            "description": "default",
+            "id": 0,
+            "name": "default",
+            "rules": [],
+            "tenant_id": PROJECT_ID
+        },
+        {
+
+            "description": "default",
+            "id": int(COMPUTE_SECURITY_GROUPS_IDS[0]),
+            "name": "secgroup",
+            "rules": [],
+            "tenant_id": PROJECT_ID
+        }
+    ]
+}

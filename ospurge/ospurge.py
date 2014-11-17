@@ -79,6 +79,7 @@ NOT_AUTHORIZED = 6
 
 RESOURCES_CLASSES = ['CinderSnapshots',
                      'CinderBackups',
+                     'NovaSecgroups',
                      'NovaServers',
                      'NeutronFloatingIps',
                      'NeutronInterfaces',
@@ -423,10 +424,10 @@ class NeutronFloatingIps(NeutronResources):
             floating_ip['floating_ip_address'], floating_ip['id'])
 
 
-class NovaServers(Resources):
+class NovaResources(Resources):
 
     def __init__(self, session):
-        super(NovaServers, self).__init__(session)
+        super(NovaResources, self).__init__(session)
         self.client = nova_client.Client(
             session.username, session.password,
             session.project_name, auth_url=session.auth_url,
@@ -434,7 +435,26 @@ class NovaServers(Resources):
             region_name=session.region_name, insecure=session.insecure)
         self.project_id = session.project_id
 
-    """Manage nova resources"""
+
+class NovaSecgroups(NovaResources):
+
+    def list(self):
+        # The 'default' security group is readonly and cannot be deleted.
+        # The only way to do something cleaner would be to import
+        # nova.compute.api and make sure sg.name is not in RO_SECURITY_GROUPS,
+        # but we may not want to add a dependency on Nova.
+        return filter(lambda sg: sg.name != 'default',
+                      self.client.security_groups.list())
+
+    def delete(self, security_group):
+        super(NovaSecgroups, self).delete(security_group)
+        self.client.security_groups.delete(security_group)
+
+    def resource_str(self, security_group):
+        return "security_group {} (id {})".format(security_group.name, security_group.id)
+
+
+class NovaServers(NovaResources):
 
     def list(self):
         return self.client.servers.list()
