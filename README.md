@@ -237,7 +237,7 @@ How to contribute
 
 Ospurge is hosted on Stackforge and is using Gerrit to manage
 contributions. You can contribute to the project by following the
-following workflow: https://wiki.openstack.org/wiki/Gerrit_Workflow
+following workflow: http://docs.openstack.org/infra/manual/developers.html#development-workflow
 
 
 License / Copyright
