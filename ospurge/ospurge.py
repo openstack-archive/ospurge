@@ -491,11 +491,11 @@ class NeutronMeteringLabel(NeutronResources):
     def delete(self, metering_label):
         super(NeutronMeteringLabel, self).delete(metering_label)
         self.client.delete_metering_label(metering_label['id'])
- 
+
     def resource_str(self, metering_label):
         return "meter-label {} (id {})".format(metering_label['name'], metering_label['id'])
 
- 
+
 class NeutronFireWallPolicy(NeutronResources):
 
     def list(self):

@@ -476,7 +476,7 @@ class TestNeutronLbMembers(TestNeutronBase):
 
     def stub_list(self):
         self.stub_url('GET', parts=['v2.0', 'lb/members.json'], json=client_fixtures.LBAAS_MEMBER_LIST)
- 
+
     def stub_delete(self):
         lb_member_id = client_fixtures.LBAAS_MEMBER_IDS[0]
         self.stub_url('DELETE', parts=['v2.0', 'lb/members', "{}.json".format(lb_member_id)], json={})

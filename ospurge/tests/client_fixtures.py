@@ -734,7 +734,7 @@ LBAAS_MEMBER_LIST = {
             "pool_id": LBAAS_POOL_IDS[0]
         },
         {
-           "id": LBAAS_MEMBER_IDS[1],
+            "id": LBAAS_MEMBER_IDS[1],
             "address": "10.0.0.123",
             "protocol_port": 80,
             "tenant_id": PROJECT_ID,
@@ -832,8 +832,8 @@ FIREWALL_RULE_LIST = {
             "action": "allow",
             "ip_version": 4,
             "shared": False
-	},
-	{
+        },
+        {
             "protocol": "tcp",
             "description": "Firewall rule 1",
             "source_port": None,
