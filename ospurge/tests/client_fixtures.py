@@ -56,6 +56,18 @@ IMAGES_IDS = ["37717f53-3707-49b9-9dd0-fd063e6b9fc5", "4e150966-cbe7-4fd7-a964-4
 ALARMS_IDS = ["ca950223-e982-4552-9dec-5dc5d3ea4172"]
 UNBOUND_PORT_ID = "abcdb45e-45fe-4e04-8704-bf6f58760000"
 
+PRIVATE_PORT_IDS = ["p7815f5b-a228-47bb-a5e5-f139c4f476ft", "p78o5f5t-a228-47bb-a5e2-f139c4f476ft"]
+FIREWALL_RULE_IDS = ["firebcc3-d831-411d-a073-ddc828a7a9id",
+                     "fi7815f5b-a328-47cb-a5e5-f139c4e476f7"]
+
+FIREWALL_POLICY_IDS = ["firebcc3-d831-422d-a073-ccc818a7a9id", "poa119a8-d25b-45a7-8d1b-88e127885630"]
+FIREWALL_IDS = ["firewal1-d831-422d-a073-ckc818a7a9ab", "firewa1l-d831-422d-a073-ckc818a7a9ab"]
+METERING_LABEL_IDS = ["mbcdb45e-45fe-4e04-8704-bf6f58760011", "meteb45e-45fe-4e04-8704-bf6f58760000"]
+LBAAS_MEMBER_IDS = ["37717f53-3707-49b9-9dd0-fd063e6lbass", "la650123-e982-4552-9dec-5dc5d3ea4172"]
+LBAAS_VIP_IDS = ["616fb98f-36ca-475e-917e-1563e5a8cd10", "102fbcc3-d831-411d-a333-ddc828a7a9ed"]
+LBAAS_HEALTHMONITOR_IDS = ["he717f53-3707-49b9-9dd0-fd063e6lbass"]
+LBAAS_POOL_IDS = ["lb815f5b-a228-17bb-a5e5-f139c3e476f6", "dlb15f5b-a228-47bb-a5e5-f139c4e47po6"]
+
 # Simulating JSON sent from the Server
 
 PROJECT_SCOPED_TOKEN = {
@@ -606,6 +618,238 @@ FLOATING_IPS_LIST = {
             "floating_ip_address": "172.24.4.227",
             "port_id": None,
             "id": FLOATING_IPS_IDS[1]
+        }
+    ]
+}
+
+LBAAS_HEALTHMONITOR_LIST = {
+    "health_monitors":
+    [
+	{
+	    "admin_state_up": True,
+	    "tenant_id": PROJECT_ID,
+	    "delay": 5,
+	    "expected_codes": "200",
+	    "max_retries": 5,
+	    "http_method": "GET",
+	    "timeout": 2,
+	    "pools": [],
+	    "url_path": "/",
+	    "type": "HTTP",
+	    "id": LBAAS_HEALTHMONITOR_IDS[0] 
+	}
+    ]
+}
+
+LBAAS_VIP_LIST = {
+    "vips":
+    [
+	{
+	    "status": "ACTIVE",
+	    "protocol": "HTTP",
+	    "description": "",
+	    "address": "10.0.0.125",
+	    "protocol_port": 80,
+	    "port_id" : PRIVATE_PORT_IDS[0],
+	    "id": LBAAS_VIP_IDS[0],
+	    "status_description": "",
+	    "name": "test-http-vip",
+	    "admin_state_up": True,
+	    "tenant_id": PROJECT_ID,
+	    "subnet_id": "b892434a-59f7-4404-a05d-9562977e1678",
+	    "connection_limit": -1,
+	    "pool_id": LBAAS_POOL_IDS[0],
+	    "session_persistence": None
+	},
+	{
+	    "status": "ACTIVE",
+            "protocol": "HTTP",
+            "description": "",
+            "address": "10.0.0.126",
+            "protocol_port": 80,
+            "port_id" : PRIVATE_PORT_IDS[1],
+            "id": LBAAS_VIP_IDS[1],
+            "status_description": "",
+            "name": "test-http-vip",
+            "admin_state_up": True,
+            "tenant_id": PROJECT_ID,
+            "subnet_id": "b892434a-49f7-4404-a05d-9562977e1678",
+            "connection_limit": -1,
+            "pool_id": LBAAS_POOL_IDS[1],
+            "session_persistence": None
+	}
+    ]
+}
+
+LBAAS_POOL_LIST = {
+    "pools":
+    [
+        {
+            "status": "ACTIVE",
+            "lb_method": "ROUND_ROBIN",
+            "protocol": "HTTP",
+            "description": "",
+            "health_monitors": [],
+            "subnet_id": "b892434a-59f7-4404-a05d-9562977e1678",
+            "tenant_id": PROJECT_ID,
+            "admin_state_up": True,
+            "name": "Test-Pools",
+            "health_monitors_status": [],
+            "members": [],
+            "provider": "haproxy",
+            "status_description": None,
+            "id": LBAAS_POOL_IDS[0]
+	    
+        },
+        {
+            "status": "ACTIVE",
+            "lb_method": "ROUND_ROBIN",
+            "protocol": "HTTP",
+            "description": "",
+            "health_monitors": [],
+            "subnet_id": "b892434a-49f7-4404-a05d-9562977e1678",
+            "tenant_id": PROJECT_ID,
+            "admin_state_up": True,
+            "name": "Test-Pools",
+            "health_monitors_status": [],
+            "members": [],
+            "provider": "haproxy",
+            "status_description": None,
+            "id": LBAAS_POOL_IDS[1]
+        }
+    ]    
+}
+
+LBAAS_MEMBER_LIST = {
+    "members":
+    [
+        {
+            "id": LBAAS_MEMBER_IDS[0],
+            "address": "10.0.0.122",
+            "protocol_port": 80,
+            "tenant_id": PROJECT_ID, 
+            "admin_state_up": True,
+            "weight": 1,
+            "status": "ACTIVE",
+            "status_description": "member test1",
+            "pool_id": LBAAS_POOL_IDS[0]
+        },
+        {
+           "id": LBAAS_MEMBER_IDS[1],
+            "address": "10.0.0.123",
+            "protocol_port": 80,
+            "tenant_id": PROJECT_ID, 
+            "admin_state_up": True,
+            "weight": 1,
+            "status": "ACTIVE",
+            "status_description": "member test1",
+            "pool_id": LBAAS_POOL_IDS[1]
+        }
+    ]
+}
+
+FIREWALL_LIST = {
+    "firewalls":
+    [
+        {
+            "status": "ACTIVE",
+            "name": "fwass-test-1",
+            "admin_state_up": True,
+            "tenant_id": PROJECT_ID,
+            "firewall_policy_id": FIREWALL_POLICY_IDS[0],
+            "id": FIREWALL_IDS[0],
+            "description": ""
+        },
+        {
+            "status": "ACTIVE",
+            "name": "fwass-test-2",
+            "admin_state_up": True,
+            "tenant_id": PROJECT_ID,
+            "firewall_policy_id": FIREWALL_POLICY_IDS[1],
+            "id": FIREWALL_IDS[1],
+            "description": ""
+        }
+    ]
+}
+
+METERING_LABEL_LIST = {
+    "metering_labels":
+    [
+        {
+            "tenant_id": PROJECT_ID,
+            "description": "Meter label test1",
+            "name": "Meterlabel1",
+            "id": METERING_LABEL_IDS[0]
+        },
+        {
+            "tenant_id": PROJECT_ID,
+            "description": "Meter label test2",
+            "name": "Meterlabel2",
+            "id": METERING_LABEL_IDS[1]
+        }
+    ]
+}
+
+FIREWALL_POLICY_LIST = {
+    "firewall_policies":
+    [
+        {
+            "name": "TestFireWallPolicy1",
+            "firewall_rules": [FIREWALL_RULE_IDS[0]],
+            "tenant_id": PROJECT_ID,
+            "audited": False,
+            "shared": False,
+            "id": FIREWALL_POLICY_IDS[0],
+            "description": "Testing firewall policy 1"
+        },
+        {
+            "name": "TestFireWallPolicy2",
+            "firewall_rules": [FIREWALL_RULE_IDS[1]],
+            "tenant_id": PROJECT_ID,
+            "audited": False,
+            "shared": False,
+            "id": FIREWALL_POLICY_IDS[1],
+            "description": "Testing firewall policy 2"
+        }
+    ]
+}
+
+FIREWALL_RULE_LIST = {
+    "firewall_rules":
+    [
+        {
+            "protocol": "tcp",
+            "description": "Firewall rule 1",
+            "source_port": None,
+            "source_ip_address": None,
+            "destination_ip_address": None,
+            "firewall_policy_id": None,
+            "position": None,
+            "destination_port": "80",
+            "id": FIREWALL_RULE_IDS[0],
+            "name": "",
+            "tenant_id": PROJECT_ID,
+            "enabled": True,
+            "action": "allow", 
+            "ip_version": 4,
+            "shared": False
+	},
+	{
+            "protocol": "tcp",
+            "description": "Firewall rule 1",
+            "source_port": None,
+            "source_ip_address": None,
+            "destination_ip_address": None,
+            "firewall_policy_id": None,
+            "position": None,
+            "destination_port": "80",
+            "id" : FIREWALL_RULE_IDS[1],
+            "name": "",
+            "tenant_id": PROJECT_ID,
+            "enabled": True,
+            "action": "allow",
+            "ip_version": 4,
+            "shared": False
         }
     ]
 }
