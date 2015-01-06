@@ -400,10 +400,10 @@ class TestNeutronFireWallRule(TestNeutronBase):
     def setUp(self):
         super(TestNeutronFireWallRule, self).setUp()
         self.resources = ospurge.NeutronFireWallRule(self.session)
-	
+
     def test_list(self):
         self._test_list()
-	
+
     def test_delete(self):
         self._test_delete()
 
@@ -413,7 +413,7 @@ class TestNeutronFireWallPolicy(TestNeutronBase):
 
     def stub_list(self):
         self.stub_url('GET', parts=['v2.0', 'fw/firewall_policies.json'], json=client_fixtures.FIREWALL_POLICY_LIST)
-    
+
     def stub_delete(self):
         firewall_policy_id = client_fixtures.FIREWALL_POLICY_IDS[0]
         self.stub_url('DELETE', parts=['v2.0', 'fw/firewall_policies', "{}.json".format(firewall_policy_id)], json={})
@@ -427,6 +427,7 @@ class TestNeutronFireWallPolicy(TestNeutronBase):
 
     def test_delete(self):
         self._test_delete()
+
 
 class TestNeutronFireWall(TestNeutronBase):
     IDS = client_fixtures.FIREWALL_IDS
@@ -448,6 +449,7 @@ class TestNeutronFireWall(TestNeutronBase):
     def test_delete(self):
         self._test_delete()
 
+
 class TestNeutronMeteringLabel(TestNeutronBase):
     IDS = client_fixtures.METERING_LABEL_IDS
 
@@ -468,12 +470,13 @@ class TestNeutronMeteringLabel(TestNeutronBase):
     def test_delete(self):
         self._test_delete()
 
+
 class TestNeutronLbMembers(TestNeutronBase):
     IDS = client_fixtures.LBAAS_MEMBER_IDS
 
     def stub_list(self):
         self.stub_url('GET', parts=['v2.0', 'lb/members.json'], json=client_fixtures.LBAAS_MEMBER_LIST)
-  
+ 
     def stub_delete(self):
         lb_member_id = client_fixtures.LBAAS_MEMBER_IDS[0]
         self.stub_url('DELETE', parts=['v2.0', 'lb/members', "{}.json".format(lb_member_id)], json={})
@@ -487,6 +490,7 @@ class TestNeutronLbMembers(TestNeutronBase):
 
     def test_delete(self):
         self._test_delete()
+
 
 class TestNeutronLbVip(TestNeutronBase):
     IDS = client_fixtures.LBAAS_VIP_IDS
@@ -508,6 +512,7 @@ class TestNeutronLbVip(TestNeutronBase):
     def test_delete(self):
         self._test_delete()
 
+
 class TestNeutronLbHealthMonitor(TestNeutronBase):
     IDS = client_fixtures.LBAAS_HEALTHMONITOR_IDS
 
@@ -528,6 +533,7 @@ class TestNeutronLbHealthMonitor(TestNeutronBase):
     def test_delete(self):
         self._test_delete()
 
+
 class TestNeutronLbPool(TestNeutronBase):
     IDS = client_fixtures.LBAAS_POOL_IDS
 
@@ -547,6 +553,7 @@ class TestNeutronLbPool(TestNeutronBase):
 
     def test_delete(self):
         self._test_delete()
+
 
 class TestNovaServers(TestResourcesBase):
     TEST_URL = client_fixtures.COMPUTE_PUBLIC_ENDPOINT

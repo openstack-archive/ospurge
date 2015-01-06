@@ -448,7 +448,7 @@ class NeutronLbPool(NeutronResources):
 
     def list(self):
         return filter(self._owned_resource, self.client.list_pools()['pools'])
-	
+
     def delete(self, pool):
         super(NeutronLbPool, self).delete(pool)
         self.client.delete_pool(pool['id'])
@@ -491,11 +491,11 @@ class NeutronMeteringLabel(NeutronResources):
     def delete(self, metering_label):
         super(NeutronMeteringLabel, self).delete(metering_label)
         self.client.delete_metering_label(metering_label['id'])
-    
+ 
     def resource_str(self, metering_label):
         return "meter-label {} (id {})".format(metering_label['name'], metering_label['id'])
 
-   
+ 
 class NeutronFireWallPolicy(NeutronResources):
 
     def list(self):
@@ -510,7 +510,7 @@ class NeutronFireWallPolicy(NeutronResources):
 
 
 class NeutronFireWallRule(NeutronResources):
-	
+
     def list(self):
         return filter(self._owned_resource, self.client.list_firewall_rules()['firewall_rules'])
 
@@ -525,7 +525,7 @@ class NeutronFireWallRule(NeutronResources):
 class NeutronFireWall(NeutronResources):
 
     def list(self):
-        return filter(self._owned_resource, self.client.list_firewalls()['firewalls']) 
+        return filter(self._owned_resource, self.client.list_firewalls()['firewalls'])
 
     def delete(self, firewall):
         super(NeutronFireWall, self).delete(firewall)

@@ -625,49 +625,49 @@ FLOATING_IPS_LIST = {
 LBAAS_HEALTHMONITOR_LIST = {
     "health_monitors":
     [
-	{
-	    "admin_state_up": True,
-	    "tenant_id": PROJECT_ID,
-	    "delay": 5,
-	    "expected_codes": "200",
-	    "max_retries": 5,
-	    "http_method": "GET",
-	    "timeout": 2,
-	    "pools": [],
-	    "url_path": "/",
-	    "type": "HTTP",
-	    "id": LBAAS_HEALTHMONITOR_IDS[0] 
-	}
+        {
+            "admin_state_up": True,
+            "tenant_id": PROJECT_ID,
+            "delay": 5,
+            "expected_codes": "200",
+            "max_retries": 5,
+            "http_method": "GET",
+            "timeout": 2,
+            "pools": [],
+            "url_path": "/",
+            "type": "HTTP",
+            "id": LBAAS_HEALTHMONITOR_IDS[0]
+        }
     ]
 }
 
 LBAAS_VIP_LIST = {
     "vips":
     [
-	{
-	    "status": "ACTIVE",
-	    "protocol": "HTTP",
-	    "description": "",
-	    "address": "10.0.0.125",
-	    "protocol_port": 80,
-	    "port_id" : PRIVATE_PORT_IDS[0],
-	    "id": LBAAS_VIP_IDS[0],
-	    "status_description": "",
-	    "name": "test-http-vip",
-	    "admin_state_up": True,
-	    "tenant_id": PROJECT_ID,
-	    "subnet_id": "b892434a-59f7-4404-a05d-9562977e1678",
-	    "connection_limit": -1,
-	    "pool_id": LBAAS_POOL_IDS[0],
-	    "session_persistence": None
-	},
-	{
-	    "status": "ACTIVE",
+        {
+            "status": "ACTIVE",
+            "protocol": "HTTP",
+            "description": "",
+            "address": "10.0.0.125",
+            "protocol_port": 80,
+            "port_id" : PRIVATE_PORT_IDS[0],
+            "id": LBAAS_VIP_IDS[0],
+            "status_description": "",
+            "name": "test-http-vip",
+            "admin_state_up": True,
+            "tenant_id": PROJECT_ID,
+            "subnet_id": "b892434a-59f7-4404-a05d-9562977e1678",
+            "connection_limit": -1,
+            "pool_id": LBAAS_POOL_IDS[0],
+            "session_persistence": None
+        },
+        {
+            "status": "ACTIVE",
             "protocol": "HTTP",
             "description": "",
             "address": "10.0.0.126",
             "protocol_port": 80,
-            "port_id" : PRIVATE_PORT_IDS[1],
+            "port_id": PRIVATE_PORT_IDS[1],
             "id": LBAAS_VIP_IDS[1],
             "status_description": "",
             "name": "test-http-vip",
@@ -677,7 +677,7 @@ LBAAS_VIP_LIST = {
             "connection_limit": -1,
             "pool_id": LBAAS_POOL_IDS[1],
             "session_persistence": None
-	}
+        }
     ]
 }
 
@@ -699,7 +699,6 @@ LBAAS_POOL_LIST = {
             "provider": "haproxy",
             "status_description": None,
             "id": LBAAS_POOL_IDS[0]
-	    
         },
         {
             "status": "ACTIVE",
@@ -717,7 +716,7 @@ LBAAS_POOL_LIST = {
             "status_description": None,
             "id": LBAAS_POOL_IDS[1]
         }
-    ]    
+    ]
 }
 
 LBAAS_MEMBER_LIST = {
@@ -727,7 +726,7 @@ LBAAS_MEMBER_LIST = {
             "id": LBAAS_MEMBER_IDS[0],
             "address": "10.0.0.122",
             "protocol_port": 80,
-            "tenant_id": PROJECT_ID, 
+            "tenant_id": PROJECT_ID,
             "admin_state_up": True,
             "weight": 1,
             "status": "ACTIVE",
@@ -738,7 +737,7 @@ LBAAS_MEMBER_LIST = {
            "id": LBAAS_MEMBER_IDS[1],
             "address": "10.0.0.123",
             "protocol_port": 80,
-            "tenant_id": PROJECT_ID, 
+            "tenant_id": PROJECT_ID,
             "admin_state_up": True,
             "weight": 1,
             "status": "ACTIVE",
@@ -830,7 +829,7 @@ FIREWALL_RULE_LIST = {
             "name": "",
             "tenant_id": PROJECT_ID,
             "enabled": True,
-            "action": "allow", 
+            "action": "allow",
             "ip_version": 4,
             "shared": False
 	},
@@ -843,7 +842,7 @@ FIREWALL_RULE_LIST = {
             "firewall_policy_id": None,
             "position": None,
             "destination_port": "80",
-            "id" : FIREWALL_RULE_IDS[1],
+            "id": FIREWALL_RULE_IDS[1],
             "name": "",
             "tenant_id": PROJECT_ID,
             "enabled": True,
