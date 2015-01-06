@@ -81,6 +81,7 @@ RESOURCES_CLASSES = ['CinderSnapshots',
                      'CinderBackups',
                      'NovaServers',
                      'NeutronFloatingIps',
+		     'NeutronMeteringLabel'
                      'NeutronInterfaces',
                      'NeutronRouters',
                      'NeutronPorts',
@@ -422,6 +423,17 @@ class NeutronFloatingIps(NeutronResources):
         return "floating ip {} (id {})".format(
             floating_ip['floating_ip_address'], floating_ip['id'])
 
+class NeutronMeteringLabel(NeutronResources):
+
+    def list(self):
+        return filter(self._owned_resource, self.client.list_metering_labels()['metering_labels'])
+
+    def delete(self, metering_label):
+        super(NeutronMeteringLabel, self).delete(metering_label)
+        self.client.delete_metering_label(metering_label['id'])
+
+    def resource_str(self, metering_label):
+        return "meter-label {} (id {})".format(metering_label['name'], metering_label['id'])
 
 class NovaServers(Resources):
 

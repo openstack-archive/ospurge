@@ -387,6 +387,26 @@ class TestNeutronFloatingIps(TestNeutronBase):
     def test_delete(self):
         self._test_delete()
 
+class TestNeutronMeteringLabel(TestNeutronBase):
+        IDS = client_fixtures.METERING_LABEL_IDS
+
+        def stub_list(self):
+            self.stub_url('GET', parts=['v2.0', 'metering/metering-labels.json'],
+                          json=client_fixtures.METERING_LABEL_LIST)
+        def stub_delete(self):
+            firewall_id = client_fixtures.METERING_LABEL_IDS[0]
+            self.stub_url('DELETE', parts=['v2.0','metering/metering-labels',
+                                           "{}.json".format(firewall_id)], json={})
+
+        def setUp(self):
+            super(TestNeutronMeteringLabel, self).setUp()
+            self.resources = ospurge.NeutronMeteringLabel(self.session)
+
+        def test_list(self):
+            self._test_list()
+
+        def test_delete(self):
+            self._test_delete()
 
 class TestNovaServers(TestResourcesBase):
     TEST_URL = client_fixtures.COMPUTE_PUBLIC_ENDPOINT

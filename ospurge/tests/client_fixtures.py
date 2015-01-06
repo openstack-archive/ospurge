@@ -56,6 +56,7 @@ IMAGES_IDS = ["37717f53-3707-49b9-9dd0-fd063e6b9fc5", "4e150966-cbe7-4fd7-a964-4
 ALARMS_IDS = ["ca950223-e982-4552-9dec-5dc5d3ea4172"]
 UNBOUND_PORT_ID = "abcdb45e-45fe-4e04-8704-bf6f58760000"
 
+METERING_LABEL_IDS = ["mbcdb45e-45fe-4e04-8704-bf6f58760011", "meteb45e-45fe-4e04-8704-bf6f58760000"]
 # Simulating JSON sent from the Server
 
 PROJECT_SCOPED_TOKEN = {
@@ -610,6 +611,23 @@ FLOATING_IPS_LIST = {
     ]
 }
 
+METERING_LABEL_LIST = {
+    "metering_labels":
+    [
+        {
+            "tenant_id": PROJECT_ID,
+            "description": "Meter label test1",
+            "name": "Meterlabel1",
+            "id": METERING_LABEL_IDS[0]
+        },
+        {
+            "tenant_id": PROJECT_ID,
+            "description": "Meter label test2",
+            "name": "Meterlabel2",
+            "id": METERING_LABEL_IDS[1]
+        }
+    ]
+}
 
 SERVERS_LIST = {
     "servers": [
