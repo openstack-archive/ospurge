@@ -650,7 +650,7 @@ LBAAS_VIP_LIST = {
             "description": "",
             "address": "10.0.0.125",
             "protocol_port": 80,
-            "port_id" : PRIVATE_PORT_IDS[0],
+            "port_id": PRIVATE_PORT_IDS[0],
             "id": LBAAS_VIP_IDS[0],
             "status_description": "",
             "name": "test-http-vip",
