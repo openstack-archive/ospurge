@@ -711,7 +711,7 @@ def perform_on_project(admin_name, password, project, auth_url,
             logging.warning(
                 "Unable to connect to {} endpoint : {}".format(rc, e.message))
             error = InvalidEndpoint(rc)
-        except:
+        except Exception:
             pass # if service is not configured ignore it
     if error:
         raise error
