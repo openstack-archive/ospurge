@@ -81,6 +81,14 @@ RESOURCES_CLASSES = ['CinderSnapshots',
                      'CinderBackups',
                      'NovaServers',
                      'NeutronFloatingIps',
+                     'NeutronFireWall',
+                     'NeutronFireWallPolicy',
+                     'NeutronFireWallRule',
+                     'NeutronLbMembers',
+                     'NeutronLbVip',
+                     'NeutronLbHealthMonitor',
+                     'NeutronLbPool',
+                     'NeutronMeteringLabel',
                      'NeutronInterfaces',
                      'NeutronRouters',
                      'NeutronPorts',
@@ -423,6 +431,110 @@ class NeutronFloatingIps(NeutronResources):
             floating_ip['floating_ip_address'], floating_ip['id'])
 
 
+class NeutronLbMembers(NeutronResources):
+
+    def list(self):
+        return filter(self._owned_resource, self.client.list_members()['members'])
+
+    def delete(self, member):
+        super(NeutronLbMembers, self).delete(member)
+        self.client.delete_member(member['id'])
+
+    def resource_str(self, member):
+        return "lb-member {} (id {})".format(member['address'], member['id'])
+
+
+class NeutronLbPool(NeutronResources):
+
+    def list(self):
+        return filter(self._owned_resource, self.client.list_pools()['pools'])
+
+    def delete(self, pool):
+        super(NeutronLbPool, self).delete(pool)
+        self.client.delete_pool(pool['id'])
+
+    def resource_str(self, pool):
+        return "lb-pool {} (id {})".format(pool['name'], pool['id'])
+
+
+class NeutronLbVip(NeutronResources):
+
+    def list(self):
+        return filter(self._owned_resource, self.client.list_vips()['vips'])
+
+    def delete(self, vip):
+        super(NeutronLbVip, self).delete(vip)
+        self.client.delete_vip(vip['id'])
+
+    def resource_str(self, vip):
+        return "lb-vip {} (id {})".format(vip['name'], vip['id'])
+
+
+class NeutronLbHealthMonitor(NeutronResources):
+
+    def list(self):
+        return filter(self._owned_resource, self.client.list_health_monitors()['health_monitors'])
+
+    def delete(self, health_monitor):
+        super(NeutronLbHealthMonitor, self).delete(health_monitor)
+        self.client.delete_health_monitor(health_monitor['id'])
+
+    def resource_str(self, health_monitor):
+        return "lb-health_monotor type {} (id {})".format(health_monitor['type'], health_monitor['id'])
+
+
+class NeutronMeteringLabel(NeutronResources):
+
+    def list(self):
+        return filter(self._owned_resource, self.client.list_metering_labels()['metering_labels'])
+
+    def delete(self, metering_label):
+        super(NeutronMeteringLabel, self).delete(metering_label)
+        self.client.delete_metering_label(metering_label['id'])
+
+    def resource_str(self, metering_label):
+        return "meter-label {} (id {})".format(metering_label['name'], metering_label['id'])
+
+
+class NeutronFireWallPolicy(NeutronResources):
+
+    def list(self):
+        return filter(self._owned_resource, self.client.list_firewall_policies()['firewall_policies'])
+
+    def delete(self, firewall_policy):
+        super(NeutronFireWallPolicy, self).delete(firewall_policy)
+        self.client.delete_firewall_policy(firewall_policy['id'])
+
+    def resource_str(self, firewall_policy):
+        return "Firewall policy {} (id {})".format(firewall_policy['name'], firewall_policy['id'])
+
+
+class NeutronFireWallRule(NeutronResources):
+
+    def list(self):
+        return filter(self._owned_resource, self.client.list_firewall_rules()['firewall_rules'])
+
+    def delete(self, firewall_rule):
+        super(NeutronFireWallRule, self).delete(firewall_rule)
+        self.client.delete_firewall_rule(firewall_rule['id'])
+
+    def resource_str(self, firewall_rule):
+        return "Firewall rule {} (id {})".format(firewall_rule['name'], firewall_rule['id'])
+
+
+class NeutronFireWall(NeutronResources):
+
+    def list(self):
+        return filter(self._owned_resource, self.client.list_firewalls()['firewalls'])
+
+    def delete(self, firewall):
+        super(NeutronFireWall, self).delete(firewall)
+        self.client.delete_firewall(firewall['id'])
+
+    def resource_str(self, firewall):
+        return "Firewall {} (id {})".format(firewall['name'], firewall['id'])
+
+
 class NovaServers(Resources):
 
     def __init__(self, session):
@@ -599,6 +711,9 @@ def perform_on_project(admin_name, password, project, auth_url,
             logging.warning(
                 "Unable to connect to {} endpoint : {}".format(rc, e.message))
             error = InvalidEndpoint(rc)
+        except (neutronclient.common.exceptions.NeutronClientException):
+            # If service is not configured, ignoring it
+            pass
     if error:
         raise error
 
