@@ -35,6 +35,8 @@ import cinderclient.exceptions
 from cinderclient.v1 import client as cinder_client
 import glanceclient.exc
 from glanceclient.v1 import client as glance_client
+from heatclient import client as heat_client
+import heatclient.openstack.common.apiclient.exceptions
 from keystoneclient.apiclient import exceptions as api_exceptions
 import keystoneclient.openstack.common.apiclient.exceptions
 from keystoneclient.v2_0 import client as keystone_client
@@ -98,7 +100,8 @@ RESOURCES_CLASSES = ['CinderSnapshots',
                      'SwiftObjects',
                      'SwiftContainers',
                      'CinderVolumes',
-                     'CeilometerAlarms']
+                     'CeilometerAlarms',
+                     'HeatStacks']
 
 
 # Decorators
@@ -582,6 +585,29 @@ class GlanceImages(Resources):
         return res.owner == self.project_id
 
 
+class HeatStacks(Resources):
+
+    def __init__(self, session):
+        self.client = heat_client.Client(
+            "1",
+            endpoint=session.get_endpoint("orchestration"),
+            token=session.token, insecure=session.insecure)
+        self.project_id = session.project_id
+
+    def list(self):
+        return self.client.stacks.list()
+
+    def delete(self, stack):
+        super(HeatStacks, self).delete(stack)
+        if stack.stack_status == "DELETE_FAILED":
+            self.client.stacks.abandon(stack.id)
+        else:
+            self.client.stacks.delete(stack.id)
+
+    def resource_str(self, stack):
+        return "stack {})".format(stack.id)
+
+
 class CeilometerAlarms(Resources):
 
     def __init__(self, session):
@@ -704,6 +730,7 @@ def perform_on_project(admin_name, password, project, auth_url,
                 neutronclient.common.exceptions.EndpointNotFound,
                 cinderclient.exceptions.EndpointNotFound,
                 novaclient.exceptions.EndpointNotFound,
+                heatclient.openstack.common.apiclient.exceptions.EndpointNotFound,
                 ResourceNotEnabled):
             # If service is not in Keystone's services catalog, ignoring it
             pass
