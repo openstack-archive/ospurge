@@ -626,3 +626,41 @@ class TestCeilometerAlarms(TestResourcesBase):
 
     def test_delete(self):
         self._test_delete()
+
+
+class TestHeatStacks(TestResourcesBase):
+    TEST_URL = client_fixtures.ORCHESTRATION_PUBLIC_ENDPOINT
+    IDS = client_fixtures.STACKS_IDS
+
+    def stub_list(self):
+        self.stub_url('GET', parts=['stacks?'],
+                      json=client_fixtures.STACKS_LIST)
+
+    def stub_delete(self):
+        self.stub_url(
+            'DELETE', parts=['stacks', client_fixtures.STACKS_IDS[0]])
+
+    def setUp(self):
+        super(TestHeatStacks, self).setUp()
+        self.resources = ospurge.HeatStacks(self.session)
+
+    def test_list(self):
+        self._test_list()
+
+    def test_delete(self):
+        self._test_delete()
+
+    @httpretty.activate
+    def test_abandon(self):
+        self.stub_auth()
+        self.stub_list()
+        get_result = {'stack': client_fixtures.STACKS_LIST['stacks'][1]}
+        self.stub_url(
+            'GET', parts=['stacks', client_fixtures.STACKS_IDS[1]],
+            json=get_result)
+        self.stub_url(
+            'DELETE',
+            parts=['stacks', 'stack2', client_fixtures.STACKS_IDS[1],
+                   'abandon'])
+        elts = list(self.resources.list())
+        self.resources.delete(elts[1])

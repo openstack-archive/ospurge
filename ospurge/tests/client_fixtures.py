@@ -25,12 +25,14 @@ STORAGE_PUBLIC_ENDPOINT = 'http://public:8080/v1/AUTH_ee5b90900a4b4e85938b0ceadf
 NETWORK_PUBLIC_ENDPOINT = 'https://network0.cw-labs.net'
 COMPUTE_PUBLIC_ENDPOINT = 'https://compute0.cw-labs.net/v2/43c9e28327094e1b81484f4b9aee74d5'
 METERING_PUBLIC_ENDPOINT = 'https://metric0.cw-labs.net'
+ORCHESTRATION_PUBLIC_ENDPOINT = 'https://orchestration0.cw-labs.net/v1'
 VOLUME_INTERNAL_ENDPOINT = 'http://internal:8776/v1/225da22d3ce34b15877ea70b2a575f58'
 IMAGE_INTERNAL_ENDPOINT = 'http://internal:9292'
 STORAGE_INTERNAL_ENDPOINT = 'http://internal:8080/v1/AUTH_ee5b90900a4b4e85938b0ceadf4467f8'
 NETWORK_INTERNAL_ENDPOINT = 'http://neutron.usr.lab0.aub.cw-labs.net:9696'
 COMPUTE_INTERNAL_ENDPOINT = 'http://nova.usr.lab0.aub.cw-labs.net:8774/v2/43c9e28327094e1b81484f4b9aee74d5'
 METERING_INTERNAL_ENDPOINT = 'http://ceilometer.usr.lab0.aub.cw-labs.net:8777'
+ORCHESTRATION_INTERNAL_ENDPOINT = 'http://heat.usr.lab0.aub.cw-labs.net:8004/v1'
 
 
 STORAGE_CONTAINERS = ['janeausten', 'marktwain']
@@ -54,6 +56,8 @@ SERVERS_IDS = ["616fb98f-46ca-475e-917e-2563e5a8cd19"]
 IMAGES_IDS = ["37717f53-3707-49b9-9dd0-fd063e6b9fc5", "4e150966-cbe7-4fd7-a964-41e008d20f10",
               "482fbcc3-d831-411d-a073-ddc828a7a9ed"]
 ALARMS_IDS = ["ca950223-e982-4552-9dec-5dc5d3ea4172"]
+STACKS_IDS = ["5c136348-5550-4ec5-8bd6-b83241844db3",
+              "ec4083c1-3667-47d2-91c9-ce0bc8e3c2b9"]
 UNBOUND_PORT_ID = "abcdb45e-45fe-4e04-8704-bf6f58760000"
 
 PRIVATE_PORT_IDS = ["p7815f5b-a228-47bb-a5e5-f139c4f476ft", "p78o5f5t-a228-47bb-a5e2-f139c4f476ft"]
@@ -145,6 +149,15 @@ PROJECT_SCOPED_TOKEN = {
             'endpoints_links': [],
             'name': 'Metering service',
             'type': 'metering'
+        }, {
+            'endpoints': [{
+                'adminURL': 'http://heat.usr.lab0.aub.cw-labs.net:8777',
+                'internalURL': ORCHESTRATION_INTERNAL_ENDPOINT,
+                'publicURL': ORCHESTRATION_PUBLIC_ENDPOINT,
+                'region': 'RegionOne'}],
+            'endpoints_links': [],
+            'name': 'Orchestration service',
+            'type': 'orchestration'
         }],
         'token': {
             'expires': '2012-10-03T16:53:36Z',
@@ -1002,3 +1015,38 @@ ALARMS_LIST = [
         "user_id": "c96c887c216949acbdfbd8b494863567"
     }
 ]
+
+STACKS_LIST = {
+    "stacks": [
+        {
+            "description": "First test",
+            "links": [
+                {
+                    "href": "http://site/5c136348-5550-4ec5-8bd6-b83241844db3",
+                    "rel": "self"
+                }
+            ],
+            "stack_status_reason": "",
+            "stack_name": "stack1",
+            "creation_time": "2015-03-03T14:08:54Z",
+            "updated_time": None,
+            "stack_status": "CREATE_SUCCESS",
+            "id": "5c136348-5550-4ec5-8bd6-b83241844db3"
+        },
+        {
+            "description": "Second test",
+            "links": [
+                {
+                    "href": "http://site/ec4083c1-3667-47d2-91c9-ce0bc8e3c2b9",
+                    "rel": "self"
+                }
+            ],
+            "stack_status_reason": "",
+            "stack_name": "stack2",
+            "creation_time": "2015-03-03T17:34:21Z",
+            "updated_time": None,
+            "stack_status": "DELETE_FAILED",
+            "id": "ec4083c1-3667-47d2-91c9-ce0bc8e3c2b9"
+        }
+    ]
+}
