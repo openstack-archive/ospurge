@@ -75,7 +75,12 @@ CONNECTION_ERROR_CODE = 5
 NOT_AUTHORIZED = 6
 
 
-# Available resources classes
+# Available resources classes.
+# The order of the Openstack resources in the subsequent list
+# corresponds to the order in which ospurge will delete the
+# resources. This order takes into account inter-resources
+# dependencies, and tries to minimize the overall time duration of the
+# purge operation.
 
 RESOURCES_CLASSES = ['CinderSnapshots',
                      'CinderBackups',
