@@ -1,6 +1,7 @@
 python-ceilometerclient
 python-cinderclient
 python-glanceclient
+python-heatclient
 python-keystoneclient
 python-neutronclient
 python-novaclient
