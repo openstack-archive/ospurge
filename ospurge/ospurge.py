@@ -39,13 +39,16 @@ from heatclient import client as heat_client
 import heatclient.openstack.common.apiclient.exceptions
 from keystoneclient.apiclient import exceptions as api_exceptions
 import keystoneclient.openstack.common.apiclient.exceptions
-from keystoneclient.v2_0 import client as keystone_client
+from keystoneclient.v3 import client as keystone_client
 import neutronclient.common.exceptions
 from neutronclient.v2_0 import client as neutron_client
 import novaclient.exceptions
 from novaclient.v1_1 import client as nova_client
 import requests
 from swiftclient import client as swift_client
+
+from keystoneclient import session as ksc_session
+from keystoneclient.auth.identity import v3
 
 RETRIES = 10  # Retry a delete operation 10 times before exiting
 TIMEOUT = 5   # 5 seconds timeout between retries
@@ -84,10 +87,11 @@ NOT_AUTHORIZED = 6
 # dependencies, and tries to minimize the overall time duration of the
 # purge operation.
 
-RESOURCES_CLASSES = ['CinderSnapshots',
-                     'CinderBackups',
+RESOURCES_CLASSES = [
+#                     'CinderSnapshots',
+#                     'CinderBackups',
                      'NovaServers',
-                     'NeutronFloatingIps',
+                    'NeutronFloatingIps',
                      'NeutronFireWall',
                      'NeutronFireWallPolicy',
                      'NeutronFireWallRule',
@@ -104,9 +108,10 @@ RESOURCES_CLASSES = ['CinderSnapshots',
                      'GlanceImages',
                      'SwiftObjects',
                      'SwiftContainers',
-                     'CinderVolumes',
-                     'CeilometerAlarms',
-                     'HeatStacks']
+#                     'CinderVolumes',
+#                     'CeilometerAlarms',
+#                     'HeatStacks'
+    ]
 
 
 # Decorators
@@ -143,9 +148,16 @@ class Session(object):
 
     def __init__(self, username, password, project_id, auth_url,
                  endpoint_type="publicURL", region_name=None, insecure=False):
-        client = keystone_client.Client(
-            username=username, password=password, tenant_id=project_id,
-            auth_url=auth_url, region_name=region_name, insecure=insecure)
+        auth = v3.Password(auth_url=auth_url,
+                           username=username,
+                           password=password,
+                           project_id=project_id,
+                           user_domain_name='default',
+                           project_domain_name='default')
+
+        self.keystone_session = ksc_session.Session(auth=auth)
+
+        client = keystone_client.Client(session=self.keystone_session)
         # Storing username, password, project_id and auth_url for
         # use by clients libraries that cannot use an existing token.
         self.username = username
@@ -159,7 +171,7 @@ class Session(object):
         self.user_id = client.user_id
         self.project_name = client.project_name
         self.endpoint_type = endpoint_type
-        self.catalog = client.service_catalog.get_endpoints()
+        self.catalog = auth.get_access(self.keystone_session).service_catalog.get_endpoints()
 
     def get_endpoint(self, service_type):
         try:
@@ -308,7 +320,7 @@ class NeutronResources(Resources):
 
     def __init__(self, session):
         super(NeutronResources, self).__init__(session)
-        self.client = neutron_client.Client(
+        self.client = neutron_client.Client(session=session.keystone_session,
             username=session.username, password=session.password,
             tenant_id=session.project_id, auth_url=session.auth_url,
             endpoint_type=session.endpoint_type,
@@ -547,11 +559,10 @@ class NovaServers(Resources):
 
     def __init__(self, session):
         super(NovaServers, self).__init__(session)
-        self.client = nova_client.Client(
-            session.username, session.password,
-            session.project_name, auth_url=session.auth_url,
+        self.client = nova_client.Client(session=session.keystone_session,
+            tenant_id=session.project_id, auth_url=session.auth_url,
             endpoint_type=session.endpoint_type,
-            region_name=session.region_name, insecure=session.insecure)
+            region_name=session.region_name, insecure=session.insecure, http_log_debug=True)
         self.project_id = session.project_id
 
     """Manage nova resources"""
@@ -570,7 +581,8 @@ class NovaServers(Resources):
 class GlanceImages(Resources):
 
     def __init__(self, session):
-        self.client = glance_client.Client(
+        logging.info("* GlanceImages.init {}.")
+        self.client = glance_client.Client(session=session.keystone_session,
             endpoint=session.get_endpoint("image"),
             token=session.token, insecure=session.insecure)
         self.project_id = session.project_id
@@ -645,7 +657,9 @@ class KeystoneManager(object):
     def __init__(self, username, password, project, auth_url, insecure, **kwargs):
         self.client = keystone_client.Client(
             username=username, password=password,
-            tenant_name=project, auth_url=auth_url,
+            domain_id="default",
+#            tenant_name=project,
+            auth_url=auth_url,
             insecure=insecure, **kwargs)
         self.admin_role_id = None
         self.tenant_info = None
@@ -662,30 +676,30 @@ class KeystoneManager(object):
             return self.client.tenant_id
 
         try:
-            self.tenant_info = self.client.tenants.get(project_name_or_id)
+            self.tenant_info = self.client.projects.get(project_name_or_id)
             # If it doesn't raise an 404, project_name_or_id is
             # already the project's id
             project_id = project_name_or_id
         except api_exceptions.NotFound:
             try:
                 # Can raise api_exceptions.Forbidden:
-                tenants = self.client.tenants.list()
+                projects = self.client.projects.list()
                 project_id = filter(
-                    lambda x: x.name == project_name_or_id, tenants)[0].id
+                    lambda x: x.name == project_name_or_id, projects)[0].id
             except IndexError:
                 raise NoSuchProject(project_name_or_id)
 
         if not self.tenant_info:
-            self.tenant_info = self.client.tenants.get(project_id)
+            self.tenant_info = self.client.projects.get(project_id)
         return project_id
 
     def enable_project(self, project_id):
         logging.info("* Enabling project {}.".format(project_id))
-        self.tenant_info = self.client.tenants.update(project_id, enabled=True)
+        self.tenant_info = self.client.projects.update(project_id, enabled=True)
 
     def disable_project(self, project_id):
         logging.info("* Disabling project {}.".format(project_id))
-        self.tenant_info = self.client.tenants.update(project_id, enabled=False)
+        self.tenant_info = self.client.projects.update(project_id, enabled=False)
 
     def get_admin_role_id(self):
         if not self.admin_role_id:
@@ -699,7 +713,7 @@ class KeystoneManager(object):
         logging.info("* Granting role admin to user {} on project {}.".format(
             user_id, project_id))
 
-        return self.client.roles.add_user_role(user_id, admin_role_id, project_id)
+        return self.client.roles.grant(user=user_id, role=admin_role_id, project=project_id)
 
     def undo_become_project_admin(self, project_id):
         user_id = self.client.user_id
@@ -707,11 +721,11 @@ class KeystoneManager(object):
         logging.info("* Removing role admin to user {} on project {}.".format(
             user_id, project_id))
 
-        return self.client.roles.remove_user_role(user_id, admin_role_id, project_id)
+        return self.client.roles.revoke(user=user_id, role=admin_role_id, project=project_id)
 
     def delete_project(self, project_id):
         logging.info("* Deleting project {}.".format(project_id))
-        self.client.tenants.delete(project_id)
+        self.client.projects.delete(project_id)
 
 
 def perform_on_project(admin_name, password, project, auth_url,
