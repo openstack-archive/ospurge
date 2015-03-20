@@ -1,3 +1,4 @@
+python-designateclient
 python-ceilometerclient
 python-cinderclient
 python-glanceclient
