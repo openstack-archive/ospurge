@@ -29,6 +29,7 @@ import os
 import sys
 import time
 
+from designateclient.v1 import Client as DesignateClient
 import ceilometerclient.exc
 from ceilometerclient.v2 import client as ceilometer_client
 import cinderclient.exceptions
@@ -90,8 +91,8 @@ NOT_AUTHORIZED = 6
 RESOURCES_CLASSES = [
 #                     'CinderSnapshots',
 #                     'CinderBackups',
-                     'NovaServers',
-                    'NeutronFloatingIps',
+                    'NovaServers',
+                     'NeutronFloatingIps',
                      'NeutronFireWall',
                      'NeutronFireWallPolicy',
                      'NeutronFireWallRule',
@@ -105,7 +106,9 @@ RESOURCES_CLASSES = [
                      'NeutronPorts',
                      'NeutronNetworks',
                      'NeutronSecgroups',
-                     'GlanceImages',
+                     'DesignateRecords',
+                     'DesignateDomains',
+                     # 'GlanceImages',
                      'SwiftObjects',
                      'SwiftContainers',
 #                     'CinderVolumes',
@@ -146,14 +149,14 @@ class Session(object):
     * self.catalog - Allowing to retrieve services' endpoints.
     """
 
-    def __init__(self, username, password, project_id, auth_url,
+    def __init__(self, username, password, project_id, project_domain_name, auth_url,
                  endpoint_type="publicURL", region_name=None, insecure=False):
         auth = v3.Password(auth_url=auth_url,
                            username=username,
                            password=password,
                            project_id=project_id,
                            user_domain_name='default',
-                           project_domain_name='default')
+                           project_domain_name=project_domain_name)
 
         self.keystone_session = ksc_session.Session(auth=auth)
 
@@ -314,6 +317,53 @@ class CinderBackups(CinderResources):
 
     def resource_str(self, backup):
         return "backup {} (id {}) of volume {}".format(backup.name, backup.id, backup.volume_id)
+
+
+class DesignateResources(Resources):
+
+    def __init__(self, session):
+        super(DesignateResources, self).__init__(session)
+        self.client = DesignateClient(session=session.keystone_session,
+                                            username=session.username, password=session.password,
+                                            tenant_id=session.project_id, auth_url=session.auth_url,
+                                            endpoint_type=session.endpoint_type,
+                                            region_name=session.region_name, insecure=session.insecure)
+        logging.info("* designate client {}.".format(self.client))
+
+        self.project_id = session.project_id
+
+    def _owned_resource(self, res):
+        # Only considering resources owned by project
+        return res['tenant_id'] == self.project_id
+
+class DesignateRecords(DesignateResources):
+
+    def list(self):
+        records = []
+        for dom in self.client.domains.list():
+            recs = self.client.records.list(dom)
+            records.extend(recs)
+        logging.debug("* designate records {}.".format(records))
+        return records
+
+    def delete(self, rec):
+        super(DesignateRecords, self).delete(rec)
+        self.client.records.delete(rec.domain_id, rec)
+
+    def resource_str(self, rec):
+        return "record {} (id {})".format(rec.name, rec.id)
+
+class DesignateDomains(DesignateResources):
+
+    def list(self):
+        return self.client.domains.list()
+
+    def delete(self, domain):
+        super(DesignateDomains, self).delete(domain)
+        self.client.domains.delete(domain)
+
+    def resource_str(self, domain):
+        return "domains {} (id {})".format(domain.name, domain.id)
 
 
 class NeutronResources(Resources):
@@ -728,14 +778,14 @@ class KeystoneManager(object):
         self.client.projects.delete(project_id)
 
 
-def perform_on_project(admin_name, password, project, auth_url,
+def perform_on_project(admin_name, password, project, project_domain_name, auth_url,
                        endpoint_type='publicURL', region_name=None,
                        action='dump', insecure=False):
     """Perform provided action on all resources of project.
 
     action can be: 'purge' or 'dump'
     """
-    session = Session(admin_name, password, project, auth_url,
+    session = Session(admin_name, password, project, project_domain_name, auth_url,
                       endpoint_type, region_name, insecure)
     error = None
     for rc in RESOURCES_CLASSES:
@@ -822,6 +872,10 @@ def parse_args():
                         help="ID or Name of project to purge. Not required "
                              "if --own-project has been set. Using --cleanup-project "
                              "requires to authenticate with admin credentials.")
+    parser.add_argument("--cleanup-project-domain-name", action=EnvDefault, required=False,
+                        envvar='OS_PROJECT_DOMAIN_NAME', default='default',
+                        help="Project domain name. Defaults to env[OS_PROJECT_DOMAIN_NAME] "
+                             "or 'default'")
     parser.add_argument("--own-project", action="store_true",
                         help="Delete resources of the project used to "
                              "authenticate. Useful if you don't have the "
@@ -891,7 +945,7 @@ def main():
     # Proper cleanup
     try:
         action = "dump" if args.dry_run else "purge"
-        perform_on_project(args.username, args.password, cleanup_project_id,
+        perform_on_project(args.username, args.password, cleanup_project_id, args.cleanup_project_domain_name,
                            args.auth_url, args.endpoint_type, args.region_name,
                            action, args.insecure)
     except requests.exceptions.ConnectionError as exc:
