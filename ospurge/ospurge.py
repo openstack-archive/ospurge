@@ -28,6 +28,7 @@ import logging
 import os
 import sys
 import time
+import urlparse
 
 import ceilometerclient.exc
 from ceilometerclient.v2 import client as ceilometer_client
@@ -56,6 +57,10 @@ class ResourceNotEnabled(Exception):
 
 
 class EndpointNotFound(Exception):
+    pass
+
+
+class MalformedEndpointURL(Exception):
     pass
 
 
@@ -163,7 +168,15 @@ class Session(object):
 
     def get_endpoint(self, service_type):
         try:
-            return self.catalog[service_type][0][self.endpoint_type]
+            endpoint_url = self.catalog[service_type][0][self.endpoint_type]
+            endpoint_parts = urlparse.urlparse(endpoint_url)
+            if (
+                endpoint_parts.scheme not in ('http', 'https') or
+                not endpoint_parts.netloc
+            ):
+                raise MalformedEndpointURL(
+                    '"%s" is not a valid endpoint url' % endpoint_url)
+            return endpoint_url
         except (KeyError, IndexError):
             # Endpoint could not be found
             raise EndpointNotFound(service_type)
@@ -739,6 +752,8 @@ def perform_on_project(admin_name, password, project, auth_url,
                 ResourceNotEnabled):
             # If service is not in Keystone's services catalog, ignoring it
             pass
+        except MalformedEndpointURL as e:
+            logging.warning("%s: %s" % (rc, e))
         except (ceilometerclient.exc.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
             logging.warning(
                 "Unable to connect to {} endpoint : {}".format(rc, e.message))
