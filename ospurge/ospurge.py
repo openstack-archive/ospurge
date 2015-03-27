@@ -28,6 +28,7 @@ import logging
 import os
 import sys
 import time
+import urlparse
 
 import ceilometerclient.exc
 from ceilometerclient.v2 import client as ceilometer_client
@@ -119,14 +120,25 @@ def retry(service_name):
             while True:
                 try:
                     return func(*args, **kwargs)
-                except Exception:
-                    if n == RETRIES:
-                        raise DeletionFailed(service_name)
-                    n += 1
-                    logging.info("* Deletion failed - "
-                                 "Retrying in {} seconds - "
-                                 "Retry count {}".format(TIMEOUT, n))
-                    time.sleep(TIMEOUT)
+                except Exception as e:
+                    if getattr(e, 'http_status', False) == 404:
+                        # Sometimes a resource can be deleted manually by
+                        # someone else while ospurge is running and listed it.
+                        # If this happens, We raise a Warning.
+                        logging.warning(
+                            "Can not delete the resource because it does not"
+                            " exist : %s" % e
+                        )
+                        # No need to retry deleting an non existing resource
+                        break
+                    else:
+                        if n == RETRIES:
+                            raise DeletionFailed(service_name)
+                        n += 1
+                        logging.info("* Deletion failed - "
+                                     "Retrying in {} seconds - "
+                                     "Retry count {}".format(TIMEOUT, n))
+                        time.sleep(TIMEOUT)
         return wrapper
     return factory
 
@@ -163,7 +175,15 @@ class Session(object):
 
     def get_endpoint(self, service_type):
         try:
-            return self.catalog[service_type][0][self.endpoint_type]
+            endpoint_url = self.catalog[service_type][0][self.endpoint_type]
+            endpoint_parts = urlparse.urlparse(endpoint_url)
+            if (
+                endpoint_parts.scheme not in ('http', 'https') or
+                not endpoint_parts.netloc
+            ):
+                raise MalformedEndpointURL(
+                    '"%s" is not a valid endpoint url' % endpoint_url)
+            return endpoint_url
         except (KeyError, IndexError):
             # Endpoint could not be found
             raise EndpointNotFound(service_type)
