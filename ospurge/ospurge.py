@@ -736,7 +736,8 @@ def perform_on_project(admin_name, password, project, auth_url,
                 cinderclient.exceptions.EndpointNotFound,
                 novaclient.exceptions.EndpointNotFound,
                 heatclient.openstack.common.apiclient.exceptions.EndpointNotFound,
-                ResourceNotEnabled):
+                ResourceNotEnabled,
+                requests.exceptions.MissingSchema):
             # If service is not in Keystone's services catalog, ignoring it
             pass
         except (ceilometerclient.exc.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
