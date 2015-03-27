@@ -739,6 +739,9 @@ def perform_on_project(admin_name, password, project, auth_url,
                 ResourceNotEnabled):
             # If service is not in Keystone's services catalog, ignoring it
             pass
+        except requests.exceptions.MissingSchema as e:
+            logging.warning(
+                '"%s" is improperly configured and returned: %s\n' % (rc, e))
         except (ceilometerclient.exc.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
             logging.warning(
                 "Unable to connect to {} endpoint : {}".format(rc, e.message))
