@@ -119,14 +119,25 @@ def retry(service_name):
             while True:
                 try:
                     return func(*args, **kwargs)
-                except Exception:
-                    if n == RETRIES:
-                        raise DeletionFailed(service_name)
-                    n += 1
-                    logging.info("* Deletion failed - "
-                                 "Retrying in {} seconds - "
-                                 "Retry count {}".format(TIMEOUT, n))
-                    time.sleep(TIMEOUT)
+                except Exception as e:
+                    if getattr(e, 'http_status', False) == 404:
+                        # Sometimes a resource can be deleted manually by
+                        # someone else while ospurge is running and listed it.
+                        # If this happens, We raise a Warning.
+                        logging.warning(
+                            "Can not delete the resource because it does not"
+                            " exist : %s" % e
+                        )
+                        # No need to retry deleting an non existing resource
+                        break
+                    else:
+                        if n == RETRIES:
+                            raise DeletionFailed(service_name)
+                        n += 1
+                        logging.info("* Deletion failed - "
+                                     "Retrying in {} seconds - "
+                                     "Retry count {}".format(TIMEOUT, n))
+                        time.sleep(TIMEOUT)
         return wrapper
     return factory
 
