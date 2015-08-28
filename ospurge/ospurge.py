@@ -328,10 +328,16 @@ class NeutronResources(Resources):
 
     # This method is used for routers and interfaces removal
     def list_routers(self):
-        return filter(self._owned_resource, self.client.list_routers()['routers'])
+        return filter(
+            self._owned_resource,
+            self.client.list_routers(tenant_id=self.project_id)['routers'])
 
     def _owned_resource(self, res):
         # Only considering resources owned by project
+        # We try to filter directly in the client.list() commands, but some 3rd
+        # party Neutron plugins may ignore the "tenant_id=self.project_id"
+        # keyword filtering parameter. An extra check does not cost much and
+        # keeps us on the safe side.
         return res['tenant_id'] == self.project_id
 
 
@@ -347,7 +353,8 @@ class NeutronRouters(NeutronResources):
         self.client.remove_gateway_router(router['id'])
         self.client.delete_router(router['id'])
 
-    def resource_str(self, router):
+    @staticmethod
+    def resource_str(router):
         return "router {} (id {})".format(router['name'], router['id'])
 
 
@@ -356,8 +363,11 @@ class NeutronInterfaces(NeutronResources):
     def list(self):
         # Only considering "router_interface" ports
         # (not gateways, neither unbound ports)
-        all_ports = [port for port in self.client.list_ports()['ports']
-                     if port["device_owner"] == "network:router_interface"]
+        all_ports = [
+            port for port in self.client.list_ports(
+                tenant_id=self.project_id)['ports']
+            if port["device_owner"] == "network:router_interface"
+        ]
         return filter(self._owned_resource, all_ports)
 
     def delete(self, interface):
@@ -365,7 +375,8 @@ class NeutronInterfaces(NeutronResources):
         self.client.remove_interface_router(interface['device_id'],
                                             {'port_id': interface['id']})
 
-    def resource_str(self, interface):
+    @staticmethod
+    def resource_str(interface):
         return "interface {} (id {})".format(interface['name'],
                                              interface['id'])
 
@@ -376,16 +387,20 @@ class NeutronPorts(NeutronResources):
     # is of the form" compute:*" if it has been bound to some vm in
     # the past.
     def list(self):
-        all_ports = [port for port in self.client.list_ports()['ports']
-                     if port["device_owner"] == ""
-                     or port["device_owner"].startswith("compute:")]
+        all_ports = [
+            port for port in self.client.list_ports(
+                tenant_id=self.project_id)['ports']
+            if port["device_owner"] == ""
+            or port["device_owner"].startswith("compute:")
+        ]
         return filter(self._owned_resource, all_ports)
 
     def delete(self, port):
         super(NeutronPorts, self).delete(port)
         self.client.delete_port(port['id'])
 
-    def resource_str(self, port):
+    @staticmethod
+    def resource_str(port):
         return "port {} (id {})".format(port['name'], port['id'])
 
 
@@ -393,7 +408,8 @@ class NeutronNetworks(NeutronResources):
 
     def list(self):
         return filter(self._owned_resource,
-                      self.client.list_networks()['networks'])
+                      self.client.list_networks(
+                          tenant_id=self.project_id)['networks'])
 
     def delete(self, net):
         """Delete a Neutron network
@@ -404,7 +420,8 @@ class NeutronNetworks(NeutronResources):
         super(NeutronNetworks, self).delete(net)
         self.client.delete_network(net['id'])
 
-    def resource_str(self, net):
+    @staticmethod
+    def resource_str(net):
         return "network {} (id {})".format(net['name'], net['id'])
 
 
@@ -418,7 +435,8 @@ class NeutronSecgroups(NeutronResources):
             return self._owned_resource(secgroup)
 
         try:
-            sgs = self.client.list_security_groups()['security_groups']
+            sgs = self.client.list_security_groups(
+                tenant_id=self.project_id)['security_groups']
             return filter(secgroup_filter, sgs)
         except neutronclient.common.exceptions.NeutronClientException as err:
             if getattr(err, "status_code", None) == 404:
@@ -430,7 +448,8 @@ class NeutronSecgroups(NeutronResources):
         super(NeutronSecgroups, self).delete(secgroup)
         self.client.delete_security_group(secgroup['id'])
 
-    def resource_str(self, secgroup):
+    @staticmethod
+    def resource_str(secgroup):
         return "security group {} (id {})".format(
             secgroup['name'], secgroup['id'])
 
@@ -439,13 +458,15 @@ class NeutronFloatingIps(NeutronResources):
 
     def list(self):
         return filter(self._owned_resource,
-                      self.client.list_floatingips()['floatingips'])
+                      self.client.list_floatingips(
+                          tenant_id=self.project_id)['floatingips'])
 
     def delete(self, floating_ip):
         super(NeutronFloatingIps, self).delete(floating_ip)
         self.client.delete_floatingip(floating_ip['id'])
 
-    def resource_str(self, floating_ip):
+    @staticmethod
+    def resource_str(floating_ip):
         return "floating ip {} (id {})".format(
             floating_ip['floating_ip_address'], floating_ip['id'])
 
@@ -453,104 +474,124 @@ class NeutronFloatingIps(NeutronResources):
 class NeutronLbMembers(NeutronResources):
 
     def list(self):
-        return filter(self._owned_resource, self.client.list_members()['members'])
+        return filter(self._owned_resource, self.client.list_members(
+            tenant_id=self.project_id)['members'])
 
     def delete(self, member):
         super(NeutronLbMembers, self).delete(member)
         self.client.delete_member(member['id'])
 
-    def resource_str(self, member):
+    @staticmethod
+    def resource_str(member):
         return "lb-member {} (id {})".format(member['address'], member['id'])
 
 
 class NeutronLbPool(NeutronResources):
 
     def list(self):
-        return filter(self._owned_resource, self.client.list_pools()['pools'])
+        return filter(self._owned_resource, self.client.list_pools(
+            tenant_id=self.project_id)['pools'])
 
     def delete(self, pool):
         super(NeutronLbPool, self).delete(pool)
         self.client.delete_pool(pool['id'])
 
-    def resource_str(self, pool):
+    @staticmethod
+    def resource_str(pool):
         return "lb-pool {} (id {})".format(pool['name'], pool['id'])
 
 
 class NeutronLbVip(NeutronResources):
 
     def list(self):
-        return filter(self._owned_resource, self.client.list_vips()['vips'])
+        return filter(self._owned_resource, self.client.list_vips(
+            tenant_id=self.project_id)['vips'])
 
     def delete(self, vip):
         super(NeutronLbVip, self).delete(vip)
         self.client.delete_vip(vip['id'])
 
-    def resource_str(self, vip):
+    @staticmethod
+    def resource_str(vip):
         return "lb-vip {} (id {})".format(vip['name'], vip['id'])
 
 
 class NeutronLbHealthMonitor(NeutronResources):
 
     def list(self):
-        return filter(self._owned_resource, self.client.list_health_monitors()['health_monitors'])
+        return filter(self._owned_resource, self.client.list_health_monitors(
+            tenant_id=self.project_id)['health_monitors'])
 
     def delete(self, health_monitor):
         super(NeutronLbHealthMonitor, self).delete(health_monitor)
         self.client.delete_health_monitor(health_monitor['id'])
 
-    def resource_str(self, health_monitor):
-        return "lb-health_monotor type {} (id {})".format(health_monitor['type'], health_monitor['id'])
+    @staticmethod
+    def resource_str(health_monitor):
+        return "lb-health_monotor type {} (id {})".format(
+            health_monitor['type'], health_monitor['id'])
 
 
 class NeutronMeteringLabel(NeutronResources):
 
     def list(self):
-        return filter(self._owned_resource, self.client.list_metering_labels()['metering_labels'])
+        return filter(self._owned_resource, self.client.list_metering_labels(
+            tenant_id=self.project_id)['metering_labels'])
 
     def delete(self, metering_label):
         super(NeutronMeteringLabel, self).delete(metering_label)
         self.client.delete_metering_label(metering_label['id'])
 
-    def resource_str(self, metering_label):
-        return "meter-label {} (id {})".format(metering_label['name'], metering_label['id'])
+    @staticmethod
+    def resource_str(metering_label):
+        return "meter-label {} (id {})".format(
+            metering_label['name'], metering_label['id'])
 
 
 class NeutronFireWallPolicy(NeutronResources):
 
     def list(self):
-        return filter(self._owned_resource, self.client.list_firewall_policies()['firewall_policies'])
+        return filter(self._owned_resource, self.client.list_firewall_policies(
+            tenant_id=self.project_id)['firewall_policies'])
 
     def delete(self, firewall_policy):
         super(NeutronFireWallPolicy, self).delete(firewall_policy)
         self.client.delete_firewall_policy(firewall_policy['id'])
 
-    def resource_str(self, firewall_policy):
-        return "Firewall policy {} (id {})".format(firewall_policy['name'], firewall_policy['id'])
+    @staticmethod
+    def resource_str(firewall_policy):
+        return "Firewall policy {} (id {})".format(
+            firewall_policy['name'], firewall_policy['id'])
 
 
 class NeutronFireWallRule(NeutronResources):
 
     def list(self):
-        return filter(self._owned_resource, self.client.list_firewall_rules()['firewall_rules'])
+        return filter(self._owned_resource, self.client.list_firewall_rules(
+            tenant_id=self.project_id)['firewall_rules'])
 
     def delete(self, firewall_rule):
         super(NeutronFireWallRule, self).delete(firewall_rule)
         self.client.delete_firewall_rule(firewall_rule['id'])
 
-    def resource_str(self, firewall_rule):
-        return "Firewall rule {} (id {})".format(firewall_rule['name'], firewall_rule['id'])
+    @staticmethod
+    def resource_str(firewall_rule):
+        return "Firewall rule {} (id {})".format(
+            firewall_rule['name'], firewall_rule['id'])
 
 
 class NeutronFireWall(NeutronResources):
 
     def list(self):
-        return filter(self._owned_resource, self.client.list_firewalls()['firewalls'])
+        return filter(self._owned_resource, self.client.list_firewalls(
+            tenant_id=self.project_id)['firewalls'])
 
     def delete(self, firewall):
         super(NeutronFireWall, self).delete(firewall)
         self.client.delete_firewall(firewall['id'])
 
-    def resource_str(self, firewall):
+    @staticmethod
+    def resource_str(firewall):
         return "Firewall {} (id {})".format(firewall['name'], firewall['id'])
 
 
@@ -587,7 +628,8 @@ class GlanceImages(Resources):
         self.project_id = session.project_id
 
     def list(self):
-        return filter(self._owned_resource, self.client.images.list())
+        return filter(self._owned_resource, self.client.images.list(
+            owner=self.project_id))
 
     def delete(self, image):
         super(GlanceImages, self).delete(image)
@@ -631,7 +673,13 @@ class CeilometerAlarms(Resources):
         def get_token():
             return session.token
         self.client = ceilometer_client.Client(
+            auth_url=session.auth_url,
             endpoint=session.get_endpoint("metering"),
+            endpoint_type=session.endpoint_type,
+            project_id=session.project_id,
+            project_name=session.project_name,
+            username=session.username,
+            password=session.password,
             token=get_token, insecure=session.insecure)
         self.project_id = session.project_id
 
