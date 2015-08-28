@@ -253,8 +253,14 @@ class TestNeutronBase(TestResourcesBase):
 
     # Used both in TestNeutronRouters and TestNeutronInterfaces
     def stub_list_routers(self):
-        self.stub_url('GET', parts=['v2.0', 'routers.json'],
-                      json=client_fixtures.ROUTERS_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'routers.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.ROUTERS_LIST
+        )
 
 
 class TestNeutronRouters(TestNeutronBase):
@@ -312,8 +318,13 @@ class TestNeutronPorts(TestNeutronBase):
     IDS = [client_fixtures.UNBOUND_PORT_ID]
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', "ports.json"],
-                      json=client_fixtures.NEUTRON_PORTS)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'ports.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.NEUTRON_PORTS)
 
     def stub_delete(self):
         port_id = client_fixtures.UNBOUND_PORT_ID
@@ -335,8 +346,14 @@ class TestNeutronNetworks(TestNeutronBase):
     IDS = client_fixtures.NETWORKS_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'networks.json'],
-                      json=client_fixtures.NETWORKS_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'networks.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.NETWORKS_LIST
+        )
 
     def stub_delete(self):
         for net_id in client_fixtures.NETWORKS_IDS:
@@ -358,8 +375,13 @@ class TestNeutronSecgroups(TestNeutronBase):
     IDS = client_fixtures.SECGROUPS_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'security-groups.json'],
-                      json=client_fixtures.SECGROUPS_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'security-groups.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.SECGROUPS_LIST)
 
     def stub_delete(self):
         for secgroup_id in client_fixtures.SECGROUPS_IDS:
@@ -381,8 +403,13 @@ class TestNeutronFloatingIps(TestNeutronBase):
     IDS = client_fixtures.FLOATING_IPS_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'floatingips.json'],
-                      json=client_fixtures.FLOATING_IPS_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'floatingips.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.FLOATING_IPS_LIST)
 
     def stub_delete(self):
         ip_id = client_fixtures.FLOATING_IPS_IDS[0]
@@ -403,7 +430,13 @@ class TestNeutronFireWallRule(TestNeutronBase):
     IDS = client_fixtures.FIREWALL_RULE_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'fw/firewall_rules.json'], json=client_fixtures.FIREWALL_RULE_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'fw/firewall_rules.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.FIREWALL_RULE_LIST)
 
     def stub_delete(self):
         firewall_rule_id = client_fixtures.FIREWALL_RULE_IDS[0]
@@ -424,7 +457,13 @@ class TestNeutronFireWallPolicy(TestNeutronBase):
     IDS = client_fixtures.FIREWALL_POLICY_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'fw/firewall_policies.json'], json=client_fixtures.FIREWALL_POLICY_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'fw/firewall_policies.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.FIREWALL_POLICY_LIST)
 
     def stub_delete(self):
         firewall_policy_id = client_fixtures.FIREWALL_POLICY_IDS[0]
@@ -445,7 +484,13 @@ class TestNeutronFireWall(TestNeutronBase):
     IDS = client_fixtures.FIREWALL_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'fw/firewalls.json'], json=client_fixtures.FIREWALL_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'fw/firewalls.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.FIREWALL_LIST)
 
     def stub_delete(self):
         firewall_id = client_fixtures.FIREWALL_IDS[0]
@@ -466,7 +511,13 @@ class TestNeutronMeteringLabel(TestNeutronBase):
     IDS = client_fixtures.METERING_LABEL_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'metering/metering-labels.json'], json=client_fixtures.METERING_LABEL_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'metering/metering-labels.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.METERING_LABEL_LIST)
 
     def stub_delete(self):
         firewall_id = client_fixtures.METERING_LABEL_IDS[0]
@@ -487,7 +538,13 @@ class TestNeutronLbMembers(TestNeutronBase):
     IDS = client_fixtures.LBAAS_MEMBER_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'lb/members.json'], json=client_fixtures.LBAAS_MEMBER_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'lb/members.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.LBAAS_MEMBER_LIST)
 
     def stub_delete(self):
         lb_member_id = client_fixtures.LBAAS_MEMBER_IDS[0]
@@ -508,7 +565,13 @@ class TestNeutronLbVip(TestNeutronBase):
     IDS = client_fixtures.LBAAS_VIP_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'lb/vips.json'], json=client_fixtures.LBAAS_VIP_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'lb/vips.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.LBAAS_VIP_LIST)
 
     def stub_delete(self):
         lb_vip_id = client_fixtures.LBAAS_VIP_IDS[0]
@@ -529,7 +592,13 @@ class TestNeutronLbHealthMonitor(TestNeutronBase):
     IDS = client_fixtures.LBAAS_HEALTHMONITOR_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'lb/health_monitors.json'], json=client_fixtures.LBAAS_HEALTHMONITOR_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'lb/health_monitors.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.LBAAS_HEALTHMONITOR_LIST)
 
     def stub_delete(self):
         lb_healthmonitor_id = client_fixtures.LBAAS_HEALTHMONITOR_IDS[0]
@@ -550,7 +619,13 @@ class TestNeutronLbPool(TestNeutronBase):
     IDS = client_fixtures.LBAAS_POOL_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v2.0', 'lb/pools.json'], json=client_fixtures.LBAAS_POOL_LIST)
+        self.stub_url(
+            'GET',
+            parts=[
+                'v2.0',
+                'lb/pools.json?tenant_id=%s' % client_fixtures.PROJECT_ID
+            ],
+            json=client_fixtures.LBAAS_POOL_LIST)
 
     def stub_delete(self):
         lb_pool_id = client_fixtures.LBAAS_POOL_IDS[0]
