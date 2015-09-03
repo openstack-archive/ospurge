@@ -29,14 +29,19 @@ import json as jsonutils
 import httpretty
 import testtools
 
-
 from ospurge import ospurge
 from ospurge.tests import client_fixtures
+
+# Disable InsecurePlatformWarning which is irrelevant in unittests with
+# mocked https requests and only clutters the results.
+import requests
+requests.packages.urllib3.disable_warnings()
+
 
 USERNAME = "username"
 PASSWORD = "password"
 PROJECT_NAME = "project"
-AUTH_URL = "http://localhost:5000/v2.0"
+AUTH_URL = client_fixtures.AUTH_URL
 
 
 class HttpTest(testtools.TestCase):
@@ -101,6 +106,13 @@ class TestResourcesBase(HttpTest):
         self.stub_auth()
         self.session = ospurge.Session(USERNAME, PASSWORD,
                                        client_fixtures.PROJECT_ID, AUTH_URL)
+        # We can't add other stubs in subclasses setUp because
+        # httpretty.dactivate() is called after this set_up (so during the
+        # super call to this method in subclasses). and extra stubs will not
+        # work. if you need extra stubs to be done during setUp, write them
+        # in an 'extra_set_up' method. instead of in the subclasses setUp
+        if hasattr(self, 'extra_set_up'):
+            self.extra_set_up()
 
     @httpretty.activate
     def _test_list(self):
@@ -604,6 +616,11 @@ class TestGlanceImages(TestResourcesBase):
 class TestCeilometerAlarms(TestResourcesBase):
     TEST_URL = client_fixtures.METERING_PUBLIC_ENDPOINT
 
+    def extra_set_up(self):
+        self.stub_url(
+            'GET', base_url=AUTH_URL, json=client_fixtures.AUTH_URL_RESPONSE)
+        self.resources = ospurge.CeilometerAlarms(self.session)
+
     def stub_list(self):
         self.stub_url('GET', parts=['v2', 'alarms'],
                       json=client_fixtures.ALARMS_LIST)
@@ -614,7 +631,6 @@ class TestCeilometerAlarms(TestResourcesBase):
 
     def setUp(self):
         super(TestCeilometerAlarms, self).setUp()
-        self.resources = ospurge.CeilometerAlarms(self.session)
 
     @httpretty.activate
     def test_list(self):

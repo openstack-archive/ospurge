@@ -19,6 +19,7 @@ TOKEN_ID = '04c7d5ffaeef485f9dc69c06db285bdb'
 USER_ID = 'c4da488862bd435c9e6c0275a0d0e49a'
 PROJECT_ID = '225da22d3ce34b15877ea70b2a575f58'
 
+AUTH_URL = "http://localhost:5000/v2.0"
 VOLUME_PUBLIC_ENDPOINT = 'http://public:8776/v1/225da22d3ce34b15877ea70b2a575f58'
 IMAGE_PUBLIC_ENDPOINT = 'http://public:9292'
 STORAGE_PUBLIC_ENDPOINT = 'http://public:8080/v1/AUTH_ee5b90900a4b4e85938b0ceadf4467f8'
@@ -34,6 +35,28 @@ COMPUTE_INTERNAL_ENDPOINT = 'http://nova.usr.lab0.aub.cw-labs.net:8774/v2/43c9e2
 METERING_INTERNAL_ENDPOINT = 'http://ceilometer.usr.lab0.aub.cw-labs.net:8777'
 ORCHESTRATION_INTERNAL_ENDPOINT = 'http://heat.usr.lab0.aub.cw-labs.net:8004/v1'
 
+AUTH_URL_RESPONSE = {
+    u'version': {
+        u'id': u'v2.0',
+        u'links': [
+            {u'href': u'%s' % AUTH_URL, u'rel': u'self'},
+            {u'href': u'http://docs.openstack.org/api/openstack-identity-service/2.0/content/',
+             u'rel': u'describedby',
+             u'type': u'text/html'},
+            {u'href': u'http://docs.openstack.org/api/openstack-identity-service/2.0/identity-dev-guide-2.0.pdf',
+             u'rel': u'describedby',
+             u'type': u'application/pdf'}
+        ],
+        u'media-types': [
+            {u'base': u'application/json',
+             u'type': u'application/vnd.openstack.identity-v2.0+json'},
+            {u'base': u'application/xml',
+             u'type': u'application/vnd.openstack.identity-v2.0+xml'}
+        ],
+        u'status': u'stable',
+        u'updated': u'2014-04-17T00:00:00Z'
+    }
+}
 
 STORAGE_CONTAINERS = ['janeausten', 'marktwain']
 STORAGE_OBJECTS = [{'container': 'janeausten', 'name': 'foo'},
