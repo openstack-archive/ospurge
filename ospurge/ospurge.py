@@ -631,7 +631,13 @@ class CeilometerAlarms(Resources):
         def get_token():
             return session.token
         self.client = ceilometer_client.Client(
+            auth_url=session.auth_url,
             endpoint=session.get_endpoint("metering"),
+            endpoint_type=session.endpoint_type,
+            project_id=session.project_id,
+            project_name=session.project_name,
+            username=session.username,
+            password=session.password,
             token=get_token, insecure=session.insecure)
         self.project_id = session.project_id
 
