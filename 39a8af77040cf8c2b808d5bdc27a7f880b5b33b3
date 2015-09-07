@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Yves-Gwenael Bourhis <yves-gwenael.bourhis@cloudwatt.com>
+Workflow+1: Yves-Gwenael Bourhis <yves-gwenael.bourhis@cloudwatt.com>
+Code-Review+2: Florent Flament <contact@florentflament.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 07 Sep 2015 08:29:51 +0000
+Reviewed-on: https://review.openstack.org/220040
+Project: stackforge/ospurge
+Branch: refs/heads/master
