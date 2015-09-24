@@ -1,36 +1,36 @@
 ospurge: OpenStack project resources cleaner
-============================================
+********************************************
 
-`ospurge` is a standalone, client-side, Python script that aims at
+``ospurge`` is a standalone, client-side, Python script that aims at
 deleting all resources (taking into account their interdependencies)
 in a specified OpenStack project. OSPurge ensures in a quick and
 automated way that no resource is left behind when a project is
 deleted.
 
-`ospurge` can be used by a cloud administrator (with the admin role)
+``ospurge`` can be used by a cloud administrator (with the admin role)
 to cleanup any project or by a non-privileged user to cleanup his own
 project.
 
 Installation
-------------
+============
 
-Create a Python virtual environment (requires package virtualenvwrapper):
+Create a Python virtual environment (requires package virtualenvwrapper)::
 
     $ mkvirtualenv ospurge
 
-Install `ospurge`:
+Install ``ospurge``::
 
     $ pip install ospurge
 
-The script is installed and can be launched:
+The script is installed and can be launched::
 
     $ ospurge -h
 
 
 Usage
------
+=====
 
-Available options can be displayed by using `ospurge -h`:
+Available options can be displayed by using ``ospurge -h``::
 
     $ ospurge -h
     usage: ospurge [-h] [--verbose] [--dry-run] [--dont-delete-project]
@@ -80,9 +80,9 @@ Available options can be displayed by using `ospurge -h`:
 
 
 Error codes
------------
+===========
 
-The following error codes are returned when `ospurge` encounters
+The following error codes are returned when ``ospurge`` encounters
 an error:
 
 * Code 2: Project doesn't exist
@@ -95,23 +95,23 @@ an error:
 
 
 Example
--------
+=======
 
 To remove a project, credentials have to be
 provided. The usual OpenStack environment variables can be used. When
-launching the `ospurge` script, the project to be cleaned up has
-to be provided, by using either the `--cleanup-project` option or the
-`--own-project` option. When the command returns, any resources associated
+launching the ``ospurge`` script, the project to be cleaned up has
+to be provided, by using either the ``--cleanup-project`` option or the
+``--own-project`` option. When the command returns, any resources associated
 to the project will have been definitively deleted.
 
-Setting OpenStack credentials:
+Setting OpenStack credentials::
 
     $ export OS_USERNAME=admin
     $ export OS_PASSWORD=password
     $ export OS_TENANT_NAME=admin
     $ export OS_AUTH_URL=http://localhost:5000/v2.0
 
-Checking resources of the target project:
+Checking resources of the target project::
 
     $ ./ospurge --dry-run --cleanup-project florent-demo
     * Resources type: CinderSnapshots
@@ -141,7 +141,7 @@ Checking resources of the target project:
 
     * Resources type: CeilometerAlarms
 
-Removing resources without deleting the project:
+Removing resources without deleting the project::
 
     $ ./ospurge --verbose --dont-delete-project --cleanup-project florent-demo
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
@@ -173,7 +173,7 @@ Removing resources without deleting the project:
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): cinder.usr.lab0.aub.cw-labs.net
     INFO:root:* Purging CeilometerAlarms
 
-Checking that resources have been correctly removed:
+Checking that resources have been correctly removed::
 
     $ ./ospurge --dry-run --cleanup-project florent-demo
     * Resources type: CinderSnapshots
@@ -200,7 +200,7 @@ Checking that resources have been correctly removed:
 
     * Resources type: CeilometerAlarms
 
-Removing project:
+Removing project::
 
     $ ./ospurge --cleanup-project florent-demo
     $ ./ospurge --cleanup-project florent-demo
@@ -208,7 +208,7 @@ Removing project:
 
 
 Deleted resources
------------------
+=================
 
 The following resources will be removed:
 
@@ -225,42 +225,16 @@ The following resources will be removed:
 
 
 Notes
------
+=====
 
-Users can be deleted by using the `python-keystoneclient` CLI:
+Users can be deleted by using the ``python-keystoneclient`` CLI::
 
     $ keystone user-delete <username_or_userid>
 
 
 How to contribute
------------------
+=================
 
 Ospurge is hosted on Stackforge and is using Gerrit to manage
 contributions. You can contribute to the project by following the
 following workflow: http://docs.openstack.org/infra/manual/developers.html#development-workflow
-
-
-License / Copyright
--------------------
-
-This software is released under the MIT License.
-
-Copyright (c) 2014 Cloudwatt
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
