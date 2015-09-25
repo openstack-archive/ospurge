@@ -67,6 +67,7 @@ VOLUMES_IDS = ["45baf976-c20a-4894-a7c3-c94b7376bf55",
                "5aa119a8-d25b-45a7-8d1b-88e127885635"]
 SNAPSHOTS_IDS = ["3fbbcccf-d058-4502-8844-6feeffdf4cb5",
                  "e479997c-650b-40a4-9dfe-77655818b0d2"]
+VOLUME_BACKUP_IDS = ["803a2ad2-893b-4b42-90d9-eb5f09a8421a"]
 ROUTERS_IDS = ["7177abc4-5ae9-4bb7-b0d4-89e94a4abf3b",
                "a9254bdb-2613-4a13-ac4c-adc581fba50d"]
 PORTS_IDS = ["d7815f5b-a228-47bb-a5e5-f139c4e476f6"]
@@ -302,6 +303,24 @@ SNAPSHOTS_LIST = {
             "size": 25,
             "created_at": "2012-03-19T01:52:47Z"
         }
+    ]
+}
+
+VOLUME_BACKUPS_LIST = {
+    u'backups': [
+        {u'availability_zone': u'nova',
+         u'container': u'volumebackups',
+         u'created_at': u'2015-09-22T14:59:03.000000',
+         u'description': u'A Volume Backup',
+         u'fail_reason': None,
+         u'id': u'803a2ad2-893b-4b42-90d9-eb5f09a8421a',
+         u'links': [{u'href': '%s/backups/803a2ad2-893b-4b42-90d9-eb5f09a8421a' % VOLUME_PUBLIC_ENDPOINT,
+                     u'rel': u'self'}],
+         u'name': u'volumebackup-01',
+         u'object_count': 22,
+         u'size': 10,
+         u'status': u'available',
+         u'volume_id': u'45baf976-c20a-4894-a7c3-c94b7376bf55'}
     ]
 }
 
