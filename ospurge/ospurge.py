@@ -31,7 +31,7 @@ import time
 
 import ceilometerclient.exc
 from ceilometerclient.v2 import client as ceilometer_client
-import cinderclient.exceptions
+import cinderclient
 from cinderclient.v1 import client as cinder_client
 import glanceclient.exc
 from glanceclient.v1 import client as glance_client
@@ -109,6 +109,24 @@ RESOURCES_CLASSES = ['CinderSnapshots',
                      'HeatStacks']
 
 
+def compare_version_strings(str1, str2, separator='.'):
+    """Compare 2 strings such as 1.1.1 and 1.4.0"""
+    nums1 = str1.strip().strip('.').split(separator)
+    nums2 = str2.strip().strip('.').split(separator)
+    if len(nums1) < len(nums2):
+        while len(nums1) < len(nums2):
+            nums1.append('0')
+    elif len(nums2) < len(nums1):
+        while len(nums2) < len(nums1):
+            nums2.append('0')
+    for num1, num2 in zip(nums1, nums2):
+        if num1 > num2:
+            return 1
+        elif num1 < num2:
+            return -1
+    return 0
+
+
 # Decorators
 
 def retry(service_name):
@@ -171,6 +189,18 @@ class Session(object):
         self.project_name = client.project_name
         self.endpoint_type = endpoint_type
         self.catalog = client.service_catalog.get_endpoints()
+        try:
+            "Detect if we are admin or not"
+            client.roles.list()  # Only admins are allowed to do this
+        except (
+            # The Exception Depends on OpenStack Infrastructure.
+            api_exceptions.Forbidden,
+            api_exceptions.ConnectionRefused,  # admin URL not permitted
+            api_exceptions.Unauthorized,
+        ):
+            self.is_admin = False
+        else:
+            self.is_admin = True
 
     def get_endpoint(self, service_type):
         try:
@@ -303,6 +333,19 @@ class CinderVolumes(CinderResources):
 
 
 class CinderBackups(CinderResources):
+
+    def __init__(self, session):
+        if session.is_admin and compare_version_strings(
+                cinderclient.version_info.version_string(), '1.4.0') < 0:
+            logging.warning('cinder volume-backups are ignored when ospurge is '
+                            'launched with admin credentials because of the '
+                            'folling bug: '
+                            'https://bugs.launchpad.net/python-cinderclient/+bug/1422046')
+            raise ResourceNotEnabled(
+                'Disabling CinderBackups for security reasons: '
+                'https://bugs.launchpad.net/python-cinderclient/+bug/1422046'
+            )
+        super(CinderBackups, self).__init__(session)
 
     def list(self):
         return self.client.backups.list()

@@ -29,6 +29,8 @@ import json as jsonutils
 import httpretty
 import testtools
 
+import cinderclient
+
 from ospurge import ospurge
 from ospurge.tests import client_fixtures
 
@@ -42,6 +44,23 @@ USERNAME = "username"
 PASSWORD = "password"
 PROJECT_NAME = "project"
 AUTH_URL = client_fixtures.AUTH_URL
+
+
+class FunctionalTests(testtools.TestCase):
+
+    def test_compare_version_strings(self):
+        for test_line in (
+            (-1, '1.1.0', '1.4.0'),
+            (1, '1.4.0', '1.1.0'),
+            (0, '1.4.5', '1.4.5'),
+            (-1, '1.0', '1.4.1'),
+            (1, '1.4', '1.1.1'),
+            (0, '1.4', '1.4.0'),
+        ):
+            self.assertEqual(
+                test_line[0],
+                ospurge.compare_version_strings(*test_line[1:])
+            )
 
 
 class HttpTest(testtools.TestCase):
@@ -246,6 +265,43 @@ class TestCinderVolumes(TestCinderBase):
 
     def test_delete(self):
         self._test_delete()
+
+
+class TestCinderBackups(TestCinderBase):
+    IDS = client_fixtures.VOLUME_BACKUP_IDS
+
+    def stub_list(self):
+        self.stub_url('GET', parts=['backups', 'detail'],
+                      json=client_fixtures.VOLUME_BACKUPS_LIST)
+
+    def stub_delete(self):
+        self.stub_url(
+            'DELETE', parts=['backups', self.IDS[0]])
+
+    def setUp(self):
+        super(TestCinderBackups, self).setUp()
+        # Make shure tests work whatever version of cinderclient
+        self.versionstring_bak = cinderclient.version_info.version_string
+        cinderclient.version_info.version_string = lambda: '1.4.0'
+        self.session.is_admin = True
+        self.resources = ospurge.CinderBackups(self.session)
+
+    def tearDown(self):
+        super(TestCinderBackups, self).tearDown()
+        cinderclient.version_info.version_string = self.versionstring_bak
+
+    def test_list(self):
+        self._test_list()
+
+    def test_delete(self):
+        self._test_delete()
+
+    def test_exception(self):
+        versionstring_bak = cinderclient.version_info.version_string
+        cinderclient.version_info.version_string = lambda: '1.1.1'
+        self.assertRaises(
+            ospurge.ResourceNotEnabled, ospurge.CinderBackups, self.session)
+        cinderclient.version_info.version_string = versionstring_bak
 
 
 class TestNeutronBase(TestResourcesBase):
