@@ -42,8 +42,8 @@ import keystoneclient.openstack.common.apiclient.exceptions
 from keystoneclient.v2_0 import client as keystone_client
 import neutronclient.common.exceptions
 from neutronclient.v2_0 import client as neutron_client
+from novaclient import client as nova_client
 import novaclient.exceptions
-from novaclient.v1_1 import client as nova_client
 import requests
 from swiftclient import client as swift_client
 
@@ -600,7 +600,7 @@ class NovaServers(Resources):
     def __init__(self, session):
         super(NovaServers, self).__init__(session)
         self.client = nova_client.Client(
-            session.username, session.password,
+            "2", session.username, session.password,
             session.project_name, auth_url=session.auth_url,
             endpoint_type=session.endpoint_type,
             region_name=session.region_name, insecure=session.insecure)
