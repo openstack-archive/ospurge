@@ -47,8 +47,7 @@ from novaclient.v1_1 import client as nova_client
 import requests
 from swiftclient import client as swift_client
 
-RETRIES = 10  # Retry a delete operation 10 times before exiting
-TIMEOUT = 5   # 5 seconds timeout between retries
+from ospurge import constants
 
 
 class ResourceNotEnabled(Exception):
@@ -64,49 +63,11 @@ class InvalidEndpoint(Exception):
 
 
 class NoSuchProject(Exception):
-    ERROR_CODE = 2
-
-AUTHENTICATION_FAILED_ERROR_CODE = 3
+    ERROR_CODE = constants.NO_SUCH_PROJECT_ERROR_CODE
 
 
 class DeletionFailed(Exception):
-    ERROR_CODE = 4
-
-CONNECTION_ERROR_CODE = 5
-
-NOT_AUTHORIZED = 6
-
-
-# Available resources classes.
-# The order of the Openstack resources in the subsequent list
-# corresponds to the order in which ospurge will delete the
-# resources. This order takes into account inter-resources
-# dependencies, and tries to minimize the overall time duration of the
-# purge operation.
-
-RESOURCES_CLASSES = ['CinderSnapshots',
-                     'CinderBackups',
-                     'NeutronFireWall',
-                     'NeutronFireWallPolicy',
-                     'NeutronFireWallRule',
-                     'NeutronLbMembers',
-                     'NeutronLbVip',
-                     'NeutronLbHealthMonitor',
-                     'NeutronLbPool',
-                     'NovaServers',
-                     'NeutronFloatingIps',
-                     'NeutronMeteringLabel',
-                     'NeutronInterfaces',
-                     'NeutronRouters',
-                     'NeutronPorts',
-                     'NeutronNetworks',
-                     'NeutronSecgroups',
-                     'GlanceImages',
-                     'SwiftObjects',
-                     'SwiftContainers',
-                     'CinderVolumes',
-                     'CeilometerAlarms',
-                     'HeatStacks']
+    ERROR_CODE = constants.DELETION_FAILED_ERROR_CODE
 
 
 # Decorators
@@ -131,13 +92,13 @@ def retry(service_name):
                         # No need to retry deleting an non existing resource
                         break
                     else:
-                        if n == RETRIES:
+                        if n == constants.RETRIES:
                             raise DeletionFailed(service_name)
                         n += 1
                         logging.info("* Deletion failed - "
                                      "Retrying in {} seconds - "
-                                     "Retry count {}".format(TIMEOUT, n))
-                        time.sleep(TIMEOUT)
+                                     "Retry count {}".format(constants.TIMEOUT, n))
+                        time.sleep(constants.TIMEOUT)
         return wrapper
     return factory
 
@@ -778,7 +739,7 @@ def perform_on_project(admin_name, password, project, auth_url,
     session = Session(admin_name, password, project, auth_url,
                       endpoint_type, region_name, insecure)
     error = None
-    for rc in RESOURCES_CLASSES:
+    for rc in constants.RESOURCES_CLASSES:
         try:
             resources = globals()[rc](session)
             res_actions = {'purge': resources.purge,
@@ -902,7 +863,7 @@ def main():
                                            args.insecure, region_name=args.region_name)
     except api_exceptions.Unauthorized as exc:
         print("Authentication failed: {}".format(str(exc)))
-        sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
+        sys.exit(constants.AUTHENTICATION_FAILED_ERROR_CODE)
 
     remove_admin_role_after_purge = False
     disable_project_after_purge = False
@@ -927,7 +888,7 @@ def main():
 
     except api_exceptions.Forbidden as exc:
         print("Not authorized: {}".format(str(exc)))
-        sys.exit(NOT_AUTHORIZED)
+        sys.exit(constants.NOT_AUTHORIZED_ERROR_CODE)
     except NoSuchProject as exc:
         print("Project {} doesn't exist".format(str(exc)))
         sys.exit(NoSuchProject.ERROR_CODE)
@@ -940,7 +901,7 @@ def main():
                            action, args.insecure)
     except requests.exceptions.ConnectionError as exc:
         print("Connection error: {}".format(str(exc)))
-        sys.exit(CONNECTION_ERROR_CODE)
+        sys.exit(constants.CONNECTION_ERROR_CODE)
     except (DeletionFailed, InvalidEndpoint) as exc:
         print("Deletion of {} failed".format(str(exc)))
         print("*Warning* Some resources may not have been cleaned up")
