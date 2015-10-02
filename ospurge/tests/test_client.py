@@ -29,7 +29,7 @@ import json as jsonutils
 import httpretty
 import testtools
 
-from ospurge import ospurge
+from ospurge import client
 from ospurge.tests import client_fixtures
 
 # Disable InsecurePlatformWarning which is irrelevant in unittests with
@@ -68,8 +68,8 @@ class SessionTest(HttpTest):
     @httpretty.activate
     def test_init(self):
         self.stub_auth()
-        session = ospurge.Session(USERNAME, PASSWORD,
-                                  client_fixtures.PROJECT_ID, AUTH_URL)
+        session = client.Session(USERNAME, PASSWORD,
+                                 client_fixtures.PROJECT_ID, AUTH_URL)
         self.assertEqual(session.token, client_fixtures.TOKEN_ID)
         self.assertEqual(session.user_id, client_fixtures.USER_ID)
         self.assertEqual(session.project_id, client_fixtures.PROJECT_ID)
@@ -77,8 +77,8 @@ class SessionTest(HttpTest):
     @httpretty.activate
     def test_get_public_endpoint(self):
         self.stub_auth()
-        session = ospurge.Session(USERNAME, PASSWORD,
-                                  client_fixtures.PROJECT_ID, AUTH_URL)
+        session = client.Session(USERNAME, PASSWORD,
+                                 client_fixtures.PROJECT_ID, AUTH_URL)
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_PUBLIC_ENDPOINT)
         endpoint = session.get_endpoint('image')
@@ -87,8 +87,8 @@ class SessionTest(HttpTest):
     @httpretty.activate
     def test_get_internal_endpoint(self):
         self.stub_auth()
-        session = ospurge.Session(USERNAME, PASSWORD, client_fixtures.PROJECT_ID,
-                                  AUTH_URL, endpoint_type='internalURL')
+        session = client.Session(USERNAME, PASSWORD, client_fixtures.PROJECT_ID,
+                                 AUTH_URL, endpoint_type='internalURL')
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_INTERNAL_ENDPOINT)
         endpoint = session.get_endpoint('image')
@@ -104,8 +104,8 @@ class TestResourcesBase(HttpTest):
     def setUp(self):
         super(TestResourcesBase, self).setUp()
         self.stub_auth()
-        self.session = ospurge.Session(USERNAME, PASSWORD,
-                                       client_fixtures.PROJECT_ID, AUTH_URL)
+        self.session = client.Session(USERNAME, PASSWORD,
+                                      client_fixtures.PROJECT_ID, AUTH_URL)
         # We can't add other stubs in subclasses setUp because
         # httpretty.dactivate() is called after this set_up (so during the
         # super call to this method in subclasses). and extra stubs will not
@@ -146,7 +146,7 @@ class TestSwiftResources(TestSwiftBase):
     @httpretty.activate
     def test_list_containers(self):
         self.stub_url('GET', json=client_fixtures.STORAGE_CONTAINERS_LIST)
-        swift = ospurge.SwiftResources(self.session)
+        swift = client.SwiftResources(self.session)
         conts = list(swift.list_containers())
         self.assertEqual(conts, client_fixtures.STORAGE_CONTAINERS)
 
@@ -166,7 +166,7 @@ class TestSwiftObjects(TestSwiftBase):
 
     def setUp(self):
         super(TestSwiftObjects, self).setUp()
-        self.resources = ospurge.SwiftObjects(self.session)
+        self.resources = client.SwiftObjects(self.session)
 
     @httpretty.activate
     def test_list(self):
@@ -188,7 +188,7 @@ class TestSwiftContainers(TestSwiftBase):
 
     def setUp(self):
         super(TestSwiftContainers, self).setUp()
-        self.resources = ospurge.SwiftContainers(self.session)
+        self.resources = client.SwiftContainers(self.session)
 
     @httpretty.activate
     def test_list(self):
@@ -217,7 +217,7 @@ class TestCinderSnapshots(TestCinderBase):
 
     def setUp(self):
         super(TestCinderSnapshots, self).setUp()
-        self.resources = ospurge.CinderSnapshots(self.session)
+        self.resources = client.CinderSnapshots(self.session)
 
     def test_list(self):
         self._test_list()
@@ -239,7 +239,7 @@ class TestCinderVolumes(TestCinderBase):
 
     def setUp(self):
         super(TestCinderVolumes, self).setUp()
-        self.resources = ospurge.CinderVolumes(self.session)
+        self.resources = client.CinderVolumes(self.session)
 
     def test_list(self):
         self._test_list()
@@ -278,7 +278,7 @@ class TestNeutronRouters(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronRouters, self).setUp()
-        self.resources = ospurge.NeutronRouters(self.session)
+        self.resources = client.NeutronRouters(self.session)
 
     def test_list(self):
         self._test_list()
@@ -305,7 +305,7 @@ class TestNeutronInterfaces(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronInterfaces, self).setUp()
-        self.resources = ospurge.NeutronInterfaces(self.session)
+        self.resources = client.NeutronInterfaces(self.session)
 
     def test_list(self):
         self._test_list()
@@ -333,7 +333,7 @@ class TestNeutronPorts(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronPorts, self).setUp()
-        self.resources = ospurge.NeutronPorts(self.session)
+        self.resources = client.NeutronPorts(self.session)
 
     def test_list(self):
         self._test_list()
@@ -362,7 +362,7 @@ class TestNeutronNetworks(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronNetworks, self).setUp()
-        self.resources = ospurge.NeutronNetworks(self.session)
+        self.resources = client.NeutronNetworks(self.session)
 
     def test_list(self):
         self._test_list()
@@ -390,7 +390,7 @@ class TestNeutronSecgroups(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronSecgroups, self).setUp()
-        self.resources = ospurge.NeutronSecgroups(self.session)
+        self.resources = client.NeutronSecgroups(self.session)
 
     def test_list(self):
         self._test_list()
@@ -417,7 +417,7 @@ class TestNeutronFloatingIps(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronFloatingIps, self).setUp()
-        self.resources = ospurge.NeutronFloatingIps(self.session)
+        self.resources = client.NeutronFloatingIps(self.session)
 
     def test_list(self):
         self._test_list()
@@ -444,7 +444,7 @@ class TestNeutronFireWallRule(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronFireWallRule, self).setUp()
-        self.resources = ospurge.NeutronFireWallRule(self.session)
+        self.resources = client.NeutronFireWallRule(self.session)
 
     def test_list(self):
         self._test_list()
@@ -471,7 +471,7 @@ class TestNeutronFireWallPolicy(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronFireWallPolicy, self).setUp()
-        self.resources = ospurge.NeutronFireWallPolicy(self.session)
+        self.resources = client.NeutronFireWallPolicy(self.session)
 
     def test_list(self):
         self._test_list()
@@ -498,7 +498,7 @@ class TestNeutronFireWall(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronFireWall, self).setUp()
-        self.resources = ospurge.NeutronFireWall(self.session)
+        self.resources = client.NeutronFireWall(self.session)
 
     def test_list(self):
         self._test_list()
@@ -525,7 +525,7 @@ class TestNeutronMeteringLabel(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronMeteringLabel, self).setUp()
-        self.resources = ospurge.NeutronMeteringLabel(self.session)
+        self.resources = client.NeutronMeteringLabel(self.session)
 
     def test_list(self):
         self._test_list()
@@ -552,7 +552,7 @@ class TestNeutronLbMembers(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronLbMembers, self).setUp()
-        self.resources = ospurge.NeutronLbMembers(self.session)
+        self.resources = client.NeutronLbMembers(self.session)
 
     def test_list(self):
         self._test_list()
@@ -579,7 +579,7 @@ class TestNeutronLbVip(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronLbVip, self).setUp()
-        self.resources = ospurge.NeutronLbVip(self.session)
+        self.resources = client.NeutronLbVip(self.session)
 
     def test_list(self):
         self._test_list()
@@ -606,7 +606,7 @@ class TestNeutronLbHealthMonitor(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronLbHealthMonitor, self).setUp()
-        self.resources = ospurge.NeutronLbHealthMonitor(self.session)
+        self.resources = client.NeutronLbHealthMonitor(self.session)
 
     def test_list(self):
         self._test_list()
@@ -633,7 +633,7 @@ class TestNeutronLbPool(TestNeutronBase):
 
     def setUp(self):
         super(TestNeutronLbPool, self).setUp()
-        self.resources = ospurge.NeutronLbPool(self.session)
+        self.resources = client.NeutronLbPool(self.session)
 
     def test_list(self):
         self._test_list()
@@ -656,7 +656,7 @@ class TestNovaServers(TestResourcesBase):
 
     def setUp(self):
         super(TestNovaServers, self).setUp()
-        self.resources = ospurge.NovaServers(self.session)
+        self.resources = client.NovaServers(self.session)
 
     def test_list(self):
         self._test_list()
@@ -679,7 +679,7 @@ class TestGlanceImages(TestResourcesBase):
 
     def setUp(self):
         super(TestGlanceImages, self).setUp()
-        self.resources = ospurge.GlanceImages(self.session)
+        self.resources = client.GlanceImages(self.session)
 
     def test_list(self):
         self._test_list()
@@ -694,7 +694,7 @@ class TestCeilometerAlarms(TestResourcesBase):
     def extra_set_up(self):
         self.stub_url(
             'GET', base_url=AUTH_URL, json=client_fixtures.AUTH_URL_RESPONSE)
-        self.resources = ospurge.CeilometerAlarms(self.session)
+        self.resources = client.CeilometerAlarms(self.session)
 
     def stub_list(self):
         self.stub_url('GET', parts=['v2', 'alarms'],
@@ -733,7 +733,7 @@ class TestHeatStacks(TestResourcesBase):
 
     def setUp(self):
         super(TestHeatStacks, self).setUp()
-        self.resources = ospurge.HeatStacks(self.session)
+        self.resources = client.HeatStacks(self.session)
 
     def test_list(self):
         self._test_list()
