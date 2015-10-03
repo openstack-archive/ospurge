@@ -31,6 +31,7 @@ import testtools
 
 import cinderclient
 
+from ospurge import base
 from ospurge import client
 from ospurge.tests import client_fixtures
 
@@ -73,17 +74,18 @@ class SessionTest(HttpTest):
     @httpretty.activate
     def test_init(self):
         self.stub_auth()
-        session = client.Session(USERNAME, PASSWORD,
-                                 client_fixtures.PROJECT_ID, AUTH_URL)
+        session = base.Session(USERNAME, PASSWORD,
+                               client_fixtures.PROJECT_ID, AUTH_URL)
         self.assertEqual(session.token, client_fixtures.TOKEN_ID)
         self.assertEqual(session.user_id, client_fixtures.USER_ID)
         self.assertEqual(session.project_id, client_fixtures.PROJECT_ID)
+        self.assertTrue(session.is_admin)
 
     @httpretty.activate
     def test_get_public_endpoint(self):
         self.stub_auth()
-        session = client.Session(USERNAME, PASSWORD,
-                                 client_fixtures.PROJECT_ID, AUTH_URL)
+        session = base.Session(USERNAME, PASSWORD,
+                               client_fixtures.PROJECT_ID, AUTH_URL)
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_PUBLIC_ENDPOINT)
         endpoint = session.get_endpoint('image')
@@ -92,8 +94,8 @@ class SessionTest(HttpTest):
     @httpretty.activate
     def test_get_internal_endpoint(self):
         self.stub_auth()
-        session = client.Session(USERNAME, PASSWORD, client_fixtures.PROJECT_ID,
-                                 AUTH_URL, endpoint_type='internalURL')
+        session = base.Session(USERNAME, PASSWORD, client_fixtures.PROJECT_ID,
+                               AUTH_URL, endpoint_type='internalURL')
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_INTERNAL_ENDPOINT)
         endpoint = session.get_endpoint('image')
@@ -109,8 +111,8 @@ class TestResourcesBase(HttpTest):
     def setUp(self):
         super(TestResourcesBase, self).setUp()
         self.stub_auth()
-        self.session = client.Session(USERNAME, PASSWORD,
-                                      client_fixtures.PROJECT_ID, AUTH_URL)
+        self.session = base.Session(USERNAME, PASSWORD,
+                                    client_fixtures.PROJECT_ID, AUTH_URL)
         # We can't add other stubs in subclasses setUp because
         # httpretty.dactivate() is called after this set_up (so during the
         # super call to this method in subclasses). and extra stubs will not
