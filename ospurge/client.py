@@ -27,7 +27,6 @@ import argparse
 import logging
 import os
 import sys
-import time
 
 import ceilometerclient.exc
 from ceilometerclient.v2 import client as ceilometer_client
@@ -47,116 +46,12 @@ from novaclient.v1_1 import client as nova_client
 import requests
 from swiftclient import client as swift_client
 
+from ospurge import base
 from ospurge import constants
 from ospurge import exceptions
 
 
-# Decorators
-
-def retry(service_name):
-    def factory(func):
-        """Decorator allowing to retry in case of failure."""
-        def wrapper(*args, **kwargs):
-            n = 0
-            while True:
-                try:
-                    return func(*args, **kwargs)
-                except Exception as e:
-                    if getattr(e, 'http_status', False) == 404:
-                        # Sometimes a resource can be deleted manually by
-                        # someone else while ospurge is running and listed it.
-                        # If this happens, We raise a Warning.
-                        logging.warning(
-                            "Can not delete the resource because it does not"
-                            " exist : %s" % e
-                        )
-                        # No need to retry deleting an non existing resource
-                        break
-                    else:
-                        if n == constants.RETRIES:
-                            raise exceptions.DeletionFailed(service_name)
-                        n += 1
-                        logging.info("* Deletion failed - "
-                                     "Retrying in {} seconds - "
-                                     "Retry count {}".format(constants.TIMEOUT, n))
-                        time.sleep(constants.TIMEOUT)
-        return wrapper
-    return factory
-
-
-# Classes
-class Session(object):
-
-    """A Session stores information that can be used by the different Openstack Clients.
-
-    The most important data is:
-    * self.token - The Openstack token to be used accross services;
-    * self.catalog - Allowing to retrieve services' endpoints.
-    """
-
-    def __init__(self, username, password, project_id, auth_url,
-                 endpoint_type="publicURL", region_name=None, insecure=False):
-        client = keystone_client.Client(
-            username=username, password=password, tenant_id=project_id,
-            auth_url=auth_url, region_name=region_name, insecure=insecure)
-        # Storing username, password, project_id and auth_url for
-        # use by clients libraries that cannot use an existing token.
-        self.username = username
-        self.password = password
-        self.project_id = project_id
-        self.auth_url = auth_url
-        self.region_name = region_name
-        self.insecure = insecure
-        # Session variables to be used by clients when possible
-        self.token = client.auth_token
-        self.user_id = client.user_id
-        self.project_name = client.project_name
-        self.endpoint_type = endpoint_type
-        self.catalog = client.service_catalog.get_endpoints()
-
-    def get_endpoint(self, service_type):
-        try:
-            return self.catalog[service_type][0][self.endpoint_type]
-        except (KeyError, IndexError):
-            # Endpoint could not be found
-            raise exceptions.EndpointNotFound(service_type)
-
-
-class Resources(object):
-
-    """Abstract base class for all resources to be removed."""
-
-    def __init__(self, session):
-        self.session = session
-
-    def list(self):
-        pass
-
-    def delete(self, resource):
-        """Displays informational message about a resource deletion."""
-        logging.info("* Deleting {}.".format(self.resource_str(resource)))
-
-    def purge(self):
-        """Delete all resources."""
-        # Purging is displayed and done only if self.list succeeds
-        resources = self.list()
-        c_name = self.__class__.__name__
-        logging.info("* Purging {}".format(c_name))
-        for resource in resources:
-            retry(c_name)(self.delete)(resource)
-
-    def dump(self):
-        """Display all available resources."""
-        # Resources type and resources are displayed only if self.list succeeds
-        resources = self.list()
-        c_name = self.__class__.__name__
-        print("* Resources type: {}".format(c_name))
-        for resource in resources:
-            print(self.resource_str(resource))
-        print("")
-
-
-class SwiftResources(Resources):
+class SwiftResources(base.Resources):
 
     def __init__(self, session):
         super(SwiftResources, self).__init__(session)
@@ -204,7 +99,7 @@ class SwiftContainers(SwiftResources):
         return "container {}".format(obj)
 
 
-class CinderResources(Resources):
+class CinderResources(base.Resources):
 
     def __init__(self, session):
         super(CinderResources, self).__init__(session)
@@ -257,7 +152,7 @@ class CinderBackups(CinderResources):
         return "backup {} (id {}) of volume {}".format(backup.name, backup.id, backup.volume_id)
 
 
-class NeutronResources(Resources):
+class NeutronResources(base.Resources):
 
     def __init__(self, session):
         super(NeutronResources, self).__init__(session)
@@ -537,7 +432,7 @@ class NeutronFireWall(NeutronResources):
         return "Firewall {} (id {})".format(firewall['name'], firewall['id'])
 
 
-class NovaServers(Resources):
+class NovaServers(base.Resources):
 
     def __init__(self, session):
         super(NovaServers, self).__init__(session)
@@ -561,7 +456,7 @@ class NovaServers(Resources):
         return "server {} (id {})".format(server.name, server.id)
 
 
-class GlanceImages(Resources):
+class GlanceImages(base.Resources):
 
     def __init__(self, session):
         self.client = glance_client.Client(
@@ -585,7 +480,7 @@ class GlanceImages(Resources):
         return res.owner == self.project_id
 
 
-class HeatStacks(Resources):
+class HeatStacks(base.Resources):
 
     def __init__(self, session):
         self.client = heat_client.Client(
@@ -608,7 +503,7 @@ class HeatStacks(Resources):
         return "stack {})".format(stack.id)
 
 
-class CeilometerAlarms(Resources):
+class CeilometerAlarms(base.Resources):
 
     def __init__(self, session):
         # Ceilometer Client needs a method that returns the token
@@ -717,8 +612,8 @@ def perform_on_project(admin_name, password, project, auth_url,
 
     action can be: 'purge' or 'dump'
     """
-    session = Session(admin_name, password, project, auth_url,
-                      endpoint_type, region_name, insecure)
+    session = base.Session(admin_name, password, project, auth_url,
+                           endpoint_type, region_name, insecure)
     error = None
     for rc in constants.RESOURCES_CLASSES:
         try:
