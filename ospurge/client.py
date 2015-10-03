@@ -49,26 +49,7 @@ import requests
 from swiftclient import client as swift_client
 
 from ospurge import constants
-
-
-class ResourceNotEnabled(Exception):
-    pass
-
-
-class EndpointNotFound(Exception):
-    pass
-
-
-class InvalidEndpoint(Exception):
-    pass
-
-
-class NoSuchProject(Exception):
-    ERROR_CODE = constants.NO_SUCH_PROJECT_ERROR_CODE
-
-
-class DeletionFailed(Exception):
-    ERROR_CODE = constants.DELETION_FAILED_ERROR_CODE
+from ospurge import exceptions
 
 
 # Decorators
@@ -94,7 +75,7 @@ def retry(service_name):
                         break
                     else:
                         if n == constants.RETRIES:
-                            raise DeletionFailed(service_name)
+                            raise exceptions.DeletionFailed(service_name)
                         n += 1
                         logging.info("* Deletion failed - "
                                      "Retrying in {} seconds - "
@@ -151,7 +132,7 @@ class Session(object):
             return self.catalog[service_type][0][self.endpoint_type]
         except (KeyError, IndexError):
             # Endpoint could not be found
-            raise EndpointNotFound(service_type)
+            raise exceptions.EndpointNotFound(service_type)
 
 
 class Resources(object):
@@ -421,7 +402,7 @@ class NeutronSecgroups(NeutronResources):
             return filter(secgroup_filter, sgs)
         except neutronclient.common.exceptions.NeutronClientException as err:
             if getattr(err, "status_code", None) == 404:
-                raise ResourceNotEnabled
+                raise exceptions.ResourceNotEnabled
             raise
 
     def delete(self, secgroup):
@@ -708,7 +689,7 @@ class KeystoneManager(object):
                 project_id = filter(
                     lambda x: x.name == project_name_or_id, tenants)[0].id
             except IndexError:
-                raise NoSuchProject(project_name_or_id)
+                raise exceptions.NoSuchProject(project_name_or_id)
 
         if not self.tenant_info:
             self.tenant_info = self.client.tenants.get(project_id)
@@ -765,13 +746,13 @@ def perform_on_project(admin_name, password, project, auth_url,
             res_actions = {'purge': resources.purge,
                            'dump': resources.dump}
             res_actions[action]()
-        except (EndpointNotFound,
+        except (exceptions.EndpointNotFound,
                 keystoneclient.openstack.common.apiclient.exceptions.EndpointNotFound,
                 neutronclient.common.exceptions.EndpointNotFound,
                 cinderclient.exceptions.EndpointNotFound,
                 novaclient.exceptions.EndpointNotFound,
                 heatclient.openstack.common.apiclient.exceptions.EndpointNotFound,
-                ResourceNotEnabled):
+                exceptions.ResourceNotEnabled):
             # If service is not in Keystone's services catalog, ignoring it
             pass
         except requests.exceptions.MissingSchema as e:
@@ -781,7 +762,7 @@ def perform_on_project(admin_name, password, project, auth_url,
         except (ceilometerclient.exc.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
             logging.warning(
                 "Unable to connect to {} endpoint : {}".format(rc, e.message))
-            error = InvalidEndpoint(rc)
+            error = exceptions.InvalidEndpoint(rc)
         except (neutronclient.common.exceptions.NeutronClientException):
             # If service is not configured, ignoring it
             pass
@@ -909,9 +890,9 @@ def main():
     except api_exceptions.Forbidden as exc:
         print("Not authorized: {}".format(str(exc)))
         sys.exit(constants.NOT_AUTHORIZED_ERROR_CODE)
-    except NoSuchProject as exc:
+    except exceptions.NoSuchProject as exc:
         print("Project {} doesn't exist".format(str(exc)))
-        sys.exit(NoSuchProject.ERROR_CODE)
+        sys.exit(constants.NO_SUCH_PROJECT_ERROR_CODE)
 
     # Proper cleanup
     try:
@@ -922,10 +903,10 @@ def main():
     except requests.exceptions.ConnectionError as exc:
         print("Connection error: {}".format(str(exc)))
         sys.exit(constants.CONNECTION_ERROR_CODE)
-    except (DeletionFailed, InvalidEndpoint) as exc:
+    except (exceptions.DeletionFailed, exceptions.InvalidEndpoint) as exc:
         print("Deletion of {} failed".format(str(exc)))
         print("*Warning* Some resources may not have been cleaned up")
-        sys.exit(DeletionFailed.ERROR_CODE)
+        sys.exit(constants.DELETION_FAILED_ERROR_CODE)
 
     if (not args.dry_run) and (not args.dont_delete_project) and (not args.own_project):
         keystone_manager.delete_project(cleanup_project_id)
