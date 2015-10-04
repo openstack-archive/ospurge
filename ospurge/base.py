@@ -21,6 +21,7 @@
 import logging
 import time
 
+from keystoneclient import exceptions as keystone_exceptions
 from keystoneclient.v2_0 import client as keystone_client
 
 from ospurge import constants
@@ -96,7 +97,6 @@ class Session(object):
         try:
             return self.catalog[service_type][0][self.endpoint_type]
         except (KeyError, IndexError):
-            # Endpoint could not be found
             raise exceptions.EndpointNotFound(service_type)
 
 
@@ -126,7 +126,10 @@ class Resources(object):
     def dump(self):
         """Display all available resources."""
         # Resources type and resources are displayed only if self.list succeeds
-        resources = self.list()
+        try:
+            resources = self.list()
+        except keystone_exceptions.EndpointNotFound as exc:
+            raise exceptions.EndpointNotFound(str(exc))
         c_name = self.__class__.__name__
         print("* Resources type: {}".format(c_name))
         for resource in resources:

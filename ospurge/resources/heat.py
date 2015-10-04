@@ -18,30 +18,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from heatclient import client as heat_client
 
-class ResourceNotEnabled(Exception):
-    pass
-
-
-class EndpointNotFound(Exception):
-    pass
+from ospurge import base
 
 
-class InvalidEndpoint(Exception):
-    pass
+class HeatStacks(base.Resources):
 
+    def __init__(self, session):
+        self.client = heat_client.Client(
+            "1",
+            endpoint=session.get_endpoint("orchestration"),
+            token=session.token, insecure=session.insecure)
+        self.project_id = session.project_id
 
-class NoSuchProject(Exception):
-    pass
+    def list(self):
+        return self.client.stacks.list()
 
+    def delete(self, stack):
+        super(HeatStacks, self).delete(stack)
+        if stack.stack_status == "DELETE_FAILED":
+            self.client.stacks.abandon(stack.id)
+        else:
+            self.client.stacks.delete(stack.id)
 
-class DeletionFailed(Exception):
-    pass
-
-
-class Unauthorized(Exception):
-    pass
-
-
-class Forbidden(Exception):
-    pass
+    def resource_str(self, stack):
+        return "stack {})".format(stack.id)

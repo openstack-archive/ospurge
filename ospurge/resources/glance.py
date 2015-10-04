@@ -18,30 +18,30 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from glanceclient.v1 import client as glance_client
 
-class ResourceNotEnabled(Exception):
-    pass
-
-
-class EndpointNotFound(Exception):
-    pass
+from ospurge import base
 
 
-class InvalidEndpoint(Exception):
-    pass
+class GlanceImages(base.Resources):
 
+    def __init__(self, session):
+        self.client = glance_client.Client(
+            endpoint=session.get_endpoint("image"),
+            token=session.token, insecure=session.insecure)
+        self.project_id = session.project_id
 
-class NoSuchProject(Exception):
-    pass
+    def list(self):
+        return filter(self._owned_resource, self.client.images.list(
+            owner=self.project_id))
 
+    def delete(self, image):
+        super(GlanceImages, self).delete(image)
+        self.client.images.delete(image.id)
 
-class DeletionFailed(Exception):
-    pass
+    def resource_str(self, image):
+        return "image {} (id {})".format(image.name, image.id)
 
-
-class Unauthorized(Exception):
-    pass
-
-
-class Forbidden(Exception):
-    pass
+    def _owned_resource(self, res):
+        # Only considering resources owned by project
+        return res.owner == self.project_id
