@@ -18,15 +18,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Error codes
+import ceilometerclient.exc
+from ceilometerclient.v2 import client as ceilometer_client
 
-NO_SUCH_PROJECT_ERROR_CODE = 2
-AUTHENTICATION_FAILED_ERROR_CODE = 3
-DELETION_FAILED_ERROR_CODE = 4
-CONNECTION_ERROR_CODE = 5
-NOT_AUTHORIZED_ERROR_CODE = 6
+from ospurge import base
+from ospurge import exceptions
 
-# Constants
+class CeilometerAlarms(base.Resources):
 
-RETRIES = 10  # Retry a delete operation 10 times before exiting
-TIMEOUT = 5   # 5 seconds timeout between retries
+    def __init__(self, session):
+        # Ceilometer Client needs a method that returns the token
+        def get_token():
+            return session.token
+
+        self.client = ceilometer_client.Client(
+            auth_url=session.auth_url,
+            endpoint=session.get_endpoint("metering"),
+            token=get_token, insecure=session.insecure)
+        self.project_id = session.project_id
+
+    def list(self):
+        query = [{'field': 'project_id',
+                  'op': 'eq',
+                  'value': self.project_id}]
+        return self.client.alarms.list(q=query)
+
+    def delete(self, alarm):
+        super(CeilometerAlarms, self).delete(alarm)
+        self.client.alarms.delete(alarm.alarm_id)
+
+    def resource_str(self, alarm):
+        return "alarm {}".format(alarm.name)

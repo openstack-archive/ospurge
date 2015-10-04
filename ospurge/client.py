@@ -24,12 +24,11 @@
 # SOFTWARE.
 
 import argparse
+import inspect
 import logging
 import os
 import sys
 
-import ceilometerclient.exc
-from ceilometerclient.v2 import client as ceilometer_client
 import cinderclient.exceptions
 from cinderclient.v1 import client as cinder_client
 import glanceclient.exc
@@ -44,60 +43,12 @@ from neutronclient.v2_0 import client as neutron_client
 import novaclient.exceptions
 from novaclient.v1_1 import client as nova_client
 import requests
-from swiftclient import client as swift_client
 
 from ospurge import base
 from ospurge import constants
 from ospurge import exceptions
-
-
-class SwiftResources(base.Resources):
-
-    def __init__(self, session):
-        super(SwiftResources, self).__init__(session)
-        self.endpoint = self.session.get_endpoint("object-store")
-        self.token = self.session.token
-        conn = swift_client.HTTPConnection(self.endpoint, insecure=self.session.insecure)
-        self.http_conn = conn.parsed_url, conn
-
-    # This method is used to retrieve Objects as well as Containers.
-    def list_containers(self):
-        containers = swift_client.get_account(self.endpoint, self.token, http_conn=self.http_conn)[1]
-        return (cont['name'] for cont in containers)
-
-
-class SwiftObjects(SwiftResources):
-
-    def list(self):
-        swift_objects = []
-        for cont in self.list_containers():
-            objs = [{'container': cont, 'name': obj['name']} for obj in
-                    swift_client.get_container(self.endpoint, self.token, cont, http_conn=self.http_conn)[1]]
-            swift_objects.extend(objs)
-        return swift_objects
-
-    def delete(self, obj):
-        super(SwiftObjects, self).delete(obj)
-        swift_client.delete_object(self.endpoint, token=self.token, http_conn=self.http_conn,
-                                   container=obj['container'], name=obj['name'])
-
-    def resource_str(self, obj):
-        return "object {} in container {}".format(obj['name'], obj['container'])
-
-
-class SwiftContainers(SwiftResources):
-
-    def list(self):
-        return self.list_containers()
-
-    def delete(self, container):
-        """Container must be empty for deletion to succeed."""
-        super(SwiftContainers, self).delete(container)
-        swift_client.delete_container(self.endpoint, self.token, container, http_conn=self.http_conn)
-
-    def resource_str(self, obj):
-        return "container {}".format(obj)
-
+from ospurge.resources import ceilometer
+from ospurge.resources import swift
 
 class CinderResources(base.Resources):
 
@@ -503,32 +454,6 @@ class HeatStacks(base.Resources):
         return "stack {})".format(stack.id)
 
 
-class CeilometerAlarms(base.Resources):
-
-    def __init__(self, session):
-        # Ceilometer Client needs a method that returns the token
-        def get_token():
-            return session.token
-        self.client = ceilometer_client.Client(
-            auth_url=session.auth_url,
-            endpoint=session.get_endpoint("metering"),
-            token=get_token, insecure=session.insecure)
-        self.project_id = session.project_id
-
-    def list(self):
-        query = [{'field': 'project_id',
-                  'op': 'eq',
-                  'value': self.project_id}]
-        return self.client.alarms.list(q=query)
-
-    def delete(self, alarm):
-        super(CeilometerAlarms, self).delete(alarm)
-        self.client.alarms.delete(alarm.alarm_id)
-
-    def resource_str(self, alarm):
-        return "alarm {}".format(alarm.name)
-
-
 class KeystoneManager(object):
 
     """Manages Keystone queries."""
@@ -615,32 +540,29 @@ def perform_on_project(admin_name, password, project, auth_url,
     session = base.Session(admin_name, password, project, auth_url,
                            endpoint_type, region_name, insecure)
     error = None
-    for rc in constants.RESOURCES_CLASSES:
-        try:
-            resources = globals()[rc](session)
-            res_actions = {'purge': resources.purge,
-                           'dump': resources.dump}
-            res_actions[action]()
-        except (exceptions.EndpointNotFound,
-                keystoneclient.openstack.common.apiclient.exceptions.EndpointNotFound,
-                neutronclient.common.exceptions.EndpointNotFound,
-                cinderclient.exceptions.EndpointNotFound,
-                novaclient.exceptions.EndpointNotFound,
-                heatclient.openstack.common.apiclient.exceptions.EndpointNotFound,
-                exceptions.ResourceNotEnabled):
-            # If service is not in Keystone's services catalog, ignoring it
-            pass
-        except requests.exceptions.MissingSchema as e:
-            logging.warning(
-                'Some resources may not have been deleted, "{!s}" is '
-                'improperly configured and returned: {!r}\n'.format(rc, e))
-        except (ceilometerclient.exc.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
-            logging.warning(
-                "Unable to connect to {} endpoint : {}".format(rc, e.message))
-            error = exceptions.InvalidEndpoint(rc)
-        except (neutronclient.common.exceptions.NeutronClientException):
-            # If service is not configured, ignoring it
-            pass
+    for name, mod in inspect.getmembers(sys.modules.get('ospurge.resources'), inspect.ismodule):
+        for name, obj in inspect.getmembers(mod, inspect.isclass):
+            if name.endswith('Resources'):
+                continue
+            try:
+                resources = obj(session)
+                func = getattr(resources, action)
+                func()
+            except (exceptions.EndpointNotFound,
+                    exceptions.ResourceNotEnabled):
+                # If service is not in Keystone's services catalog, ignoring it
+                pass
+            except requests.exceptions.MissingSchema as e:
+                logging.warning(
+                    'Some resources may not have been deleted, "{!s}" is '
+                    'improperly configured and returned: {!r}\n'.format(rc, e))
+            except (exceptions.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
+                logging.warning(
+                    "Unable to connect to {} endpoint : {}".format(rc, e.message))
+                error = exceptions.InvalidEndpoint(rc)
+            except (neutronclient.common.exceptions.NeutronClientException):
+                # If service is not configured, ignoring it
+                pass
     if error:
         raise error
 
