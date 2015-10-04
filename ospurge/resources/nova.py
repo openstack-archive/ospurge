@@ -18,28 +18,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import novaclient.exceptions
+from novaclient.v1_1 import client as nova_client
 
-class ResourceNotEnabled(Exception):
-    pass
-
-
-class EndpointNotFound(Exception):
-    pass
+from ospurge import base
 
 
-class InvalidEndpoint(Exception):
-    pass
+class NovaServers(base.Resources):
 
+    def __init__(self, session):
+        super(NovaServers, self).__init__(session)
+        self.client = nova_client.Client(
+            session.username, session.password,
+            session.project_name, auth_url=session.auth_url,
+            endpoint_type=session.endpoint_type,
+            region_name=session.region_name, insecure=session.insecure)
+        self.project_id = session.project_id
 
-class NoSuchProject(Exception):
-    pass
+    """Manage nova resources"""
 
+    def list(self):
+        return self.client.servers.list()
 
-class DeletionFailed(Exception):
-    pass
+    def delete(self, server):
+        super(NovaServers, self).delete(server)
+        self.client.servers.delete(server)
 
-class Unauthorized(Exception):
-    pass
-
-class Forbidden(Exception):
-    pass
+    def resource_str(self, server):
+        return "server {} (id {})".format(server.name, server.id)

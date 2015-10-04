@@ -28,581 +28,21 @@ import logging
 import os
 import sys
 
-import ceilometerclient.exc
-from ceilometerclient.v2 import client as ceilometer_client
-import cinderclient.exceptions
-from cinderclient.v1 import client as cinder_client
-import glanceclient.exc
-from glanceclient.v1 import client as glance_client
-from heatclient import client as heat_client
-import heatclient.openstack.common.apiclient.exceptions
-from keystoneclient.apiclient import exceptions as api_exceptions
-import keystoneclient.openstack.common.apiclient.exceptions
-from keystoneclient.v2_0 import client as keystone_client
-import neutronclient.common.exceptions
-from neutronclient.v2_0 import client as neutron_client
-import novaclient.exceptions
-from novaclient.v1_1 import client as nova_client
 import requests
-from swiftclient import client as swift_client
 
 from ospurge import base
 from ospurge import constants
 from ospurge import exceptions
 
-
-class SwiftResources(base.Resources):
-
-    def __init__(self, session):
-        super(SwiftResources, self).__init__(session)
-        self.endpoint = self.session.get_endpoint("object-store")
-        self.token = self.session.token
-        conn = swift_client.HTTPConnection(self.endpoint, insecure=self.session.insecure)
-        self.http_conn = conn.parsed_url, conn
-
-    # This method is used to retrieve Objects as well as Containers.
-    def list_containers(self):
-        containers = swift_client.get_account(self.endpoint, self.token, http_conn=self.http_conn)[1]
-        return (cont['name'] for cont in containers)
-
-
-class SwiftObjects(SwiftResources):
-
-    def list(self):
-        swift_objects = []
-        for cont in self.list_containers():
-            objs = [{'container': cont, 'name': obj['name']} for obj in
-                    swift_client.get_container(self.endpoint, self.token, cont, http_conn=self.http_conn)[1]]
-            swift_objects.extend(objs)
-        return swift_objects
-
-    def delete(self, obj):
-        super(SwiftObjects, self).delete(obj)
-        swift_client.delete_object(self.endpoint, token=self.token, http_conn=self.http_conn,
-                                   container=obj['container'], name=obj['name'])
-
-    def resource_str(self, obj):
-        return "object {} in container {}".format(obj['name'], obj['container'])
-
-
-class SwiftContainers(SwiftResources):
-
-    def list(self):
-        return self.list_containers()
-
-    def delete(self, container):
-        """Container must be empty for deletion to succeed."""
-        super(SwiftContainers, self).delete(container)
-        swift_client.delete_container(self.endpoint, self.token, container, http_conn=self.http_conn)
-
-    def resource_str(self, obj):
-        return "container {}".format(obj)
-
-
-class CinderResources(base.Resources):
-
-    def __init__(self, session):
-        super(CinderResources, self).__init__(session)
-        # Cinder client library can't use an existing token. When
-        # using this library, we have to reauthenticate.
-        self.client = cinder_client.Client(
-            session.username, session.password,
-            session.project_name, session.auth_url, session.insecure,
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name)
-
-
-class CinderSnapshots(CinderResources):
-
-    def list(self):
-        return self.client.volume_snapshots.list()
-
-    def delete(self, snap):
-        super(CinderSnapshots, self).delete(snap)
-        self.client.volume_snapshots.delete(snap)
-
-    def resource_str(self, snap):
-        return "snapshot {} (id {})".format(snap.display_name, snap.id)
-
-
-class CinderVolumes(CinderResources):
-
-    def list(self):
-        return self.client.volumes.list()
-
-    def delete(self, vol):
-        """Snapshots created from the volume must be deleted first."""
-        super(CinderVolumes, self).delete(vol)
-        self.client.volumes.delete(vol)
-
-    def resource_str(self, vol):
-        return "volume {} (id {})".format(vol.display_name, vol.id)
-
-
-class CinderBackups(CinderResources):
-
-    def list(self):
-        return self.client.backups.list()
-
-    def delete(self, backup):
-        super(CinderBackups, self).delete(backup)
-        self.client.backups.delete(backup)
-
-    def resource_str(self, backup):
-        return "backup {} (id {}) of volume {}".format(backup.name, backup.id, backup.volume_id)
-
-
-class NeutronResources(base.Resources):
-
-    def __init__(self, session):
-        super(NeutronResources, self).__init__(session)
-        self.client = neutron_client.Client(
-            username=session.username, password=session.password,
-            tenant_id=session.project_id, auth_url=session.auth_url,
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name, insecure=session.insecure)
-        self.project_id = session.project_id
-
-    # This method is used for routers and interfaces removal
-    def list_routers(self):
-        return filter(
-            self._owned_resource,
-            self.client.list_routers(tenant_id=self.project_id)['routers'])
-
-    def _owned_resource(self, res):
-        # Only considering resources owned by project
-        # We try to filter directly in the client.list() commands, but some 3rd
-        # party Neutron plugins may ignore the "tenant_id=self.project_id"
-        # keyword filtering parameter. An extra check does not cost much and
-        # keeps us on the safe side.
-        return res['tenant_id'] == self.project_id
-
-
-class NeutronRouters(NeutronResources):
-
-    def list(self):
-        return self.list_routers()
-
-    def delete(self, router):
-        """Interfaces must be deleted first."""
-        super(NeutronRouters, self).delete(router)
-        # Remove router gateway prior to remove the router itself
-        self.client.remove_gateway_router(router['id'])
-        self.client.delete_router(router['id'])
-
-    @staticmethod
-    def resource_str(router):
-        return "router {} (id {})".format(router['name'], router['id'])
-
-
-class NeutronInterfaces(NeutronResources):
-
-    def list(self):
-        # Only considering "router_interface" ports
-        # (not gateways, neither unbound ports)
-        all_ports = [
-            port for port in self.client.list_ports(
-                tenant_id=self.project_id)['ports']
-            if port["device_owner"] == "network:router_interface"
-        ]
-        return filter(self._owned_resource, all_ports)
-
-    def delete(self, interface):
-        super(NeutronInterfaces, self).delete(interface)
-        self.client.remove_interface_router(interface['device_id'],
-                                            {'port_id': interface['id']})
-
-    @staticmethod
-    def resource_str(interface):
-        return "interface {} (id {})".format(interface['name'],
-                                             interface['id'])
-
-
-class NeutronPorts(NeutronResources):
-
-    # When created, unbound ports' device_owner are "". device_owner
-    # is of the form" compute:*" if it has been bound to some vm in
-    # the past.
-    def list(self):
-        all_ports = [
-            port for port in self.client.list_ports(
-                tenant_id=self.project_id)['ports']
-            if port["device_owner"] == ""
-            or port["device_owner"].startswith("compute:")
-        ]
-        return filter(self._owned_resource, all_ports)
-
-    def delete(self, port):
-        super(NeutronPorts, self).delete(port)
-        self.client.delete_port(port['id'])
-
-    @staticmethod
-    def resource_str(port):
-        return "port {} (id {})".format(port['name'], port['id'])
-
-
-class NeutronNetworks(NeutronResources):
-
-    def list(self):
-        return filter(self._owned_resource,
-                      self.client.list_networks(
-                          tenant_id=self.project_id)['networks'])
-
-    def delete(self, net):
-        """Delete a Neutron network
-
-        Interfaces connected to the network must be deleted first.
-        Implying there must not be any VM on the network.
-        """
-        super(NeutronNetworks, self).delete(net)
-        self.client.delete_network(net['id'])
-
-    @staticmethod
-    def resource_str(net):
-        return "network {} (id {})".format(net['name'], net['id'])
-
-
-class NeutronSecgroups(NeutronResources):
-
-    def list(self):
-        # filtering out default security group (cannot be removed)
-        def secgroup_filter(secgroup):
-            if secgroup['name'] == 'default':
-                return False
-            return self._owned_resource(secgroup)
-
-        try:
-            sgs = self.client.list_security_groups(
-                tenant_id=self.project_id)['security_groups']
-            return filter(secgroup_filter, sgs)
-        except neutronclient.common.exceptions.NeutronClientException as err:
-            if getattr(err, "status_code", None) == 404:
-                raise exceptions.ResourceNotEnabled
-            raise
-
-    def delete(self, secgroup):
-        """VMs using the security group should be deleted first."""
-        super(NeutronSecgroups, self).delete(secgroup)
-        self.client.delete_security_group(secgroup['id'])
-
-    @staticmethod
-    def resource_str(secgroup):
-        return "security group {} (id {})".format(
-            secgroup['name'], secgroup['id'])
-
-
-class NeutronFloatingIps(NeutronResources):
-
-    def list(self):
-        return filter(self._owned_resource,
-                      self.client.list_floatingips(
-                          tenant_id=self.project_id)['floatingips'])
-
-    def delete(self, floating_ip):
-        super(NeutronFloatingIps, self).delete(floating_ip)
-        self.client.delete_floatingip(floating_ip['id'])
-
-    @staticmethod
-    def resource_str(floating_ip):
-        return "floating ip {} (id {})".format(
-            floating_ip['floating_ip_address'], floating_ip['id'])
-
-
-class NeutronLbMembers(NeutronResources):
-
-    def list(self):
-        return filter(self._owned_resource, self.client.list_members(
-            tenant_id=self.project_id)['members'])
-
-    def delete(self, member):
-        super(NeutronLbMembers, self).delete(member)
-        self.client.delete_member(member['id'])
-
-    @staticmethod
-    def resource_str(member):
-        return "lb-member {} (id {})".format(member['address'], member['id'])
-
-
-class NeutronLbPool(NeutronResources):
-
-    def list(self):
-        return filter(self._owned_resource, self.client.list_pools(
-            tenant_id=self.project_id)['pools'])
-
-    def delete(self, pool):
-        super(NeutronLbPool, self).delete(pool)
-        self.client.delete_pool(pool['id'])
-
-    @staticmethod
-    def resource_str(pool):
-        return "lb-pool {} (id {})".format(pool['name'], pool['id'])
-
-
-class NeutronLbVip(NeutronResources):
-
-    def list(self):
-        return filter(self._owned_resource, self.client.list_vips(
-            tenant_id=self.project_id)['vips'])
-
-    def delete(self, vip):
-        super(NeutronLbVip, self).delete(vip)
-        self.client.delete_vip(vip['id'])
-
-    @staticmethod
-    def resource_str(vip):
-        return "lb-vip {} (id {})".format(vip['name'], vip['id'])
-
-
-class NeutronLbHealthMonitor(NeutronResources):
-
-    def list(self):
-        return filter(self._owned_resource, self.client.list_health_monitors(
-            tenant_id=self.project_id)['health_monitors'])
-
-    def delete(self, health_monitor):
-        super(NeutronLbHealthMonitor, self).delete(health_monitor)
-        self.client.delete_health_monitor(health_monitor['id'])
-
-    @staticmethod
-    def resource_str(health_monitor):
-        return "lb-health_monotor type {} (id {})".format(
-            health_monitor['type'], health_monitor['id'])
-
-
-class NeutronMeteringLabel(NeutronResources):
-
-    def list(self):
-        return filter(self._owned_resource, self.client.list_metering_labels(
-            tenant_id=self.project_id)['metering_labels'])
-
-    def delete(self, metering_label):
-        super(NeutronMeteringLabel, self).delete(metering_label)
-        self.client.delete_metering_label(metering_label['id'])
-
-    @staticmethod
-    def resource_str(metering_label):
-        return "meter-label {} (id {})".format(
-            metering_label['name'], metering_label['id'])
-
-
-class NeutronFireWallPolicy(NeutronResources):
-
-    def list(self):
-        return filter(self._owned_resource, self.client.list_firewall_policies(
-            tenant_id=self.project_id)['firewall_policies'])
-
-    def delete(self, firewall_policy):
-        super(NeutronFireWallPolicy, self).delete(firewall_policy)
-        self.client.delete_firewall_policy(firewall_policy['id'])
-
-    @staticmethod
-    def resource_str(firewall_policy):
-        return "Firewall policy {} (id {})".format(
-            firewall_policy['name'], firewall_policy['id'])
-
-
-class NeutronFireWallRule(NeutronResources):
-
-    def list(self):
-        return filter(self._owned_resource, self.client.list_firewall_rules(
-            tenant_id=self.project_id)['firewall_rules'])
-
-    def delete(self, firewall_rule):
-        super(NeutronFireWallRule, self).delete(firewall_rule)
-        self.client.delete_firewall_rule(firewall_rule['id'])
-
-    @staticmethod
-    def resource_str(firewall_rule):
-        return "Firewall rule {} (id {})".format(
-            firewall_rule['name'], firewall_rule['id'])
-
-
-class NeutronFireWall(NeutronResources):
-
-    def list(self):
-        return filter(self._owned_resource, self.client.list_firewalls(
-            tenant_id=self.project_id)['firewalls'])
-
-    def delete(self, firewall):
-        super(NeutronFireWall, self).delete(firewall)
-        self.client.delete_firewall(firewall['id'])
-
-    @staticmethod
-    def resource_str(firewall):
-        return "Firewall {} (id {})".format(firewall['name'], firewall['id'])
-
-
-class NovaServers(base.Resources):
-
-    def __init__(self, session):
-        super(NovaServers, self).__init__(session)
-        self.client = nova_client.Client(
-            session.username, session.password,
-            session.project_name, auth_url=session.auth_url,
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name, insecure=session.insecure)
-        self.project_id = session.project_id
-
-    """Manage nova resources"""
-
-    def list(self):
-        return self.client.servers.list()
-
-    def delete(self, server):
-        super(NovaServers, self).delete(server)
-        self.client.servers.delete(server)
-
-    def resource_str(self, server):
-        return "server {} (id {})".format(server.name, server.id)
-
-
-class GlanceImages(base.Resources):
-
-    def __init__(self, session):
-        self.client = glance_client.Client(
-            endpoint=session.get_endpoint("image"),
-            token=session.token, insecure=session.insecure)
-        self.project_id = session.project_id
-
-    def list(self):
-        return filter(self._owned_resource, self.client.images.list(
-            owner=self.project_id))
-
-    def delete(self, image):
-        super(GlanceImages, self).delete(image)
-        self.client.images.delete(image.id)
-
-    def resource_str(self, image):
-        return "image {} (id {})".format(image.name, image.id)
-
-    def _owned_resource(self, res):
-        # Only considering resources owned by project
-        return res.owner == self.project_id
-
-
-class HeatStacks(base.Resources):
-
-    def __init__(self, session):
-        self.client = heat_client.Client(
-            "1",
-            endpoint=session.get_endpoint("orchestration"),
-            token=session.token, insecure=session.insecure)
-        self.project_id = session.project_id
-
-    def list(self):
-        return self.client.stacks.list()
-
-    def delete(self, stack):
-        super(HeatStacks, self).delete(stack)
-        if stack.stack_status == "DELETE_FAILED":
-            self.client.stacks.abandon(stack.id)
-        else:
-            self.client.stacks.delete(stack.id)
-
-    def resource_str(self, stack):
-        return "stack {})".format(stack.id)
-
-
-class CeilometerAlarms(base.Resources):
-
-    def __init__(self, session):
-        # Ceilometer Client needs a method that returns the token
-        def get_token():
-            return session.token
-        self.client = ceilometer_client.Client(
-            auth_url=session.auth_url,
-            endpoint=session.get_endpoint("metering"),
-            token=get_token, insecure=session.insecure)
-        self.project_id = session.project_id
-
-    def list(self):
-        query = [{'field': 'project_id',
-                  'op': 'eq',
-                  'value': self.project_id}]
-        return self.client.alarms.list(q=query)
-
-    def delete(self, alarm):
-        super(CeilometerAlarms, self).delete(alarm)
-        self.client.alarms.delete(alarm.alarm_id)
-
-    def resource_str(self, alarm):
-        return "alarm {}".format(alarm.name)
-
-
-class KeystoneManager(object):
-
-    """Manages Keystone queries."""
-
-    def __init__(self, username, password, project, auth_url, insecure, **kwargs):
-        self.client = keystone_client.Client(
-            username=username, password=password,
-            tenant_name=project, auth_url=auth_url,
-            insecure=insecure, **kwargs)
-        self.admin_role_id = None
-        self.tenant_info = None
-
-    def get_project_id(self, project_name_or_id=None):
-        """Get a project by its id
-
-        Returns:
-        * ID of current project if called without parameter,
-        * ID of project given as parameter if one is given.
-        """
-
-        if project_name_or_id is None:
-            return self.client.tenant_id
-
-        try:
-            self.tenant_info = self.client.tenants.get(project_name_or_id)
-            # If it doesn't raise an 404, project_name_or_id is
-            # already the project's id
-            project_id = project_name_or_id
-        except api_exceptions.NotFound:
-            try:
-                # Can raise api_exceptions.Forbidden:
-                tenants = self.client.tenants.list()
-                project_id = filter(
-                    lambda x: x.name == project_name_or_id, tenants)[0].id
-            except IndexError:
-                raise exceptions.NoSuchProject(project_name_or_id)
-
-        if not self.tenant_info:
-            self.tenant_info = self.client.tenants.get(project_id)
-        return project_id
-
-    def enable_project(self, project_id):
-        logging.info("* Enabling project {}.".format(project_id))
-        self.tenant_info = self.client.tenants.update(project_id, enabled=True)
-
-    def disable_project(self, project_id):
-        logging.info("* Disabling project {}.".format(project_id))
-        self.tenant_info = self.client.tenants.update(project_id, enabled=False)
-
-    def get_admin_role_id(self):
-        if not self.admin_role_id:
-            roles = self.client.roles.list()
-            self.admin_role_id = filter(lambda x: x.name == "admin", roles)[0].id
-        return self.admin_role_id
-
-    def become_project_admin(self, project_id):
-        user_id = self.client.user_id
-        admin_role_id = self.get_admin_role_id()
-        logging.info("* Granting role admin to user {} on project {}.".format(
-            user_id, project_id))
-
-        return self.client.roles.add_user_role(user_id, admin_role_id, project_id)
-
-    def undo_become_project_admin(self, project_id):
-        user_id = self.client.user_id
-        admin_role_id = self.get_admin_role_id()
-        logging.info("* Removing role admin to user {} on project {}.".format(
-            user_id, project_id))
-
-        return self.client.roles.remove_user_role(user_id, admin_role_id, project_id)
-
-    def delete_project(self, project_id):
-        logging.info("* Deleting project {}.".format(project_id))
-        self.client.tenants.delete(project_id)
+# TODO(berendt): wildcard imports will be removed in the future
+from ospurge.resources.ceilometer import *  # noqa
+from ospurge.resources.cinder import *  # noqa
+from ospurge.resources.glance import *  # noqa
+from ospurge.resources.heat import *  # noqa
+from ospurge.resources.neutron import *  # noqa
+from ospurge.resources.nova import *  # noqa
+from ospurge.resources.swift import *  # noqa
+from ospurge import utils
 
 
 def perform_on_project(admin_name, password, project, auth_url,
@@ -615,26 +55,20 @@ def perform_on_project(admin_name, password, project, auth_url,
     session = base.Session(admin_name, password, project, auth_url,
                            endpoint_type, region_name, insecure)
     error = None
+
     for rc in constants.RESOURCES_CLASSES:
         try:
             resources = globals()[rc](session)
-            res_actions = {'purge': resources.purge,
-                           'dump': resources.dump}
-            res_actions[action]()
+            func = getattr(resources, action)
+            func()
         except (exceptions.EndpointNotFound,
-                keystoneclient.openstack.common.apiclient.exceptions.EndpointNotFound,
-                neutronclient.common.exceptions.EndpointNotFound,
-                cinderclient.exceptions.EndpointNotFound,
-                novaclient.exceptions.EndpointNotFound,
-                heatclient.openstack.common.apiclient.exceptions.EndpointNotFound,
                 exceptions.ResourceNotEnabled):
-            # If service is not in Keystone's services catalog, ignoring it
             pass
         except requests.exceptions.MissingSchema as e:
             logging.warning(
                 'Some resources may not have been deleted, "{!s}" is '
                 'improperly configured and returned: {!r}\n'.format(rc, e))
-        except (ceilometerclient.exc.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
+        except (exceptions.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
             logging.warning(
                 "Unable to connect to {} endpoint : {}".format(rc, e.message))
             error = exceptions.InvalidEndpoint(rc)
@@ -734,11 +168,11 @@ def main():
         logging.basicConfig(level=logging.WARNING)
 
     try:
-        keystone_manager = KeystoneManager(args.username, args.password,
-                                           args.admin_project, args.auth_url,
-                                           args.insecure, region_name=args.region_name)
-    except api_exceptions.Unauthorized as exc:
-        print("Authentication failed: {}".format(str(exc)))
+        keystone_manager = utils.KeystoneManager(args.username, args.password,
+                                                 args.admin_project, args.auth_url,
+                                                 args.insecure, region_name=args.region_name)
+    except exceptions.Unauthorized as exc:
+        print("Authentication failed: %s" % exc)
         sys.exit(constants.AUTHENTICATION_FAILED_ERROR_CODE)
 
     remove_admin_role_after_purge = False
@@ -747,13 +181,7 @@ def main():
         cleanup_project_id = keystone_manager.get_project_id(
             args.cleanup_project)
         if not args.own_project:
-            try:
-                keystone_manager.become_project_admin(cleanup_project_id)
-            except api_exceptions.Conflict:
-                # user was already admin on the target project.
-                pass
-            else:
-                remove_admin_role_after_purge = True
+            remove_admin_role_after_purge = keystone_manager.become_project_admin(cleanup_project_id)
 
             # If the project was enabled before the purge, do not disable it after the purge
             disable_project_after_purge = not keystone_manager.tenant_info.enabled
@@ -762,7 +190,7 @@ def main():
                 # in order to delete resources of the project
                 keystone_manager.enable_project(cleanup_project_id)
 
-    except api_exceptions.Forbidden as exc:
+    except exceptions.Forbidden as exc:
         print("Not authorized: {}".format(str(exc)))
         sys.exit(constants.NOT_AUTHORIZED_ERROR_CODE)
     except exceptions.NoSuchProject as exc:

@@ -18,28 +18,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import ceilometerclient.exc
+from ceilometerclient.v2 import client as ceilometer_client
 
-class ResourceNotEnabled(Exception):
-    pass
-
-
-class EndpointNotFound(Exception):
-    pass
+from ospurge import base
+from ospurge import exceptions
 
 
-class InvalidEndpoint(Exception):
-    pass
+class CeilometerAlarms(base.Resources):
 
+    def __init__(self, session):
+        # Ceilometer Client needs a method that returns the token
+        def get_token():
+            return session.token
 
-class NoSuchProject(Exception):
-    pass
+        self.client = ceilometer_client.Client(
+            auth_url=session.auth_url,
+            endpoint=session.get_endpoint("metering"),
+            token=get_token, insecure=session.insecure)
+        self.project_id = session.project_id
 
+    def list(self):
+        query = [{'field': 'project_id',
+                  'op': 'eq',
+                  'value': self.project_id}]
+        return self.client.alarms.list(q=query)
 
-class DeletionFailed(Exception):
-    pass
+    def delete(self, alarm):
+        super(CeilometerAlarms, self).delete(alarm)
+        self.client.alarms.delete(alarm.alarm_id)
 
-class Unauthorized(Exception):
-    pass
-
-class Forbidden(Exception):
-    pass
+    def resource_str(self, alarm):
+        return "alarm {}".format(alarm.name)
