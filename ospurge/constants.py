@@ -18,40 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Available resources classes
-
-# The order of the Openstack resources in the subsequent list
-# corresponds to the order in which ospurge will delete the
-# resources. This order takes into account inter-resources
-# dependencies, and tries to minimize the overall time duration of the
-# purge operation.
-
-RESOURCES_CLASSES = [
-    'CinderSnapshots',
-    'CinderBackups',
-    'NeutronFireWall',
-    'NeutronFireWallPolicy',
-    'NeutronFireWallRule',
-    'NeutronLbMembers',
-    'NeutronLbVip',
-    'NeutronLbHealthMonitor',
-    'NeutronLbPool',
-    'NovaServers',
-    'NeutronFloatingIps',
-    'NeutronMeteringLabel',
-    'NeutronInterfaces',
-    'NeutronRouters',
-    'NeutronPorts',
-    'NeutronNetworks',
-    'NeutronSecgroups',
-    'GlanceImages',
-    'SwiftObjects',
-    'SwiftContainers',
-    'CinderVolumes',
-    'CeilometerAlarms',
-    'HeatStacks'
-]
-
 # Error codes
 
 NO_SUCH_PROJECT_ERROR_CODE = 2

@@ -96,7 +96,6 @@ class Session(object):
         try:
             return self.catalog[service_type][0][self.endpoint_type]
         except (KeyError, IndexError):
-            # Endpoint could not be found
             raise exceptions.EndpointNotFound(service_type)
 
 
