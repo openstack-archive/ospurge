@@ -696,11 +696,13 @@ class KeystoneManager(object):
 
     """Manages Keystone queries."""
 
-    def __init__(self, username, password, project, auth_url, insecure, **kwargs):
+    def __init__(self, username, password, project, auth_url, insecure,
+                 admin_role_name, **kwargs):
         self.client = keystone_client.Client(
             username=username, password=password,
             tenant_name=project, auth_url=auth_url,
             insecure=insecure, **kwargs)
+        self.admin_role_name = admin_role_name
         self.admin_role_id = None
         self.tenant_info = None
 
@@ -744,7 +746,7 @@ class KeystoneManager(object):
     def get_admin_role_id(self):
         if not self.admin_role_id:
             roles = self.client.roles.list()
-            self.admin_role_id = filter(lambda x: x.name == "admin", roles)[0].id
+            self.admin_role_id = filter(lambda x: x.name == self.admin_role_name, roles)[0].id
         return self.admin_role_id
 
     def become_project_admin(self, project_id):
@@ -858,6 +860,8 @@ def parse_args():
                         help="Project name used for authentication. This project "
                              "will be purged if --own-project is set. "
                              "Defaults to env[OS_TENANT_NAME].")
+    parser.add_argument("--admin-role", required=False, default="admin",
+                        help="Name of admin role. Defaults to 'admin'.")
     parser.add_argument("--auth-url", action=EnvDefault,
                         envvar='OS_AUTH_URL', required=True,
                         help="Authentication URL. Defaults to "
@@ -899,7 +903,8 @@ def main():
     try:
         keystone_manager = KeystoneManager(args.username, args.password,
                                            args.admin_project, args.auth_url,
-                                           args.insecure, region_name=args.region_name)
+                                           args.insecure, region_name=args.region_name,
+                                           admin_role_name=args.admin_role_name)
     except api_exceptions.Unauthorized as exc:
         print("Authentication failed: {}".format(str(exc)))
         sys.exit(AUTHENTICATION_FAILED_ERROR_CODE)
