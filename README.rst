@@ -36,8 +36,8 @@ Available options can be displayed by using ``ospurge -h``::
     usage: ospurge [-h] [--verbose] [--dry-run] [--dont-delete-project]
                    [--region-name REGION_NAME] [--endpoint-type ENDPOINT_TYPE]
                    --username USERNAME --password PASSWORD --admin-project
-                   ADMIN_PROJECT --auth-url AUTH_URL
-                   [--cleanup-project CLEANUP_PROJECT] [--own-project]
+                   ADMIN_PROJECT [--admin-role-name ADMIN_ROLE_NAME] --auth-url
+                   AUTH_URL [--cleanup-project CLEANUP_PROJECT] [--own-project]
                    [--insecure]
 
     Purge resources from an Openstack project.
@@ -63,6 +63,8 @@ Available options can be displayed by using ``ospurge -h``::
                             Project name used for authentication. This project
                             will be purged if --own-project is set. Defaults to
                             env[OS_TENANT_NAME].
+      --admin-role-name ADMIN_ROLE_NAME
+                                Name of admin role. Defaults to 'admin'.
       --auth-url AUTH_URL   Authentication URL. Defaults to env[OS_AUTH_URL].
       --cleanup-project CLEANUP_PROJECT
                             ID or Name of project to purge. Not required if --own-
@@ -76,7 +78,6 @@ Available options can be displayed by using ``ospurge -h``::
                             certificate will not be verified against any
                             certificate authorities. This option should be used
                             with caution.
-
 
 
 Error codes
