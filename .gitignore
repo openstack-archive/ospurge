@@ -7,3 +7,4 @@ build/
 dist/
 ospurge.egg-info/
 pbr-0.6-py2.7.egg/
+.tox
