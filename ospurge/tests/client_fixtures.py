@@ -20,6 +20,7 @@ USER_ID = 'c4da488862bd435c9e6c0275a0d0e49a'
 PROJECT_ID = '225da22d3ce34b15877ea70b2a575f58'
 
 AUTH_URL = "http://localhost:5000/v2.0"
+ROLE_URL = "http://admin:35357/v2.0/OS-KSADM"
 VOLUME_PUBLIC_ENDPOINT = 'http://public:8776/v1/225da22d3ce34b15877ea70b2a575f58'
 IMAGE_PUBLIC_ENDPOINT = 'http://public:9292'
 STORAGE_PUBLIC_ENDPOINT = 'http://public:8080/v1/AUTH_ee5b90900a4b4e85938b0ceadf4467f8'
@@ -67,6 +68,7 @@ VOLUMES_IDS = ["45baf976-c20a-4894-a7c3-c94b7376bf55",
                "5aa119a8-d25b-45a7-8d1b-88e127885635"]
 SNAPSHOTS_IDS = ["3fbbcccf-d058-4502-8844-6feeffdf4cb5",
                  "e479997c-650b-40a4-9dfe-77655818b0d2"]
+VOLUME_BACKUP_IDS = ["803a2ad2-893b-4b42-90d9-eb5f09a8421a"]
 ROUTERS_IDS = ["7177abc4-5ae9-4bb7-b0d4-89e94a4abf3b",
                "a9254bdb-2613-4a13-ac4c-adc581fba50d"]
 PORTS_IDS = ["d7815f5b-a228-47bb-a5e5-f139c4e476f6"]
@@ -204,6 +206,19 @@ PROJECT_SCOPED_TOKEN = {
     }
 }
 
+ROLE_LIST = {u'roles': [
+    {u'id': u'201c290919ec4d6bb350401f8b4145a3',
+     u'name': u'heat_stack_owner'},
+    {u'id': u'edc12489faa74ee0aca0b8a0b4d74a74', u'name': u'Member'},
+    {u'id': u'6c3ceb6e6112486ba1465a636652b544', u'name': u'ResellerAdmin'},
+    {u'id': u'7e9fd9336bc24936b3bbde15d1dd8f64', u'name': u'service'},
+    {u'id': u'972b51c620fe481e8e37682d8b5dbd1b', u'name': u'admin'},
+    {u'id': u'9c3698e2f6a34d59b45d969d78403942', u'name': u'heat_stack_user'},
+    {u'id': u'9fe2ff9ee4384b1894a90878d3e92bab', u'name': u'_member_'},
+    {u'id': u'b6673106f5c64c0cbc1970ad706d38c0', u'name': u'anotherrole'}]
+}
+
+
 STORAGE_CONTAINERS_LIST = [
     {
         "count": 0,
@@ -302,6 +317,24 @@ SNAPSHOTS_LIST = {
             "size": 25,
             "created_at": "2012-03-19T01:52:47Z"
         }
+    ]
+}
+
+VOLUME_BACKUPS_LIST = {
+    u'backups': [
+        {u'availability_zone': u'nova',
+         u'container': u'volumebackups',
+         u'created_at': u'2015-09-22T14:59:03.000000',
+         u'description': u'A Volume Backup',
+         u'fail_reason': None,
+         u'id': u'803a2ad2-893b-4b42-90d9-eb5f09a8421a',
+         u'links': [{u'href': '%s/backups/803a2ad2-893b-4b42-90d9-eb5f09a8421a' % VOLUME_PUBLIC_ENDPOINT,
+                     u'rel': u'self'}],
+         u'name': u'volumebackup-01',
+         u'object_count': 22,
+         u'size': 10,
+         u'status': u'available',
+         u'volume_id': u'45baf976-c20a-4894-a7c3-c94b7376bf55'}
     ]
 }
 

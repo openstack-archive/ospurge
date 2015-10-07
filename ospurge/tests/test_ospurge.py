@@ -29,6 +29,8 @@ import json as jsonutils
 import httpretty
 import testtools
 
+import cinderclient
+
 from ospurge import ospurge
 from ospurge.tests import client_fixtures
 
@@ -61,6 +63,9 @@ class HttpTest(testtools.TestCase):
     def stub_auth(self):
         self.stub_url('POST', parts=['tokens'], base_url=AUTH_URL,
                       json=client_fixtures.PROJECT_SCOPED_TOKEN)
+        self.stub_url('GET', parts=['roles'],
+                      base_url=client_fixtures.ROLE_URL,
+                      json=client_fixtures.ROLE_LIST)
 
 
 class SessionTest(HttpTest):
@@ -246,6 +251,43 @@ class TestCinderVolumes(TestCinderBase):
 
     def test_delete(self):
         self._test_delete()
+
+
+class TestCinderBackups(TestCinderBase):
+    IDS = client_fixtures.VOLUME_BACKUP_IDS
+
+    def stub_list(self):
+        self.stub_url('GET', parts=['backups', 'detail'],
+                      json=client_fixtures.VOLUME_BACKUPS_LIST)
+
+    def stub_delete(self):
+        self.stub_url(
+            'DELETE', parts=['backups', self.IDS[0]])
+
+    def setUp(self):
+        super(TestCinderBackups, self).setUp()
+        # Make sure tests work whatever version of cinderclient
+        self.versionstring_bak = cinderclient.version_info.version_string
+        cinderclient.version_info.version_string = lambda: '1.4.0'
+        self.session.is_admin = True
+        self.resources = ospurge.CinderBackups(self.session)
+
+    def tearDown(self):
+        super(TestCinderBackups, self).tearDown()
+        cinderclient.version_info.version_string = self.versionstring_bak
+
+    def test_list(self):
+        self._test_list()
+
+    def test_delete(self):
+        self._test_delete()
+
+    def test_empty_list(self):
+        self.stub_auth()
+        versionstring_bak = cinderclient.version_info.version_string
+        cinderclient.version_info.version_string = lambda: '1.1.1'
+        self.assertEqual(self.resources.list(), [])
+        cinderclient.version_info.version_string = versionstring_bak
 
 
 class TestNeutronBase(TestResourcesBase):

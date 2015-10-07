@@ -24,6 +24,7 @@
 # SOFTWARE.
 
 import argparse
+from distutils import version
 import logging
 import os
 import sys
@@ -31,7 +32,7 @@ import time
 
 import ceilometerclient.exc
 from ceilometerclient.v2 import client as ceilometer_client
-import cinderclient.exceptions
+import cinderclient
 from cinderclient.v1 import client as cinder_client
 import glanceclient.exc
 from glanceclient.v1 import client as glance_client
@@ -171,6 +172,18 @@ class Session(object):
         self.project_name = client.project_name
         self.endpoint_type = endpoint_type
         self.catalog = client.service_catalog.get_endpoints()
+        try:
+            # Detect if we are admin or not
+            client.roles.list()  # Only admins are allowed to do this
+        except (
+            # The Exception Depends on OpenStack Infrastructure.
+            api_exceptions.Forbidden,
+            api_exceptions.ConnectionRefused,  # admin URL not permitted
+            api_exceptions.Unauthorized,
+        ):
+            self.is_admin = False
+        else:
+            self.is_admin = True
 
     def get_endpoint(self, service_type):
         try:
@@ -305,6 +318,13 @@ class CinderVolumes(CinderResources):
 class CinderBackups(CinderResources):
 
     def list(self):
+        if self.session.is_admin and version.LooseVersion(
+                cinderclient.version_info.version_string()) < '1.4.0':
+            logging.warning('cinder volume-backups are ignored when ospurge is '
+                            'launched with admin credentials because of the '
+                            'following bug: '
+                            'https://bugs.launchpad.net/python-cinderclient/+bug/1422046')
+            return []
         return self.client.backups.list()
 
     def delete(self, backup):
