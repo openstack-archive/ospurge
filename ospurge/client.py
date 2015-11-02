@@ -38,7 +38,7 @@ import glanceclient.exc
 from glanceclient.v1 import client as glance_client
 from heatclient import client as heat_client
 import heatclient.openstack.common.apiclient.exceptions
-from keystoneclient.apiclient import exceptions as api_exceptions
+from keystoneclient import exceptions as keystone_exceptions
 import keystoneclient.openstack.common.apiclient.exceptions
 from keystoneclient.v2_0 import client as keystone_client
 import neutronclient.common.exceptions
@@ -50,6 +50,14 @@ from swiftclient import client as swift_client
 
 from ospurge import constants
 from ospurge import exceptions
+
+
+try:
+    KeystoneConnectionRefused = keystone_exceptions.ConnectionRefused
+except AttributeError:
+    # ConnectionRefused does not exist in python-keystoneclient==0.7.1 which
+    # is the packages version on Ubuntu, so we still have to support it.
+    KeystoneConnectionRefused = keystone_exceptions.ConnectionError
 
 
 # Decorators
@@ -119,9 +127,9 @@ class Session(object):
             client.roles.list()  # Only admins are allowed to do this
         except (
             # The Exception Depends on OpenStack Infrastructure.
-            api_exceptions.Forbidden,
-            api_exceptions.ConnectionRefused,  # admin URL not permitted
-            api_exceptions.Unauthorized,
+            keystone_exceptions.Forbidden,
+            KeystoneConnectionRefused,  # admin URL not permitted
+            keystone_exceptions.Unauthorized,
         ):
             self.is_admin = False
         else:
@@ -684,9 +692,9 @@ class KeystoneManager(object):
             # If it doesn't raise an 404, project_name_or_id is
             # already the project's id
             project_id = project_name_or_id
-        except api_exceptions.NotFound:
+        except keystone_exceptions.NotFound:
             try:
-                # Can raise api_exceptions.Forbidden:
+                # Can raise keystone_exceptions.Forbidden:
                 tenants = self.client.tenants.list()
                 project_id = filter(
                     lambda x: x.name == project_name_or_id, tenants)[0].id
@@ -867,7 +875,7 @@ def main():
                                            args.admin_project, args.auth_url,
                                            args.insecure, region_name=args.region_name,
                                            admin_role_name=args.admin_role_name)
-    except api_exceptions.Unauthorized as exc:
+    except keystone_exceptions.Unauthorized as exc:
         print("Authentication failed: {}".format(str(exc)))
         sys.exit(constants.AUTHENTICATION_FAILED_ERROR_CODE)
 
@@ -879,7 +887,7 @@ def main():
         if not args.own_project:
             try:
                 keystone_manager.become_project_admin(cleanup_project_id)
-            except api_exceptions.Conflict:
+            except keystone_exceptions.Conflict:
                 # user was already admin on the target project.
                 pass
             else:
@@ -892,7 +900,7 @@ def main():
                 # in order to delete resources of the project
                 keystone_manager.enable_project(cleanup_project_id)
 
-    except api_exceptions.Forbidden as exc:
+    except keystone_exceptions.Forbidden as exc:
         print("Not authorized: {}".format(str(exc)))
         sys.exit(constants.NOT_AUTHORIZED_ERROR_CODE)
     except exceptions.NoSuchProject as exc:
