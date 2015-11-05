@@ -520,6 +520,8 @@ class CeilometerAlarms(base.Resources):
         self.client = ceilometer_client.Client(
             auth_url=session.auth_url,
             endpoint=session.get_endpoint("metering"),
+            endpoint_type=session.endpoint_type,
+            region_name=session.region_name,
             token=get_token, insecure=session.insecure)
         self.project_id = session.project_id
 
