@@ -26,7 +26,6 @@
 import argparse
 from distutils import version
 import logging
-import os
 import sys
 
 import ceilometerclient.exc
@@ -37,9 +36,6 @@ import glanceclient.exc
 from glanceclient.v1 import client as glance_client
 from heatclient import client as heat_client
 import heatclient.openstack.common.apiclient.exceptions
-from keystoneclient.apiclient import exceptions as api_exceptions
-import keystoneclient.openstack.common.apiclient.exceptions
-from keystoneclient.v2_0 import client as keystone_client
 import neutronclient.common.exceptions
 from neutronclient.v2_0 import client as neutron_client
 from novaclient import client as nova_client
@@ -50,6 +46,7 @@ from swiftclient import client as swift_client
 from ospurge import base
 from ospurge import constants
 from ospurge import exceptions
+from ospurge import utils
 
 
 class SwiftResources(base.Resources):
@@ -537,84 +534,6 @@ class CeilometerAlarms(base.Resources):
         return "alarm {}".format(alarm.name)
 
 
-class KeystoneManager(object):
-
-    """Manages Keystone queries."""
-
-    def __init__(self, username, password, project, auth_url, insecure,
-                 admin_role_name, **kwargs):
-        self.client = keystone_client.Client(
-            username=username, password=password,
-            tenant_name=project, auth_url=auth_url,
-            insecure=insecure, **kwargs)
-        self.admin_role_name = admin_role_name
-        self.admin_role_id = None
-        self.tenant_info = None
-
-    def get_project_id(self, project_name_or_id=None):
-        """Get a project by its id
-
-        Returns:
-        * ID of current project if called without parameter,
-        * ID of project given as parameter if one is given.
-        """
-
-        if project_name_or_id is None:
-            return self.client.tenant_id
-
-        try:
-            self.tenant_info = self.client.tenants.get(project_name_or_id)
-            # If it doesn't raise an 404, project_name_or_id is
-            # already the project's id
-            project_id = project_name_or_id
-        except api_exceptions.NotFound:
-            try:
-                # Can raise api_exceptions.Forbidden:
-                tenants = self.client.tenants.list()
-                project_id = filter(
-                    lambda x: x.name == project_name_or_id, tenants)[0].id
-            except IndexError:
-                raise exceptions.NoSuchProject(project_name_or_id)
-
-        if not self.tenant_info:
-            self.tenant_info = self.client.tenants.get(project_id)
-        return project_id
-
-    def enable_project(self, project_id):
-        logging.info("* Enabling project {}.".format(project_id))
-        self.tenant_info = self.client.tenants.update(project_id, enabled=True)
-
-    def disable_project(self, project_id):
-        logging.info("* Disabling project {}.".format(project_id))
-        self.tenant_info = self.client.tenants.update(project_id, enabled=False)
-
-    def get_admin_role_id(self):
-        if not self.admin_role_id:
-            roles = self.client.roles.list()
-            self.admin_role_id = filter(lambda x: x.name == self.admin_role_name, roles)[0].id
-        return self.admin_role_id
-
-    def become_project_admin(self, project_id):
-        user_id = self.client.user_id
-        admin_role_id = self.get_admin_role_id()
-        logging.info("* Granting role admin to user {} on project {}.".format(
-            user_id, project_id))
-
-        return self.client.roles.add_user_role(user_id, admin_role_id, project_id)
-
-    def undo_become_project_admin(self, project_id):
-        user_id = self.client.user_id
-        admin_role_id = self.get_admin_role_id()
-        logging.info("* Removing role admin to user {} on project {}.".format(
-            user_id, project_id))
-
-        return self.client.roles.remove_user_role(user_id, admin_role_id, project_id)
-
-    def delete_project(self, project_id):
-        logging.info("* Deleting project {}.".format(project_id))
-        self.client.tenants.delete(project_id)
-
-
 def perform_on_project(admin_name, password, project, auth_url,
                        endpoint_type='publicURL', region_name=None,
                        action='dump', insecure=False):
@@ -632,7 +551,6 @@ def perform_on_project(admin_name, password, project, auth_url,
                            'dump': resources.dump}
             res_actions[action]()
         except (exceptions.EndpointNotFound,
-                keystoneclient.openstack.common.apiclient.exceptions.EndpointNotFound,
                 neutronclient.common.exceptions.EndpointNotFound,
                 cinderclient.exceptions.EndpointNotFound,
                 novaclient.exceptions.EndpointNotFound,
@@ -655,23 +573,6 @@ def perform_on_project(admin_name, password, project, auth_url,
         raise error
 
 
-# From Russell Heilling
-# http://stackoverflow.com/questions/10551117/setting-options-from-environment-variables-when-using-argparse
-class EnvDefault(argparse.Action):
-
-    def __init__(self, envvar, required=True, default=None, **kwargs):
-        # Overriding default with environment variable if available
-        if envvar in os.environ:
-            default = os.environ[envvar]
-        if required and default:
-            required = False
-        super(EnvDefault, self).__init__(default=default, required=required,
-                                         **kwargs)
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, values)
-
-
 def parse_args():
     desc = "Purge resources from an Openstack project."
     parser = argparse.ArgumentParser(description=desc)
@@ -682,32 +583,32 @@ def parse_args():
     parser.add_argument("--dont-delete-project", action="store_true",
                         help="Executes cleanup script without removing the project. "
                              "Warning: all project resources will still be deleted.")
-    parser.add_argument("--region-name", action=EnvDefault, required=False,
+    parser.add_argument("--region-name", action=utils.EnvDefault, required=False,
                         envvar='OS_REGION_NAME', default=None,
                         help="Region to use. Defaults to env[OS_REGION_NAME] "
                              "or None")
-    parser.add_argument("--endpoint-type", action=EnvDefault,
+    parser.add_argument("--endpoint-type", action=utils.EnvDefault,
                         envvar='OS_ENDPOINT_TYPE', default="publicURL",
                         help="Endpoint type to use. Defaults to "
                              "env[OS_ENDPOINT_TYPE] or publicURL")
-    parser.add_argument("--username", action=EnvDefault,
+    parser.add_argument("--username", action=utils.EnvDefault,
                         envvar='OS_USERNAME', required=True,
                         help="If --own-project is set : a user name with access to the "
                              "project being purged. If --cleanup-project is set : "
                              "a user name with admin role in project specified in --admin-project. "
                              "Defaults to env[OS_USERNAME]")
-    parser.add_argument("--password", action=EnvDefault,
+    parser.add_argument("--password", action=utils.EnvDefault,
                         envvar='OS_PASSWORD', required=True,
                         help="The user's password. Defaults "
                              "to env[OS_PASSWORD].")
-    parser.add_argument("--admin-project", action=EnvDefault,
+    parser.add_argument("--admin-project", action=utils.EnvDefault,
                         envvar='OS_TENANT_NAME', required=True,
                         help="Project name used for authentication. This project "
                              "will be purged if --own-project is set. "
                              "Defaults to env[OS_TENANT_NAME].")
     parser.add_argument("--admin-role-name", required=False, default="admin",
                         help="Name of admin role. Defaults to 'admin'.")
-    parser.add_argument("--auth-url", action=EnvDefault,
+    parser.add_argument("--auth-url", action=utils.EnvDefault,
                         envvar='OS_AUTH_URL', required=True,
                         help="Authentication URL. Defaults to "
                              "env[OS_AUTH_URL].")
@@ -746,11 +647,11 @@ def main():
         logging.basicConfig(level=logging.WARNING)
 
     try:
-        keystone_manager = KeystoneManager(args.username, args.password,
-                                           args.admin_project, args.auth_url,
-                                           args.insecure, region_name=args.region_name,
-                                           admin_role_name=args.admin_role_name)
-    except api_exceptions.Unauthorized as exc:
+        keystone_manager = utils.KeystoneManager(args.username, args.password,
+                                                 args.admin_project, args.auth_url,
+                                                 args.insecure, region_name=args.region_name,
+                                                 admin_role_name=args.admin_role_name)
+    except exceptions.Unauthorized as exc:
         print("Authentication failed: {}".format(str(exc)))
         sys.exit(constants.AUTHENTICATION_FAILED_ERROR_CODE)
 
@@ -762,7 +663,7 @@ def main():
         if not args.own_project:
             try:
                 keystone_manager.become_project_admin(cleanup_project_id)
-            except api_exceptions.Conflict:
+            except exceptions.Conflict:
                 # user was already admin on the target project.
                 pass
             else:
@@ -775,7 +676,7 @@ def main():
                 # in order to delete resources of the project
                 keystone_manager.enable_project(cleanup_project_id)
 
-    except api_exceptions.Forbidden as exc:
+    except exceptions.Forbidden as exc:
         print("Not authorized: {}".format(str(exc)))
         sys.exit(constants.NOT_AUTHORIZED_ERROR_CODE)
     except exceptions.NoSuchProject as exc:
