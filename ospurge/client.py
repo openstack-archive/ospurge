@@ -27,24 +27,20 @@ import argparse
 import logging
 import sys
 
-import ceilometerclient.exc
-from ceilometerclient.v2 import client as ceilometer_client
-import glanceclient.exc
-from glanceclient.v1 import client as glance_client
-from heatclient import client as heat_client
-import heatclient.openstack.common.apiclient.exceptions
 import keystoneclient.openstack.common.apiclient.exceptions
 import neutronclient.common.exceptions
 from neutronclient.v2_0 import client as neutron_client
-from novaclient import client as nova_client
-import novaclient.exceptions
 import requests
 
 from ospurge import base
 from ospurge import constants
 from ospurge import exceptions
 # TODO(berendt): wildcard imports will be removed in the future
+from ospurge.resources.ceilometer import *  # noqa
 from ospurge.resources.cinder import *  # noqa
+from ospurge.resources.glance import *  # noqa
+from ospurge.resources.heat import *  # noqa
+from ospurge.resources.nova import *  # noqa
 from ospurge.resources.swift import *  # noqa
 from ospurge import utils
 
@@ -329,103 +325,6 @@ class NeutronFireWall(NeutronResources):
         return "Firewall {} (id {})".format(firewall['name'], firewall['id'])
 
 
-class NovaServers(base.Resources):
-
-    def __init__(self, session):
-        super(NovaServers, self).__init__(session)
-        self.client = nova_client.Client(
-            "2", session.username, session.password,
-            session.project_name, auth_url=session.auth_url,
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name, insecure=session.insecure)
-        self.project_id = session.project_id
-
-    """Manage nova resources"""
-
-    def list(self):
-        return self.client.servers.list()
-
-    def delete(self, server):
-        super(NovaServers, self).delete(server)
-        self.client.servers.delete(server)
-
-    def resource_str(self, server):
-        return "server {} (id {})".format(server.name, server.id)
-
-
-class GlanceImages(base.Resources):
-
-    def __init__(self, session):
-        self.client = glance_client.Client(
-            endpoint=session.get_endpoint("image"),
-            token=session.token, insecure=session.insecure)
-        self.project_id = session.project_id
-
-    def list(self):
-        return filter(self._owned_resource, self.client.images.list(
-            owner=self.project_id))
-
-    def delete(self, image):
-        super(GlanceImages, self).delete(image)
-        self.client.images.delete(image.id)
-
-    def resource_str(self, image):
-        return "image {} (id {})".format(image.name, image.id)
-
-    def _owned_resource(self, res):
-        # Only considering resources owned by project
-        return res.owner == self.project_id
-
-
-class HeatStacks(base.Resources):
-
-    def __init__(self, session):
-        self.client = heat_client.Client(
-            "1",
-            endpoint=session.get_endpoint("orchestration"),
-            token=session.token, insecure=session.insecure)
-        self.project_id = session.project_id
-
-    def list(self):
-        return self.client.stacks.list()
-
-    def delete(self, stack):
-        super(HeatStacks, self).delete(stack)
-        if stack.stack_status == "DELETE_FAILED":
-            self.client.stacks.abandon(stack.id)
-        else:
-            self.client.stacks.delete(stack.id)
-
-    def resource_str(self, stack):
-        return "stack {})".format(stack.id)
-
-
-class CeilometerAlarms(base.Resources):
-
-    def __init__(self, session):
-        # Ceilometer Client needs a method that returns the token
-        def get_token():
-            return session.token
-        self.client = ceilometer_client.Client(
-            auth_url=session.auth_url,
-            endpoint=session.get_endpoint("metering"),
-            token=get_token, insecure=session.insecure)
-        self.project_id = session.project_id
-
-    def list(self):
-        query = [{'field': 'project_id',
-                  'op': 'eq',
-                  'value': self.project_id}]
-        return self.client.alarms.list(q=query)
-
-    def delete(self, alarm):
-        super(CeilometerAlarms, self).delete(alarm)
-        self.client.alarms.delete(alarm.alarm_id)
-
-    def resource_str(self, alarm):
-        return "alarm {}".format(alarm.name)
-
-
 def perform_on_project(admin_name, password, project, auth_url,
                        endpoint_type='publicURL', region_name=None,
                        action='dump', insecure=False):
@@ -435,17 +334,15 @@ def perform_on_project(admin_name, password, project, auth_url,
     """
     session = base.Session(admin_name, password, project, auth_url,
                            endpoint_type, region_name, insecure)
-    error = None
     for rc in constants.RESOURCES_CLASSES:
         try:
             resources = globals()[rc](session)
             func = getattr(resources, action)
             func()
         except (exceptions.EndpointNotFound,
+                exceptions.InvalidEndpoint,
                 keystoneclient.openstack.common.apiclient.exceptions.EndpointNotFound,
                 neutronclient.common.exceptions.EndpointNotFound,
-                novaclient.exceptions.EndpointNotFound,
-                heatclient.openstack.common.apiclient.exceptions.EndpointNotFound,
                 exceptions.ResourceNotEnabled):
             # If service is not in Keystone's services catalog, ignoring it
             pass
@@ -453,15 +350,9 @@ def perform_on_project(admin_name, password, project, auth_url,
             logging.warning(
                 'Some resources may not have been deleted, "{!s}" is '
                 'improperly configured and returned: {!r}\n'.format(rc, e))
-        except (ceilometerclient.exc.InvalidEndpoint, glanceclient.exc.InvalidEndpoint) as e:
-            logging.warning(
-                "Unable to connect to {} endpoint : {}".format(rc, e.message))
-            error = exceptions.InvalidEndpoint(rc)
         except (neutronclient.common.exceptions.NeutronClientException):
             # If service is not configured, ignoring it
             pass
-    if error:
-        raise error
 
 
 def parse_args():
