@@ -81,7 +81,7 @@ exit_on_failure "Unable to snapshot volume $VOL_NAME"
 # Don't exit if this fails - as we may test platforms that don't
 # provide this feature
 if ! cinder backup-create --display-name $VOLBACK_NAME $VOL_ID; then
-  :
+    :
 fi
 
 
@@ -125,8 +125,7 @@ exit_on_failure "Unable to add interface on subnet $SUBNET_NAME to router $ROUT_
 
 # Creating a floating IP and retrieving its IP Address
 
-FIP_ADD=$(neutron floatingip-create $EXTNET_NAME \
-          | awk '/ floating_ip_address /{print $4}')
+FIP_ADD=$(neutron floatingip-create $EXTNET_NAME | awk '/ floating_ip_address /{print $4}')
 exit_if_empty "$FIP_ADD" "Unable to create or retrieve floating IP"
 
 # Creating a security group
@@ -170,11 +169,11 @@ exit_on_failure "Unable to create Glance iamge $IMG_NAME"
 ###############################
 echo 'heat_template_version: 2013-05-23
 description: >
-  Hello world HOT template' > dummy_stack.yaml
+    Hello world HOT template' > dummy_stack.yaml
 # Don't exit if this fails - as we may test platforms that don't
 # provide this feature
 if ! heat stack-create -f dummy_stack.yaml $STACK_NAME; then
-  :
+    :
 fi
 
 
