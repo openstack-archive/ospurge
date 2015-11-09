@@ -21,7 +21,7 @@
 import logging
 import time
 
-from keystoneclient.apiclient import exceptions as api_exceptions
+from keystoneclient.apiclient import exceptions as keystone_exceptions
 from keystoneclient.v2_0 import client as keystone_client
 
 from ospurge import constants
@@ -97,9 +97,9 @@ class Session(object):
             client.roles.list()  # Only admins are allowed to do this
         except (
             # The Exception Depends on OpenStack Infrastructure.
-            api_exceptions.Forbidden,
-            api_exceptions.ConnectionRefused,  # admin URL not permitted
-            api_exceptions.Unauthorized,
+            keystone_exceptions.Forbidden,
+            keystone_exceptions.ConnectionRefused,  # admin URL not permitted
+            keystone_exceptions.Unauthorized,
         ):
             self.is_admin = False
         else:
@@ -139,7 +139,10 @@ class Resources(object):
     def dump(self):
         """Display all available resources."""
         # Resources type and resources are displayed only if self.list succeeds
-        resources = self.list()
+        try:
+            resources = self.list()
+        except keystone_exceptions.EndpointNotFound as exc:
+            raise exceptions.EndpointNotFound(str(exc))
         c_name = self.__class__.__name__
         print("* Resources type: {}".format(c_name))
         for resource in resources:
