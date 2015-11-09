@@ -41,60 +41,13 @@ from neutronclient.v2_0 import client as neutron_client
 from novaclient import client as nova_client
 import novaclient.exceptions
 import requests
-from swiftclient import client as swift_client
 
 from ospurge import base
 from ospurge import constants
 from ospurge import exceptions
+# TODO(berendt): wildcard imports will be removed in the future
+from ospurge.resources.swift import *  # noqa
 from ospurge import utils
-
-
-class SwiftResources(base.Resources):
-
-    def __init__(self, session):
-        super(SwiftResources, self).__init__(session)
-        self.endpoint = self.session.get_endpoint("object-store")
-        self.token = self.session.token
-        conn = swift_client.HTTPConnection(self.endpoint, insecure=self.session.insecure)
-        self.http_conn = conn.parsed_url, conn
-
-    # This method is used to retrieve Objects as well as Containers.
-    def list_containers(self):
-        containers = swift_client.get_account(self.endpoint, self.token, http_conn=self.http_conn)[1]
-        return (cont['name'] for cont in containers)
-
-
-class SwiftObjects(SwiftResources):
-
-    def list(self):
-        swift_objects = []
-        for cont in self.list_containers():
-            objs = [{'container': cont, 'name': obj['name']} for obj in
-                    swift_client.get_container(self.endpoint, self.token, cont, http_conn=self.http_conn)[1]]
-            swift_objects.extend(objs)
-        return swift_objects
-
-    def delete(self, obj):
-        super(SwiftObjects, self).delete(obj)
-        swift_client.delete_object(self.endpoint, token=self.token, http_conn=self.http_conn,
-                                   container=obj['container'], name=obj['name'])
-
-    def resource_str(self, obj):
-        return "object {} in container {}".format(obj['name'], obj['container'])
-
-
-class SwiftContainers(SwiftResources):
-
-    def list(self):
-        return self.list_containers()
-
-    def delete(self, container):
-        """Container must be empty for deletion to succeed."""
-        super(SwiftContainers, self).delete(container)
-        swift_client.delete_container(self.endpoint, self.token, container, http_conn=self.http_conn)
-
-    def resource_str(self, obj):
-        return "container {}".format(obj)
 
 
 class CinderResources(base.Resources):
@@ -547,9 +500,8 @@ def perform_on_project(admin_name, password, project, auth_url,
     for rc in constants.RESOURCES_CLASSES:
         try:
             resources = globals()[rc](session)
-            res_actions = {'purge': resources.purge,
-                           'dump': resources.dump}
-            res_actions[action]()
+            func = getattr(resources, action)
+            func()
         except (exceptions.EndpointNotFound,
                 neutronclient.common.exceptions.EndpointNotFound,
                 cinderclient.exceptions.EndpointNotFound,
