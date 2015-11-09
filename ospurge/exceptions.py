@@ -37,3 +37,19 @@ class NoSuchProject(Exception):
 
 class DeletionFailed(Exception):
     pass
+
+
+class Unauthorized(Exception):
+    pass
+
+
+class Forbidden(Exception):
+    pass
+
+
+class AuthorizationFailed(Exception):
+    pass
+
+
+class Conflict(Exception):
+    pass
