@@ -686,8 +686,11 @@ class TestNeutronLbPool(TestNeutronBase):
         self._test_delete()
 
 
-class TestNovaServers(TestResourcesBase):
+class TestNovaBase(TestResourcesBase):
     TEST_URL = client_fixtures.COMPUTE_PUBLIC_ENDPOINT
+
+
+class TestNovaServers(TestNovaBase):
     IDS = client_fixtures.SERVERS_IDS
 
     def stub_list(self):
@@ -701,6 +704,28 @@ class TestNovaServers(TestResourcesBase):
     def setUp(self):
         super(TestNovaServers, self).setUp()
         self.resources = client.NovaServers(self.session)
+
+    def test_list(self):
+        self._test_list()
+
+    def test_delete(self):
+        self._test_delete()
+
+
+class TestNovaKeyPairs(TestNovaBase):
+    IDS = client_fixtures.KEYPAIRS_IDS
+
+    def stub_list(self):
+        self.stub_url('GET', parts=['os-keypairs'],
+                      json=client_fixtures.KEYPAIRS_LIST)
+
+    def stub_delete(self):
+        self.stub_url(
+            'DELETE', parts=['os-keypairs', client_fixtures.KEYPAIRS_IDS[0]])
+
+    def setUp(self):
+        super(TestNovaKeyPairs, self).setUp()
+        self.resources = client.NovaKeyPairs(self.session)
 
     def test_list(self):
         self._test_list()

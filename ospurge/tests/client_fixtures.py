@@ -78,6 +78,7 @@ SECGROUPS_IDS = ["85cc3048-abc3-43cc-89b3-377341426ac5"]
 FLOATING_IPS_IDS = ["2f245a7b-796b-4f26-9cf9-9e82d248fda7",
                     "61cea855-49cb-4846-997d-801b70c71bdd"]
 SERVERS_IDS = ["616fb98f-46ca-475e-917e-2563e5a8cd19"]
+KEYPAIRS_IDS = ["keypair-601a2305-4f25-41ed-89c6-2a966fc8027a"]
 IMAGES_IDS = ["37717f53-3707-49b9-9dd0-fd063e6b9fc5", "4e150966-cbe7-4fd7-a964-41e008d20f10",
               "482fbcc3-d831-411d-a073-ddc828a7a9ed"]
 ALARMS_IDS = ["ca950223-e982-4552-9dec-5dc5d3ea4172"]
@@ -979,6 +980,19 @@ SERVERS_LIST = {
         }
     ]
 }
+
+KEYPAIRS_LIST = {
+    "keypairs": [
+        {
+            "keypair": {
+                "fingerprint": "15:b0:f8:b3:f9:48:63:71:cf:7b:5b:38:6d:44:2d:4a",
+                "name": KEYPAIRS_IDS[0],
+                "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQC+Eo/RZRngaGTkFs7I62ZjsIlO79KklKbMXi8F+KITD4bVQHHn+kV+4gRgkgCRbdoDqoGfpaDFs877DYX9n4z6FrAIZ4PES8TNKhatifpn9NdQYWA+IkU8CuvlEKGuFpKRi/k7JLos/gHi2hy7QUwgtRvcefvD/vgQZOVw/mGR9Q== Generated-by-Nova\n"
+            }
+        }
+    ]
+}
+
 
 IMAGES_LIST = {
     "images": [
