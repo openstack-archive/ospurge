@@ -91,9 +91,7 @@ exit_on_failure "Unable to snapshot volume $VOL_NAME"
 # Backuping volume
 # Don't exit if this fails - as we may test platforms that don't
 # provide this feature
-if ! cinder backup-create --display-name $VOLBACK_NAME $VOL_ID; then
-    :
-fi
+cinder backup-create --display-name $VOLBACK_NAME $VOL_ID || true
 
 
 ###############################
@@ -220,9 +218,7 @@ description: >
     Hello world HOT template' > dummy_stack.yaml
 # Don't exit if this fails - as we may test platforms that don't
 # provide this feature
-if ! heat stack-create -f dummy_stack.yaml $STACK_NAME; then
-    :
-fi
+heat stack-create -f dummy_stack.yaml $STACK_NAME || true
 
 
 # Wait for VM to be spawned before snapshotting the VM
@@ -261,6 +257,4 @@ exit_on_failure "Unable to create VM Snapshot of $VM_NAME"
 # Create a ceilometer alarm
 # Don't exit if this fails - as we may test platforms that don't
 # provide this feature
-if ! ceilometer alarm-create --name $ALARM_NAME --meter-name cpu_util --threshold 70.0; then
-    :
-fi
+ceilometer alarm-create --name $ALARM_NAME --meter-name cpu_util --threshold 70.0 || true
