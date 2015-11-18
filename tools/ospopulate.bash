@@ -54,6 +54,13 @@ CONT_NAME="ospurge_test_container_$UUID"
 FLAV_NAME="ospurge_test_flavor_$UUID"
 STACK_NAME="ospurge_test_stack_$UUID"
 ALARM_NAME="ospurge_test_alarm_$UUID"
+FW_NAME="ospurge_test_firewall_$UUID"
+FW_POLICY_NAME="ospurge_test_policy_$UUID"
+FW_RULE_NAME="ospurge_test_rule_$UUID"
+LB_POOL_NAME="ospurge_test_pool_$UUID"
+LB_VIP_NAME="ospurge_test_vip_$UUID"
+LB_MEMBER_NAME="ospurge_test_member_$UUID"
+METER_NAME="ospurge_test_meter_$UUID"
 
 # Create a file that will be used to populate Glance and Swift
 dd if="/dev/zero" of="zero_disk.raw" bs=1M count=5
@@ -146,6 +153,43 @@ neutron security-group-rule-create --direction ingress --protocol TCP \
 --port-range-min 22 --port-range-max 22 --remote-ip-prefix 0.0.0.0/0 \
 $SECGRP_ID
 
+# Creating a firewall rule
+# Don't exit if this fails - as we may test platforms that don't
+# provide this feature
+neutron firewall-rule-create --name $FW_RULE_NAME --protocol tcp --action allow --destination-port 80 || true
+
+# Creating a firewall policy
+# Don't exit if this fails - as we may test platforms that don't
+# provide this feature
+neutron firewall-policy-create --firewall-rules "$FW_RULE_NAME" $FW_POLICY_NAME || true
+
+# Creating a firewall
+# Don't exit if this fails - as we may test platforms that don't
+# provide this feature
+neutron firewall-create --name $FW_NAME $FW_POLICY_NAME || true
+
+# Creating a loadbalancer pool
+# Don't exit if this fails - as we may test platforms that don't
+# provide this feature
+neutron lb-pool-create --lb-method ROUND_ROBIN --name $LB_POOL_NAME --protocol HTTP --subnet-id $SUBNET_ID || true
+
+# Creating a loadbalancer VIP address
+# Don't exit if this fails - as we may test platforms that don't
+# provide this feature
+neutron lb-vip-create --name $LB_VIP_NAME --protocol-port 80 --protocol HTTP --subnet-id $SUBNET_ID $LB_POOL_NAME || true
+
+# Creating a loadbalancer member
+neutron lb-member-create --address 192.168.0.153 --protocol-port 80 $LB_POOL_NAME || true
+
+# Creating a loadbalancer health monitor
+# Don't exit if this fails - as we may test platforms that don't
+# provide this feature
+neutron lb-healthmonitor-create --delay 3 --type HTTP --max-retries 3 --timeout 3 || true
+
+# Creating a metering label
+# Don't exit if this fails - as we may test platforms that don't
+# provide this feature
+neutron meter-label-create $METER_NAME || true
 
 ###############################
 ### Nova
