@@ -53,6 +53,7 @@ SECGRP_NAME="test_secgroup_$UUID"
 CONT_NAME="test_container_$UUID"
 FLAV_NAME="test_flavor_$UUID"
 STACK_NAME="test_stack_$UUID"
+ALARM_NAME="test_alarm_$UUID"
 
 # Create a file that will be used to populate Glance and Swift
 dd if="/dev/zero" of="zero_disk.raw" bs=1M count=5
@@ -212,3 +213,7 @@ exit_on_failure "Unable to attach volume $VOL_ID to VM $VM_ID"
 # Create an image
 nova image-create $VM_ID $VMSNAP_NAME
 exit_on_failure "Unable to create VM Snapshot of $VM_NAME"
+
+# Create a ceilometer alarm
+ceilometer alarm-create --name $ALARM_NAME --meter-name cpu_util --threshold 70.0
+exit_on_failure "Unable to create ceilometer alarm $ALARM_NAME"
