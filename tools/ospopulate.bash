@@ -21,7 +21,7 @@ EXTNET_NAME=${EXTNET_NAME:-public}
 # Name of flavor used to spawn a VM
 FLAVOR=${FLAVOR:-m1.small}
 # Image used for the VM
-VMIMG_NAME=${VMIMG_NAME:-cirros-0.3.2-x86_64-uec}
+VMIMG_NAME=${VMIMG_NAME:-cirros-0.3.4-x86_64-uec}
 
 
 ################################
