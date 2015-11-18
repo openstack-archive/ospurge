@@ -8,6 +8,9 @@
 set -xue
 set -o pipefail
 
+# Check if needed environment variable OS_TENANT_NAME is set and non-empty.
+: "${OS_TENANT_NAME:?Need to set OS_TENANT_NAME non-empty}"
+
 TOP_DIR=$(cd $(dirname "$0") && pwd)
 source $TOP_DIR/utils.bash
 
