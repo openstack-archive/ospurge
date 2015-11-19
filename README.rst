@@ -1,36 +1,70 @@
-ospurge: OpenStack project resources cleaner
-********************************************
+OpenStack project resources cleaner
+===================================
 
-``ospurge`` is a standalone, client-side, Python script that aims at
-deleting all resources (taking into account their interdependencies)
-in a specified OpenStack project. OSPurge ensures in a quick and
-automated way that no resource is left behind when a project is
-deleted.
+* ``ospurge`` is a standalone, client-side, operators tool that aims at
+  deleting all resources, taking into account their interdependencies,
+  in a specified OpenStack project.
 
-``ospurge`` can be used by a cloud administrator (with the admin role)
-to cleanup any project or by a non-privileged user to cleanup his own
-project.
+* ``ospurge`` ensures in a quick and automated way that no resource is
+  left behind when a project is deleted.
+
+* ``ospurge`` can be used by a cloud administrator, this means a user with the
+  admin role, to cleanup any project or by a non-privileged user to cleanup his
+  own project.
+
+
+Supported resources
+-------------------
+
+At the moment it is possible to purge the following resources from a project:
+
+* Ceilometer alarms
+* floating IP addresses
+* images / snapshots
+* instances
+* networks
+* routers
+* security groups
+* Swift containers
+* Swift objects
+* volumes / snapshots
+
+
+Error codes
+-----------
+
+The following error codes are returned when ``ospurge`` encounters
+an error:
+
+* ``Code 0``: Process exited sucessfully
+* ``Code 1``: Unknown error
+* ``Code 2``: Project doesn't exist
+* ``Code 3``: Authentication failed (e.g. bad username or password)
+* ``Code 4``: Resource deletion failed
+* ``Code 5``: Connection error while deleting a resource (e.g. service not
+  available)
+* ``Code 6``: Connection to endpoint failed (e.g. wrong authentication URL)
+
 
 Installation
-============
+------------
 
-Create a Python virtual environment (requires package virtualenvwrapper)::
+Create a Python virtual environment (requires the
+`virtualenvwrapper <https://virtualenvwrapper.readthedocs.org/>`_):
+
+.. code-block:: console
 
     $ mkvirtualenv ospurge
 
-Install ``ospurge``::
+Install ``ospurge`` with ``pip``:
+
+.. code-block:: console
 
     $ pip install ospurge
 
-The script is installed and can be launched::
+Available options can be displayed by using ``ospurge -h``:
 
-    $ ospurge -h
-
-
-Usage
-=====
-
-Available options can be displayed by using ``ospurge -h``::
+.. code-block:: console
 
     $ ospurge -h
     usage: ospurge [-h] [--verbose] [--dry-run] [--dont-delete-project]
@@ -80,23 +114,8 @@ Available options can be displayed by using ``ospurge -h``::
                             with caution.
 
 
-Error codes
-===========
-
-The following error codes are returned when ``ospurge`` encounters
-an error:
-
-* Code 2: Project doesn't exist
-* Code 3: Authentication failed (e.g. Bad username or password)
-* Code 4: Resource deletion failed
-* Code 5: Connection error while deleting a resource (e.g. Service not available)
-* Code 6: Connection to endpoint failed (e.g. authentication url)
-* Code 1: Unknown error
-* Code 0: Process exited sucessfully
-
-
-Example
-=======
+Example usage
+-------------
 
 To remove a project, credentials have to be
 provided. The usual OpenStack environment variables can be used. When
@@ -105,16 +124,20 @@ to be provided, by using either the ``--cleanup-project`` option or the
 ``--own-project`` option. When the command returns, any resources associated
 to the project will have been definitively deleted.
 
-Setting OpenStack credentials::
+* Setting OpenStack credentials:
+
+.. code-block:: console
 
     $ export OS_USERNAME=admin
     $ export OS_PASSWORD=password
     $ export OS_TENANT_NAME=admin
     $ export OS_AUTH_URL=http://localhost:5000/v2.0
 
-Checking resources of the target project::
+* Checking resources of the target project:
 
-    $ ./ospurge --dry-run --cleanup-project florent-demo
+.. code-block:: console
+
+    $ ./ospurge --dry-run --cleanup-project demo
     * Resources type: CinderSnapshots
 
     * Resources type: NovaServers
@@ -142,11 +165,13 @@ Checking resources of the target project::
 
     * Resources type: CeilometerAlarms
 
-Removing resources without deleting the project::
+* Removing resources without deleting the project:
 
-    $ ./ospurge --verbose --dont-delete-project --cleanup-project florent-demo
+.. code-block:: console
+
+    $ ./ospurge --verbose --dont-delete-project --cleanup-project demo
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
-    INFO:root:* Granting role admin to user e7f562a29da3492baba2cc7c5a1f2d84 on project florent-demo.
+    INFO:root:* Granting role admin to user e7f562a29da3492baba2cc7c5a1f2d84 on project demo.
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
@@ -174,9 +199,11 @@ Removing resources without deleting the project::
     INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): cinder.usr.lab0.aub.cw-labs.net
     INFO:root:* Purging CeilometerAlarms
 
-Checking that resources have been correctly removed::
+* Checking that resources have been correctly removed:
 
-    $ ./ospurge --dry-run --cleanup-project florent-demo
+.. code-block:: console
+
+    $ ./ospurge --dry-run --cleanup-project demo
     * Resources type: CinderSnapshots
 
     * Resources type: NovaServers
@@ -201,41 +228,26 @@ Checking that resources have been correctly removed::
 
     * Resources type: CeilometerAlarms
 
-Removing project::
+* Removing project:
 
-    $ ./ospurge --cleanup-project florent-demo
-    $ ./ospurge --cleanup-project florent-demo
-    Project florent-demo doesn't exist
+.. code-block:: console
 
+    $ ./ospurge --cleanup-project demo
+    $ ./ospurge --cleanup-project demo
+    Project demo doesn't exist
 
-Deleted resources
-=================
+* Users can be deleted by using the ``python-keystoneclient`` command-line
+  interface:
 
-The following resources will be removed:
-
-* ceilometer alarms
-* floating IPs
-* images / snapshots
-* instances
-* networks
-* routers
-* security groups
-* swift containers
-* swift objects
-* volumes / snapshots
-
-
-Notes
-=====
-
-Users can be deleted by using the ``python-keystoneclient`` CLI::
+.. code-block:: console
 
     $ keystone user-delete <username_or_userid>
 
 
 How to contribute
-=================
+-----------------
 
-Ospurge is hosted on Stackforge and is using Gerrit to manage
-contributions. You can contribute to the project by following the
-following workflow: http://docs.openstack.org/infra/manual/developers.html#development-workflow
+OSpurge is hosted on the OpenStack infrastructure and is using
+`Gerrit <https://review.openstack.org>`_ to manage contributions. You can
+contribute to the project by following the
+`OpenStack Development workflow <http://docs.openstack.org/infra/manual/developers.html#development-workflow>`_.
