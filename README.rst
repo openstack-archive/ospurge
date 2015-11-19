@@ -236,12 +236,12 @@ to the project will have been definitively deleted.
     $ ./ospurge --cleanup-project demo
     Project demo doesn't exist
 
-* Users can be deleted by using the ``python-keystoneclient`` command-line
+* Users can be deleted by using the ``python-openstackclient`` command-line
   interface:
 
 .. code-block:: console
 
-    $ keystone user-delete <username_or_userid>
+   $ openstack user delete <user>
 
 
 How to contribute
