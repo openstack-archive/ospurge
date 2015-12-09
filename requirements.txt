@@ -1,3 +1,4 @@
+os-client-config
 python-ceilometerclient
 python-cinderclient
 python-glanceclient

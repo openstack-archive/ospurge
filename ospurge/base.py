@@ -117,8 +117,9 @@ class Resources(object):
 
     """Abstract base class for all resources to be removed."""
 
-    def __init__(self, session):
-        self.session = session
+    def __init__(self, cloud):
+        self.cloud = cloud
+        self.project_id = cloud.get_session().get_project_id()
 
     def list(self):
         pass

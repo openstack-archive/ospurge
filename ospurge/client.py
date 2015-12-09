@@ -29,23 +29,18 @@ import logging
 import os
 import sys
 
+import os_client_config
+
+from ceilometerclient import client as ceilometer_client
 import ceilometerclient.exc
-from ceilometerclient.v2 import client as ceilometer_client
 import cinderclient
-from cinderclient.v1 import client as cinder_client
 import glanceclient.exc
-from glanceclient.v1 import client as glance_client
-from heatclient import client as heat_client
 import heatclient.openstack.common.apiclient.exceptions
 from keystoneclient.apiclient import exceptions as api_exceptions
 import keystoneclient.openstack.common.apiclient.exceptions
-from keystoneclient.v2_0 import client as keystone_client
 import neutronclient.common.exceptions
-from neutronclient.v2_0 import client as neutron_client
-from novaclient import client as nova_client
 import novaclient.exceptions
 import requests
-from swiftclient import client as swift_client
 
 from ospurge import base
 from ospurge import constants
@@ -54,16 +49,13 @@ from ospurge import exceptions
 
 class SwiftResources(base.Resources):
 
-    def __init__(self, session):
-        super(SwiftResources, self).__init__(session)
-        self.endpoint = self.session.get_endpoint("object-store")
-        self.token = self.session.token
-        conn = swift_client.HTTPConnection(self.endpoint, insecure=self.session.insecure)
-        self.http_conn = conn.parsed_url, conn
+    def __init__(self, cloud):
+        super(SwiftResources, self).__init__(cloud)
+        self.swift_client = self.cloud.get_legacy_client('object-store')
 
     # This method is used to retrieve Objects as well as Containers.
     def list_containers(self):
-        containers = swift_client.get_account(self.endpoint, self.token, http_conn=self.http_conn)[1]
+        containers = self.swift_client.get_account()
         return (cont['name'] for cont in containers)
 
 
@@ -73,14 +65,14 @@ class SwiftObjects(SwiftResources):
         swift_objects = []
         for cont in self.list_containers():
             objs = [{'container': cont, 'name': obj['name']} for obj in
-                    swift_client.get_container(self.endpoint, self.token, cont, http_conn=self.http_conn)[1]]
+                    self.swift_client.get_container(cont)[1]]
             swift_objects.extend(objs)
         return swift_objects
 
     def delete(self, obj):
         super(SwiftObjects, self).delete(obj)
-        swift_client.delete_object(self.endpoint, token=self.token, http_conn=self.http_conn,
-                                   container=obj['container'], name=obj['name'])
+        self.swift_client.delete_object(
+            container=obj['container'], name=obj['name'])
 
     def resource_str(self, obj):
         return "object {} in container {}".format(obj['name'], obj['container'])
@@ -94,7 +86,7 @@ class SwiftContainers(SwiftResources):
     def delete(self, container):
         """Container must be empty for deletion to succeed."""
         super(SwiftContainers, self).delete(container)
-        swift_client.delete_container(self.endpoint, self.token, container, http_conn=self.http_conn)
+        self.swift_client.delete_container(container)
 
     def resource_str(self, obj):
         return "container {}".format(obj)
@@ -102,15 +94,11 @@ class SwiftContainers(SwiftResources):
 
 class CinderResources(base.Resources):
 
-    def __init__(self, session):
-        super(CinderResources, self).__init__(session)
+    def __init__(self, cloud):
+        super(CinderResources, self).__init__(cloud)
         # Cinder client library can't use an existing token. When
         # using this library, we have to reauthenticate.
-        self.client = cinder_client.Client(
-            session.username, session.password,
-            session.project_name, session.auth_url, session.insecure,
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name)
+        self.client = self.cloud.get_legacy_client('volume')
 
 
 class CinderSnapshots(CinderResources):
@@ -162,14 +150,9 @@ class CinderBackups(CinderResources):
 
 class NeutronResources(base.Resources):
 
-    def __init__(self, session):
-        super(NeutronResources, self).__init__(session)
-        self.client = neutron_client.Client(
-            username=session.username, password=session.password,
-            tenant_id=session.project_id, auth_url=session.auth_url,
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name, insecure=session.insecure)
-        self.project_id = session.project_id
+    def __init__(self, cloud):
+        super(NeutronResources, self).__init__(cloud)
+        self.client = self.cloud.get_legacy_client('network')
 
     # This method is used for routers and interfaces removal
     def list_routers(self):
@@ -442,14 +425,9 @@ class NeutronFireWall(NeutronResources):
 
 class NovaServers(base.Resources):
 
-    def __init__(self, session):
-        super(NovaServers, self).__init__(session)
-        self.client = nova_client.Client(
-            "2", session.username, session.password,
-            session.project_name, auth_url=session.auth_url,
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name, insecure=session.insecure)
-        self.project_id = session.project_id
+    def __init__(self, cloud):
+        super(NovaServers, self).__init__(cloud)
+        self.client = self.cloud.get_legacy_client('compute')
 
     """Manage nova resources"""
 
@@ -466,11 +444,9 @@ class NovaServers(base.Resources):
 
 class GlanceImages(base.Resources):
 
-    def __init__(self, session):
-        self.client = glance_client.Client(
-            endpoint=session.get_endpoint("image"),
-            token=session.token, insecure=session.insecure)
-        self.project_id = session.project_id
+    def __init__(self, cloud):
+        super(GlanceImages, self).__init__(cloud)
+        self.client = self.cloud.get_legacy_client('image')
 
     def list(self):
         return filter(self._owned_resource, self.client.images.list(
@@ -490,12 +466,9 @@ class GlanceImages(base.Resources):
 
 class HeatStacks(base.Resources):
 
-    def __init__(self, session):
-        self.client = heat_client.Client(
-            "1",
-            endpoint=session.get_endpoint("orchestration"),
-            token=session.token, insecure=session.insecure)
-        self.project_id = session.project_id
+    def __init__(self, cloud):
+        super(HeatStacks, self).__init__(cloud)
+        self.client = self.cloud.get_legacy_client('orchestration')
 
     def list(self):
         return self.client.stacks.list()
@@ -513,16 +486,10 @@ class HeatStacks(base.Resources):
 
 class CeilometerAlarms(base.Resources):
 
-    def __init__(self, session):
-        # Ceilometer Client needs a method that returns the token
-        def get_token():
-            return session.token
-        self.client = ceilometer_client.Client(
-            endpoint=session.get_endpoint("metering"),
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name,
-            token=get_token, insecure=session.insecure)
-        self.project_id = session.project_id
+    def __init__(self, cloud):
+        super(CeilometerAlarms, self).__init__(cloud)
+        self.client = self.cloud.get_legacy_client(
+            'metering', ceilometer_client)
 
     def list(self):
         query = [{'field': 'project_id',
@@ -542,12 +509,9 @@ class KeystoneManager(object):
 
     """Manages Keystone queries."""
 
-    def __init__(self, username, password, project, auth_url, insecure,
-                 admin_role_name, **kwargs):
-        self.client = keystone_client.Client(
-            username=username, password=password,
-            tenant_name=project, auth_url=auth_url,
-            insecure=insecure, **kwargs)
+    def __init__(self, cloud, admin_role_name):
+        self.cloud = cloud
+        self.client = cloud.get_legacy_client('identity')
         self.admin_role_name = admin_role_name
         self.admin_role_id = None
         self.tenant_info = None
@@ -596,7 +560,7 @@ class KeystoneManager(object):
         return self.admin_role_id
 
     def become_project_admin(self, project_id):
-        user_id = self.client.user_id
+        user_id = self.cloud.get_session().get_user_id()
         admin_role_id = self.get_admin_role_id()
         logging.info("* Granting role admin to user {} on project {}.".format(
             user_id, project_id))
@@ -616,19 +580,15 @@ class KeystoneManager(object):
         self.client.tenants.delete(project_id)
 
 
-def perform_on_project(admin_name, password, project, auth_url,
-                       endpoint_type='publicURL', region_name=None,
-                       action='dump', insecure=False):
+def perform_on_project(cloud, action='dump'):
     """Perform provided action on all resources of project.
 
     action can be: 'purge' or 'dump'
     """
-    session = base.Session(admin_name, password, project, auth_url,
-                           endpoint_type, region_name, insecure)
     error = None
     for rc in constants.RESOURCES_CLASSES:
         try:
-            resources = globals()[rc](session)
+            resources = globals()[rc](cloud)
             res_actions = {'purge': resources.purge,
                            'dump': resources.dump}
             res_actions[action]()
@@ -746,11 +706,15 @@ def main():
         # Set default log level to Warning
         logging.basicConfig(level=logging.WARNING)
 
+    admin_cloud = os_client_config.OpenStackConfig().get_one_cloud(
+        username=args.username, password=args.password,
+        project_id=args.admin_project, auth_url=args.auth_url,
+        endpoint_type=args.endpoint_type,
+        os_metering_api_version='2',
+        verify=not args.insecure, region_name=args.region_name)
     try:
-        keystone_manager = KeystoneManager(args.username, args.password,
-                                           args.admin_project, args.auth_url,
-                                           args.insecure, region_name=args.region_name,
-                                           admin_role_name=args.admin_role_name)
+        keystone_manager = KeystoneManager(
+            admin_cloud, admin_role_name=args.admin_role_name)
     except api_exceptions.Unauthorized as exc:
         print("Authentication failed: {}".format(str(exc)))
         sys.exit(constants.AUTHENTICATION_FAILED_ERROR_CODE)
@@ -786,9 +750,12 @@ def main():
     # Proper cleanup
     try:
         action = "dump" if args.dry_run else "purge"
-        perform_on_project(args.username, args.password, cleanup_project_id,
-                           args.auth_url, args.endpoint_type, args.region_name,
-                           action, args.insecure)
+        purge_cloud = os_client_config.OpenStackConfig().get_one_cloud(
+            username=args.username, password=args.password,
+            project_id=cleanup_project_id, auth_url=args.auth_url,
+            endpoint_type=args.endpoint_type,
+            verify=not args.insecure, region_name=args.region_name)
+        perform_on_project(purge_cloud, action)
     except requests.exceptions.ConnectionError as exc:
         print("Connection error: {}".format(str(exc)))
         sys.exit(constants.CONNECTION_ERROR_CODE)
