@@ -31,7 +31,6 @@ import sys
 
 import os_client_config
 
-from ceilometerclient import client as ceilometer_client
 import ceilometerclient.exc
 import cinderclient
 import glanceclient.exc
@@ -488,8 +487,7 @@ class CeilometerAlarms(base.Resources):
 
     def __init__(self, cloud):
         super(CeilometerAlarms, self).__init__(cloud)
-        self.client = self.cloud.get_legacy_client(
-            'metering', ceilometer_client)
+        self.client = self.cloud.get_legacy_client('metering')
 
     def list(self):
         query = [{'field': 'project_id',

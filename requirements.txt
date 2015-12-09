@@ -1,4 +1,4 @@
-os-client-config
+os-client-config>=1.13.0
 python-ceilometerclient
 python-cinderclient
 python-glanceclient
