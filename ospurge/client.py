@@ -37,8 +37,7 @@ import glanceclient.exc
 from glanceclient.v1 import client as glance_client
 from heatclient import client as heat_client
 import heatclient.openstack.common.apiclient.exceptions
-from keystoneclient.apiclient import exceptions as api_exceptions
-import keystoneclient.openstack.common.apiclient.exceptions
+from keystoneclient import exceptions as api_exceptions
 from keystoneclient.v2_0 import client as keystone_client
 import neutronclient.common.exceptions
 from neutronclient.v2_0 import client as neutron_client
@@ -633,7 +632,7 @@ def perform_on_project(admin_name, password, project, auth_url,
                            'dump': resources.dump}
             res_actions[action]()
         except (exceptions.EndpointNotFound,
-                keystoneclient.openstack.common.apiclient.exceptions.EndpointNotFound,
+                keystoneclient.exceptions.EndpointNotFound,
                 neutronclient.common.exceptions.EndpointNotFound,
                 cinderclient.exceptions.EndpointNotFound,
                 novaclient.exceptions.EndpointNotFound,

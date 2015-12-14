@@ -21,7 +21,7 @@
 import logging
 import time
 
-from keystoneclient.apiclient import exceptions as api_exceptions
+from keystoneclient import exceptions as api_exceptions
 from keystoneclient.v2_0 import client as keystone_client
 
 from ospurge import constants
