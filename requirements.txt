@@ -6,3 +6,4 @@ python-keystoneclient
 python-neutronclient
 python-novaclient
 python-swiftclient
+python-group-based-policy-client

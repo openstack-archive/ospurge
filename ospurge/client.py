@@ -33,6 +33,7 @@ import ceilometerclient.exc
 from ceilometerclient.v2 import client as ceilometer_client
 import cinderclient
 from cinderclient.v1 import client as cinder_client
+from gbpclient.v2_0 import client as gbp_client
 import glanceclient.exc
 from glanceclient.v1 import client as glance_client
 from heatclient import client as heat_client
@@ -535,6 +536,224 @@ class CeilometerAlarms(base.Resources):
 
     def resource_str(self, alarm):
         return "alarm {}".format(alarm.name)
+
+
+class GBPResources(base.Resources):
+
+    def __init__(self, session):
+        super(GBPResources, self).__init__(session)
+        self.client = gbp_client.Client(
+            username=session.username, password=session.password,
+            tenant_id=session.project_id, auth_url=session.auth_url,
+            endpoint_type=session.endpoint_type,
+            region_name=session.region_name, insecure=session.insecure)
+        self.project_id = session.project_id
+
+    def _owned_resource(self, res):
+        # Only considering resources owned by project
+        # We try to filter directly in the client.list() commands, but some 3rd
+        # party Neutron plugins may ignore the "tenant_id=self.project_id"
+        # keyword filtering parameter. An extra check does not cost much and
+        # keeps us on the safe side.
+        return res['tenant_id'] == self.project_id
+
+
+class GBPPolicyTarget(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_policy_targets(
+                          tenant_id=self.project_id)['policy_targets'])
+
+    def delete(self, target):
+        """Delete a GBP policy targets"""
+        self.client.delete_policy_target(target['id'])
+
+    @staticmethod
+    def resource_str(target):
+        return "policy target {} (id {})".format(target['name'], target['id'])
+
+
+class GBPTargetGroups(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_policy_target_groups(
+                          tenant_id=self.project_id)['policy_target_groups'])
+
+    def delete(self, group):
+        """Delete a GBP policy target groups"""
+        self.client.delete_policy_target_group(group['id'])
+
+    @staticmethod
+    def resource_str(group):
+        return "policy target group {} (id {})".format(group['name'],
+                                                       group['id'])
+
+
+class GBPL2Policy(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_l2_policies(
+                          tenant_id=self.project_id)['l2_policies'])
+
+    def delete(self, l2policy):
+        """Delete a GBP L2 policy"""
+        self.client.delete_l2_policy(l2policy['id'])
+
+    @staticmethod
+    def resource_str(l2policy):
+        return "L2 policy {} (id {})".format(l2policy['name'], l2policy['id'])
+
+
+class GBPL3Policy(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_l3_policies(
+                          tenant_id=self.project_id)['l3_policies'])
+
+    def delete(self, l3policy):
+        """Delete a GBP L3 policies"""
+        self.client.delete_l3_policy(l3policy['id'])
+
+    @staticmethod
+    def resource_str(l3policy):
+        return "L3 policy {} (id {})".format(l3policy['name'], l3policy['id'])
+
+
+class GBPServicePolicies(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_network_service_policies(
+                          tenant_id=self.project_id)['network_service_policies'])
+
+    def delete(self, servicepolicy):
+        """Delete GBP service policy"""
+        self.client.delete_network_service_policy(servicepolicy['id'])
+
+    @staticmethod
+    def resource_str(servicepolicy):
+        return "service policy {} (id {})".format(servicepolicy['name'],
+                                                  servicepolicy['id'])
+
+
+class GBPExternalPolicies(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_external_policies(
+                          tenant_id=self.project_id)['external_policies'])
+
+    def delete(self, extpolicy):
+        """Delete a GBP external policies"""
+        self.client.delete_external_policy(extpolicy['id'])
+
+    @staticmethod
+    def resource_str(extpolicy):
+        return "external policy {} (id {})".format(extpolicy['name'],
+                                                   extpolicy['id'])
+
+
+class GBPExternalSegments(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_external_segments(
+                          tenant_id=self.project_id)['external_segments'])
+
+    def delete(self, extsegment):
+        """Delete a GBP external segments"""
+        self.client.delete_external_segment(extsegment['id'])
+
+    @staticmethod
+    def resource_str(extsegment):
+        return "external segment {} (id {})".format(extsegment['name'],
+                                                    extsegment['id'])
+
+
+class GBPNatPools(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_nat_pools(
+                          tenant_id=self.project_id)['nat_pools'])
+
+    def delete(self, natpool):
+        """Delete a GBP NAT pools"""
+        self.client.delete_nat_pool(natpool['id'])
+
+    @staticmethod
+    def resource_str(natpool):
+        return "nat pool {} (id {})".format(natpool['name'], natpool['id'])
+
+
+class GBPPolicyRuleSets(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_policy_rule_sets(
+                          tenant_id=self.project_id)['policy_rule_sets'])
+
+    def delete(self, ruleset):
+        """Delete a GBP policy rule sets"""
+        self.client.delete_policy_rule_set(ruleset['id'])
+
+    @staticmethod
+    def resource_str(ruleset):
+        return "policy rule set {} (id {})".format(ruleset['name'],
+                                                   ruleset['id'])
+
+
+class GBPolicyRules(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_policy_rules(
+                          tenant_id=self.project_id)['policy_rules'])
+
+    def delete(self, rule):
+        """Delete a GBP policy rules"""
+        self.client.delete_policy_rule(rule['id'])
+
+    @staticmethod
+    def resource_str(rule):
+        return "policy rule {} (id {})".format(rule['name'], rule['id'])
+
+
+class GBPPolicyClassifiers(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_policy_classifiers(
+                          tenant_id=self.project_id)['policy_classifiers'])
+
+    def delete(self, classifier):
+        """Delete a GBP policy classifiers"""
+        self.client.delete_policy_classifier(classifier['id'])
+
+    @staticmethod
+    def resource_str(classifier):
+        return "policy classifier {} (id {})".format(classifier['name'],
+                                                     classifier['id'])
+
+
+class GBPPolicyActions(GBPResources):
+
+    def list(self):
+        return filter(self._owned_resource,
+                      self.client.list_policy_actions(
+                          tenant_id=self.project_id)['policy_actions'])
+
+    def delete(self, action):
+        """Delete a GBP policy actions"""
+        self.client.delete_policy_action(action['id'])
+
+    @staticmethod
+    def resource_str(action):
+        return "policy action {} (id {})".format(action['name'], action['id'])
 
 
 class KeystoneManager(object):
