@@ -790,9 +790,11 @@ class TestHeatStacks(TestResourcesBase):
         self.stub_auth()
         self.stub_list()
         get_result = {'stack': client_fixtures.STACKS_LIST['stacks'][1]}
+        location = '%s/stacks/stack2/%s' % (self.TEST_URL,
+                                            client_fixtures.STACKS_IDS[1])
         self.stub_url(
             'GET', parts=['stacks', client_fixtures.STACKS_IDS[1]],
-            json=get_result)
+            json=get_result, location=location)
         self.stub_url(
             'DELETE',
             parts=['stacks', 'stack2', client_fixtures.STACKS_IDS[1],
