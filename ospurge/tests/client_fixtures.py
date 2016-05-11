@@ -78,6 +78,7 @@ SECGROUPS_IDS = ["85cc3048-abc3-43cc-89b3-377341426ac5"]
 FLOATING_IPS_IDS = ["2f245a7b-796b-4f26-9cf9-9e82d248fda7",
                     "61cea855-49cb-4846-997d-801b70c71bdd"]
 SERVERS_IDS = ["616fb98f-46ca-475e-917e-2563e5a8cd19"]
+KEYPAIRS_IDS = ["new-keypair-test"]
 IMAGES_IDS = ["37717f53-3707-49b9-9dd0-fd063e6b9fc5", "4e150966-cbe7-4fd7-a964-41e008d20f10",
               "482fbcc3-d831-411d-a073-ddc828a7a9ed"]
 ALARMS_IDS = ["ca950223-e982-4552-9dec-5dc5d3ea4172"]
@@ -976,6 +977,19 @@ SERVERS_LIST = {
             "tenant_id": "openstack",
             "updated": "2012-09-07T16:56:37Z",
             "user_id": "fake"
+        }
+    ]
+}
+
+KEYPAIRS_LIST = {
+    "keypairs": [
+        {
+            "keypair": {
+                "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHm2JVceefxvkBs4KkERy9aHOE2CNRg4gAbkF7o274R779/1j9PeiZy6ZIopD6SKet+PhK36cp9S7aLTqt+uxZklmH1bDo1KLxxROpu+Q+Zvx5nYs5REZje4/ipWQdt5uAjCHE8aL56bUfmAGuPPT7W/FotVWbMI/md2a6QvuToaQdfuqt4KcZULoo3iVSojqtJb+yGA3Ez3H8M+BR5T5foKERgEo1Q/P++glvwqcbA57o1zRPVpCuQAu51kbDO3ZlriGanr28Xd6ygaKOxLzTZQRWPM/tofFaxpgLNDiImi2GKiwLTOjiZ7u9/pgPALik7yT4hRfsViPYbrIL8gEV Generated-by-Nova",
+                "type": "ssh",
+                "name": "new-keypair-test",
+                "fingerprint": "05:c9:36:a9:d4:91:14:b6:d8:d2:65:91:67:44:46:ba"
+            }
         }
     ]
 }

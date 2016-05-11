@@ -37,6 +37,7 @@ RESOURCES_CLASSES = [
     'NeutronLbHealthMonitor',
     'NeutronLbPool',
     'NovaServers',
+    'NovaKeypairs',
     'NeutronFloatingIps',
     'NeutronMeteringLabel',
     'NeutronInterfaces',

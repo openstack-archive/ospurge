@@ -439,10 +439,9 @@ class NeutronFireWall(NeutronResources):
         return "Firewall {} (id {})".format(firewall['name'], firewall['id'])
 
 
-class NovaServers(base.Resources):
-
+class NovaResources(base.Resources):
     def __init__(self, session):
-        super(NovaServers, self).__init__(session)
+        super(NovaResources, self).__init__(session)
         self.client = nova_client.Client(
             "2", session.username, session.password,
             session.project_name, auth_url=session.auth_url,
@@ -450,6 +449,8 @@ class NovaServers(base.Resources):
             region_name=session.region_name, insecure=session.insecure)
         self.project_id = session.project_id
 
+
+class NovaServers(NovaResources):
     """Manage nova resources"""
 
     def list(self):
@@ -461,6 +462,19 @@ class NovaServers(base.Resources):
 
     def resource_str(self, server):
         return "server {} (id {})".format(server.name, server.id)
+
+
+class NovaKeypairs(NovaResources):
+
+    def list(self):
+        return self.client.keypairs.list()
+
+    def delete(self, keypair):
+        super(NovaKeypairs, self).delete(keypair)
+        self.client.keypairs.delete(keypair)
+
+    def resource_str(self, keypair):
+        return "server {} (id {})".format(keypair.name, keypair.id)
 
 
 class GlanceImages(base.Resources):
