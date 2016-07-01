@@ -34,11 +34,13 @@ from ceilometerclient.v2 import client as ceilometer_client
 import cinderclient
 from cinderclient.v1 import client as cinder_client
 import glanceclient.exc
-from glanceclient.v1 import client as glance_client
+from glanceclient.v2 import client as glance_client
 from heatclient import client as heat_client
 import heatclient.openstack.common.apiclient.exceptions
+from keystoneclient.auth.identity import generic as keystone_auth
+from keystoneclient import client as keystone_client
 from keystoneclient import exceptions as api_exceptions
-from keystoneclient.v2_0 import client as keystone_client
+from keystoneclient import session as keystone_session
 import neutronclient.common.exceptions
 from neutronclient.v2_0 import client as neutron_client
 from novaclient import client as nova_client
@@ -103,13 +105,8 @@ class CinderResources(base.Resources):
 
     def __init__(self, session):
         super(CinderResources, self).__init__(session)
-        # Cinder client library can't use an existing token. When
-        # using this library, we have to reauthenticate.
-        self.client = cinder_client.Client(
-            session.username, session.password,
-            session.project_name, session.auth_url, session.insecure,
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name)
+        self.client = cinder_client.Client("2.1",
+                                           session=session.keystone_session)
 
 
 class CinderSnapshots(CinderResources):
@@ -163,11 +160,7 @@ class NeutronResources(base.Resources):
 
     def __init__(self, session):
         super(NeutronResources, self).__init__(session)
-        self.client = neutron_client.Client(
-            username=session.username, password=session.password,
-            tenant_id=session.project_id, auth_url=session.auth_url,
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name, insecure=session.insecure)
+        self.client = neutron_client.Client(session=session.keystone_session)
         self.project_id = session.project_id
 
     # This method is used for routers and interfaces removal
@@ -443,11 +436,8 @@ class NovaServers(base.Resources):
 
     def __init__(self, session):
         super(NovaServers, self).__init__(session)
-        self.client = nova_client.Client(
-            "2", session.username, session.password,
-            session.project_name, auth_url=session.auth_url,
-            endpoint_type=session.endpoint_type,
-            region_name=session.region_name, insecure=session.insecure)
+        self.client = nova_client.Client("2.1",
+                                         session=session.keystone_session)
         self.project_id = session.project_id
 
     """Manage nova resources"""
@@ -466,9 +456,8 @@ class NovaServers(base.Resources):
 class GlanceImages(base.Resources):
 
     def __init__(self, session):
-        self.client = glance_client.Client(
-            endpoint=session.get_endpoint("image"),
-            token=session.token, insecure=session.insecure)
+        self.client = glance_client.Client("1",
+                                           session=session.keystone_session)
         self.project_id = session.project_id
 
     def list(self):
@@ -542,14 +531,27 @@ class KeystoneManager(object):
     """Manages Keystone queries."""
 
     def __init__(self, username, password, project, auth_url, insecure,
-                 admin_role_name, **kwargs):
-        self.client = keystone_client.Client(
-            username=username, password=password,
-            tenant_name=project, auth_url=auth_url,
-            insecure=insecure, **kwargs)
-        self.admin_role_name = admin_role_name
+                 **kwargs):
+        data = {
+            'username': username,
+            'password': password,
+            'project_name': project
+        }
+
+        if 'v3' in auth_url.split('/')[-1]:
+            data.update({
+                'user_domain_id': kwargs['user_domain_name'],
+                'project_domain_id': kwargs['user_domain_name']
+            })
+
+        self.auth = keystone_auth.password.Password(auth_url, **data)
+        session = keystone_session.Session(auth=self.auth, verify=insecure)
+        self.client = keystone_client.Client(session=session)
+
         self.admin_role_id = None
         self.tenant_info = None
+        self.admin_role_name = kwargs['admin_role_name']
+        self.user_id = self.auth.auth_ref.user_id
 
     def get_project_id(self, project_name_or_id=None):
         """Get a project by its id
@@ -558,35 +560,49 @@ class KeystoneManager(object):
         * ID of current project if called without parameter,
         * ID of project given as parameter if one is given.
         """
-
         if project_name_or_id is None:
-            return self.client.tenant_id
+            return self.auth.auth_ref.project_id
 
         try:
-            self.tenant_info = self.client.tenants.get(project_name_or_id)
+            if self.client.version == "v2.0":
+                self.tenant_info = self.client.tenants.get(project_name_or_id)
+            else:
+                self.tenant_info = self.client.projects.get(project_name_or_id)
             # If it doesn't raise an 404, project_name_or_id is
             # already the project's id
             project_id = project_name_or_id
         except api_exceptions.NotFound:
             try:
                 # Can raise api_exceptions.Forbidden:
-                tenants = self.client.tenants.list()
+                if self.client.version == "v2.0":
+                    tenants = self.client.tenants.list()
+                else:
+                    tenants = self.client.projects.list()
                 project_id = filter(
                     lambda x: x.name == project_name_or_id, tenants)[0].id
             except IndexError:
                 raise exceptions.NoSuchProject(project_name_or_id)
 
         if not self.tenant_info:
-            self.tenant_info = self.client.tenants.get(project_id)
+            if self.client.version == "v2.0":
+                self.tenant_info = self.client.tenants.get(project_id)
+            else:
+                self.tenant_info = self.client.projects.get(project_id)
         return project_id
 
     def enable_project(self, project_id):
         logging.info("* Enabling project {}.".format(project_id))
-        self.tenant_info = self.client.tenants.update(project_id, enabled=True)
+        if self.client.version == "v2.0":
+            self.tenant_info = self.client.tenants.update(project_id, enabled=True)
+        else:
+            self.tenant_info = self.client.projects.update(project_id, enabled=True)
 
     def disable_project(self, project_id):
         logging.info("* Disabling project {}.".format(project_id))
-        self.tenant_info = self.client.tenants.update(project_id, enabled=False)
+        if self.client.version == "v2.0":
+            self.tenant_info = self.client.tenants.update(project_id, enabled=False)
+        else:
+            self.tenant_info = self.client.projects.update(project_id, enabled=False)
 
     def get_admin_role_id(self):
         if not self.admin_role_id:
@@ -595,35 +611,48 @@ class KeystoneManager(object):
         return self.admin_role_id
 
     def become_project_admin(self, project_id):
-        user_id = self.client.user_id
+        user_id = self.user_id
         admin_role_id = self.get_admin_role_id()
         logging.info("* Granting role admin to user {} on project {}.".format(
             user_id, project_id))
-
-        return self.client.roles.add_user_role(user_id, admin_role_id, project_id)
+        if self.client.version == "v2.0":
+            return self.client.roles.add_user_role(user_id, admin_role_id,
+                                                   project_id)
+        else:
+            return self.client.roles.grant(role=admin_role_id, user=user_id,
+                                           project=project_id)
 
     def undo_become_project_admin(self, project_id):
-        user_id = self.client.user_id
+        user_id = self.user_id
         admin_role_id = self.get_admin_role_id()
         logging.info("* Removing role admin to user {} on project {}.".format(
             user_id, project_id))
-
-        return self.client.roles.remove_user_role(user_id, admin_role_id, project_id)
+        if self.client.version == "v2.0":
+            return self.client.roles.remove_user_role(user_id,
+                                                      admin_role_id,
+                                                      project_id)
+        else:
+            return self.client.roles.revoke(role=admin_role_id,
+                                            user=user_id,
+                                            project=project_id)
 
     def delete_project(self, project_id):
         logging.info("* Deleting project {}.".format(project_id))
-        self.client.tenants.delete(project_id)
+        if self.client.version == "v2.0":
+            self.client.tenants.delete(project_id)
+        else:
+            self.client.projects.delete(project_id)
 
 
 def perform_on_project(admin_name, password, project, auth_url,
-                       endpoint_type='publicURL', region_name=None,
-                       action='dump', insecure=False):
+                       endpoint_type='publicURL', action='dump',
+                       insecure=False, **kwargs):
     """Perform provided action on all resources of project.
 
     action can be: 'purge' or 'dump'
     """
     session = base.Session(admin_name, password, project, auth_url,
-                           endpoint_type, region_name, insecure)
+                           endpoint_type, insecure, **kwargs)
     error = None
     for rc in constants.RESOURCES_CLASSES:
         try:
@@ -701,7 +730,7 @@ def parse_args():
                         help="The user's password. Defaults "
                              "to env[OS_PASSWORD].")
     parser.add_argument("--admin-project", action=EnvDefault,
-                        envvar='OS_TENANT_NAME', required=True,
+                        envvar='OS_TENANT_NAME', required=False,
                         help="Project name used for authentication. This project "
                              "will be purged if --own-project is set. "
                              "Defaults to env[OS_TENANT_NAME].")
@@ -711,6 +740,22 @@ def parse_args():
                         envvar='OS_AUTH_URL', required=True,
                         help="Authentication URL. Defaults to "
                              "env[OS_AUTH_URL].")
+    parser.add_argument("--user-domain-id", action=EnvDefault,
+                        envvar='OS_USER_DOMAIN_ID', required=False,
+                        help="User Domain ID. Defaults to "
+                             "env[OS_USER_DOMAIN_ID].")
+    parser.add_argument("--user-domain-name", action=EnvDefault,
+                        envvar='OS_USER_DOMAIN_NAME', required=False,
+                        help="User Domain ID. Defaults to "
+                             "env[OS_USER_DOMAIN_NAME].")
+    parser.add_argument("--project-name", action=EnvDefault,
+                        envvar='OS_PROJECT_NAME', required=False,
+                        help="Project Name. Defaults to "
+                             "env[OS_PROJECT_NAME].")
+    parser.add_argument("--project-domain-id", action=EnvDefault,
+                        envvar='OS_PROJECT_DOMAIN_ID', required=False,
+                        help="Project Domain ID. Defaults to "
+                             "env[OS_PROJECT_DOMAIN_ID].")
     parser.add_argument("--cleanup-project", required=False, default=None,
                         help="ID or Name of project to purge. Not required "
                              "if --own-project has been set. Using --cleanup-project "
@@ -733,6 +778,8 @@ def parse_args():
     if args.cleanup_project and args.own_project:
         parser.error('Both --cleanup-project '
                      'and --own-project can not be set')
+    if not (args.admin_project or args.project_name):
+        parser.error('--admin-project or --project-name is required')
     return args
 
 
@@ -745,11 +792,19 @@ def main():
         # Set default log level to Warning
         logging.basicConfig(level=logging.WARNING)
 
+    data = {
+        'region_name': args.region_name,
+        'user_domain_id': args.user_domain_id,
+        'project_domain_id': args.project_domain_id,
+        'user_domain_name': args.user_domain_name,
+        'admin_role_name': args.admin_role_name
+    }
+    project = args.admin_project if args.admin_project else args.project_name
+
     try:
         keystone_manager = KeystoneManager(args.username, args.password,
-                                           args.admin_project, args.auth_url,
-                                           args.insecure, region_name=args.region_name,
-                                           admin_role_name=args.admin_role_name)
+                                           project, args.auth_url,
+                                           args.insecure, **data)
     except api_exceptions.Unauthorized as exc:
         print("Authentication failed: {}".format(str(exc)))
         sys.exit(constants.AUTHENTICATION_FAILED_ERROR_CODE)
@@ -786,8 +841,8 @@ def main():
     try:
         action = "dump" if args.dry_run else "purge"
         perform_on_project(args.username, args.password, cleanup_project_id,
-                           args.auth_url, args.endpoint_type, args.region_name,
-                           action, args.insecure)
+                           args.auth_url, args.endpoint_type, action,
+                           args.insecure, **data)
     except requests.exceptions.ConnectionError as exc:
         print("Connection error: {}".format(str(exc)))
         sys.exit(constants.CONNECTION_ERROR_CODE)
