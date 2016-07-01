@@ -28,8 +28,8 @@ NETWORK_PUBLIC_ENDPOINT = 'https://network0.cw-labs.net'
 COMPUTE_PUBLIC_ENDPOINT = 'https://compute0.cw-labs.net/v2/43c9e28327094e1b81484f4b9aee74d5'
 METERING_PUBLIC_ENDPOINT = 'https://metric0.cw-labs.net'
 ORCHESTRATION_PUBLIC_ENDPOINT = 'https://orchestration0.cw-labs.net/v1'
-VOLUME_INTERNAL_ENDPOINT = 'http://internal:8776/v1/225da22d3ce34b15877ea70b2a575f58'
-IMAGE_INTERNAL_ENDPOINT = 'http://internal:9292'
+VOLUME_INTERNAL_ENDPOINT = 'http://public:8776/v1/225da22d3ce34b15877ea70b2a575f58'
+IMAGE_INTERNAL_ENDPOINT = 'http://public:9292'
 STORAGE_INTERNAL_ENDPOINT = 'http://internal:8080/v1/AUTH_ee5b90900a4b4e85938b0ceadf4467f8'
 NETWORK_INTERNAL_ENDPOINT = 'http://neutron.usr.lab0.aub.cw-labs.net:9696'
 COMPUTE_INTERNAL_ENDPOINT = 'http://nova.usr.lab0.aub.cw-labs.net:8774/v2/43c9e28327094e1b81484f4b9aee74d5'
@@ -1042,7 +1042,40 @@ IMAGES_LIST = {
             "status": "active",
             "updated_at": "2014-02-03T14:13:53"
         }
-    ]
+    ],
+    "additionalProperties": {
+        "type": "string"
+    },
+    "name": "image",
+    "links": [
+        {
+            "href": "{self}",
+            "rel": "self"
+        },
+        {
+            "href": "{file}",
+            "rel": "enclosure"
+        },
+        {
+            "href": "{schema}",
+            "rel": "describedby"
+        }
+    ],
+    "properties": {
+        "container_format": {
+            "enum": [
+                "ami",
+                "ari",
+                "aki",
+                "bare",
+                "ovf",
+                "ova",
+                "docker"
+            ],
+            "type": "string",
+            "description": "Format of the container"
+        }
+    }
 }
 
 ALARMS_LIST = [
