@@ -62,6 +62,8 @@ class HttpTest(testtools.TestCase):
         httpretty.register_uri(method, url, **kwargs)
 
     def stub_auth(self):
+        self.stub_url('GET', base_url=AUTH_URL,
+                      json=client_fixtures.AUTH_URL_RESPONSE)
         self.stub_url('POST', parts=['tokens'], base_url=AUTH_URL,
                       json=client_fixtures.PROJECT_SCOPED_TOKEN)
         self.stub_url('GET', parts=['roles'],
@@ -75,7 +77,8 @@ class SessionTest(HttpTest):
     def test_init(self):
         self.stub_auth()
         session = base.Session(USERNAME, PASSWORD,
-                               client_fixtures.PROJECT_ID, AUTH_URL)
+                               client_fixtures.PROJECT_ID, AUTH_URL,
+                               region_name="RegionOne")
         self.assertEqual(session.token, client_fixtures.TOKEN_ID)
         self.assertEqual(session.user_id, client_fixtures.USER_ID)
         self.assertEqual(session.project_id, client_fixtures.PROJECT_ID)
@@ -85,7 +88,8 @@ class SessionTest(HttpTest):
     def test_get_public_endpoint(self):
         self.stub_auth()
         session = base.Session(USERNAME, PASSWORD,
-                               client_fixtures.PROJECT_ID, AUTH_URL)
+                               client_fixtures.PROJECT_ID, AUTH_URL,
+                               region_name="RegionOne")
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_PUBLIC_ENDPOINT)
         endpoint = session.get_endpoint('image')
@@ -94,8 +98,10 @@ class SessionTest(HttpTest):
     @httpretty.activate
     def test_get_internal_endpoint(self):
         self.stub_auth()
-        session = base.Session(USERNAME, PASSWORD, client_fixtures.PROJECT_ID,
-                               AUTH_URL, endpoint_type='internalURL')
+        session = base.Session(USERNAME, PASSWORD,
+                               client_fixtures.PROJECT_ID, AUTH_URL,
+                               region_name="RegionOne",
+                               endpoint_type='internalURL')
         endpoint = session.get_endpoint('volume')
         self.assertEqual(endpoint, client_fixtures.VOLUME_INTERNAL_ENDPOINT)
         endpoint = session.get_endpoint('image')
@@ -112,7 +118,8 @@ class TestResourcesBase(HttpTest):
         super(TestResourcesBase, self).setUp()
         self.stub_auth()
         self.session = base.Session(USERNAME, PASSWORD,
-                                    client_fixtures.PROJECT_ID, AUTH_URL)
+                                    client_fixtures.PROJECT_ID, AUTH_URL,
+                                    region_name="RegionOne")
         # We can't add other stubs in subclasses setUp because
         # httpretty.dactivate() is called after this set_up (so during the
         # super call to this method in subclasses). and extra stubs will not
@@ -714,12 +721,14 @@ class TestGlanceImages(TestResourcesBase):
     IDS = client_fixtures.IMAGES_IDS
 
     def stub_list(self):
-        self.stub_url('GET', parts=['v1', 'images', 'detail'],
+        self.stub_url('GET', parts=['v2', 'images?limit=20', 'detail'],
+                      json=client_fixtures.IMAGES_LIST)
+        self.stub_url('GET', parts=['v2', 'schemas', 'image'],
                       json=client_fixtures.IMAGES_LIST)
 
     def stub_delete(self):
         self.stub_url(
-            'DELETE', parts=['v1', 'images', client_fixtures.IMAGES_IDS[0]])
+            'DELETE', parts=['v2', 'images', client_fixtures.IMAGES_IDS[0]])
 
     def setUp(self):
         super(TestGlanceImages, self).setUp()
