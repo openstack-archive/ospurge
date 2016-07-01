@@ -21,8 +21,11 @@
 import logging
 import time
 
-from keystoneclient import exceptions as api_exceptions
-from keystoneclient.v2_0 import client as keystone_client
+from keystoneauth1 import exceptions as api_exceptions
+from keystoneauth1.identity import generic as keystone_auth
+from keystoneauth1 import session as keystone_session
+from keystoneclient import client as keystone_client
+from keystoneclient import exceptions as keystone_exceptions
 
 from ospurge import constants
 from ospurge import exceptions
@@ -74,31 +77,46 @@ class Session(object):
     """
 
     def __init__(self, username, password, project_id, auth_url,
-                 endpoint_type="publicURL", region_name=None, insecure=False):
-        client = keystone_client.Client(
-            username=username, password=password, tenant_id=project_id,
-            auth_url=auth_url, region_name=region_name, insecure=insecure)
+                 endpoint_type="publicURL", insecure=False, **kwargs):
+
+        data = {
+            'username': username,
+            'password': password,
+            'project_id': project_id,
+            'user_domain_id': kwargs.get('user_domain_id'),
+            'user_domain_name': kwargs.get('user_domain_name'),
+            'project_domain_id': kwargs.get('project_domain_id'),
+            'project_domain_name': kwargs.get('project_domain_name'),
+            'domain_id': kwargs.get('domain_id')
+        }
+
+        auth = keystone_auth.Password(auth_url, **data)
+        session = keystone_session.Session(auth=auth, verify=(not insecure))
+        self.client = keystone_client.Client(session=session)
+
         # Storing username, password, project_id and auth_url for
         # use by clients libraries that cannot use an existing token.
         self.username = username
         self.password = password
-        self.project_id = project_id
+        self.project_id = auth.auth_ref.project_id
         self.auth_url = auth_url
-        self.region_name = region_name
+        self.region_name = kwargs['region_name']
         self.insecure = insecure
         # Session variables to be used by clients when possible
-        self.token = client.auth_token
-        self.user_id = client.user_id
-        self.project_name = client.project_name
+        self.token = auth.auth_ref.auth_token
+        self.user_id = auth.auth_ref.user_id
+        self.project_name = self.client.project_name
+        self.keystone_session = session
         self.endpoint_type = endpoint_type
-        self.catalog = client.service_catalog.get_endpoints()
+        self.catalog = auth.auth_ref.service_catalog.get_endpoints()
+
         try:
             # Detect if we are admin or not
-            client.roles.list()  # Only admins are allowed to do this
+            self.client.roles.list()  # Only admins are allowed to do this
         except (
             # The Exception Depends on OpenStack Infrastructure.
             api_exceptions.Forbidden,
-            api_exceptions.ConnectionRefused,  # admin URL not permitted
+            keystone_exceptions.ConnectionRefused,  # admin URL not permitted
             api_exceptions.Unauthorized,
         ):
             self.is_admin = False
@@ -107,7 +125,10 @@ class Session(object):
 
     def get_endpoint(self, service_type):
         try:
-            return self.catalog[service_type][0][self.endpoint_type]
+            if self.client.version == "v2.0":
+                return self.catalog[service_type][0][self.endpoint_type]
+            else:
+                return self.catalog[service_type][0]['url']
         except (KeyError, IndexError):
             # Endpoint could not be found
             raise exceptions.EndpointNotFound(service_type)
