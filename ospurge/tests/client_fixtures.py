@@ -1042,7 +1042,40 @@ IMAGES_LIST = {
             "status": "active",
             "updated_at": "2014-02-03T14:13:53"
         }
-    ]
+    ],
+    "additionalProperties": {
+        "type": "string"
+    },
+    "name": "image",
+    "links": [
+        {
+            "href": "{self}",
+            "rel": "self"
+        },
+        {
+            "href": "{file}",
+            "rel": "enclosure"
+        },
+        {
+            "href": "{schema}",
+            "rel": "describedby"
+        }
+    ],
+    "properties": {
+        "container_format": {
+            "enum": [
+                "ami",
+                "ari",
+                "aki",
+                "bare",
+                "ovf",
+                "ova",
+                "docker"
+            ],
+            "type": "string",
+            "description": "Format of the container"
+        }
+    }
 }
 
 ALARMS_LIST = [
