@@ -740,10 +740,7 @@ def main():
     args = parse_args()
 
     if args.verbose:
-        logging.basicConfig(level=logging.INFO)
-    else:
-        # Set default log level to Warning
-        logging.basicConfig(level=logging.WARNING)
+        logging.getLogger().setLevel(logging.INFO)
 
     try:
         keystone_manager = KeystoneManager(args.username, args.password,
