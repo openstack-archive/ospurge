@@ -1,0 +1,9 @@
+Code-Review+2: Yves-Gwenael Bourhis <yves-gwenael.bourhis@cloudwatt.com>
+Code-Review+2: Jordan Pittier <jordan.pittier@scality.com>
+Workflow+1: Jordan Pittier <jordan.pittier@scality.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 25 Aug 2016 08:43:14 +0000
+Reviewed-on: https://review.openstack.org/336607
+Project: openstack/ospurge
+Branch: refs/heads/master
