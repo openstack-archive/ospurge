@@ -209,7 +209,7 @@ class NeutronInterfaces(NeutronResources):
         all_ports = [
             port for port in self.client.list_ports(
                 tenant_id=self.project_id)['ports']
-            if port["device_owner"] == "network:router_interface"
+            if port["device_owner"] in ("network:router_interface", "network:router_interface_distributed")
         ]
         return filter(self._owned_resource, all_ports)
 
