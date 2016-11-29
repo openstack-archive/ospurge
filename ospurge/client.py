@@ -90,7 +90,7 @@ class SwiftObjects(SwiftResources):
                                    container=obj['container'], name=obj['name'])
 
     def resource_str(self, obj):
-        return "object {} in container {}".format(obj['name'], obj['container'])
+        return u"object {} in container {}".format(obj['name'], obj['container'])
 
 
 class SwiftContainers(SwiftResources):
@@ -104,7 +104,7 @@ class SwiftContainers(SwiftResources):
         swift_client.delete_container(self.endpoint, self.token, container, http_conn=self.http_conn)
 
     def resource_str(self, obj):
-        return "container {}".format(obj)
+        return u"container {}".format(obj)
 
 
 class CinderResources(base.Resources):
@@ -125,7 +125,7 @@ class CinderSnapshots(CinderResources):
         self.client.volume_snapshots.delete(snap)
 
     def resource_str(self, snap):
-        return "snapshot {} (id {})".format(snap.display_name, snap.id)
+        return u"snapshot {} (id {})".format(snap.display_name, snap.id)
 
 
 class CinderVolumes(CinderResources):
@@ -139,7 +139,7 @@ class CinderVolumes(CinderResources):
         self.client.volumes.delete(vol)
 
     def resource_str(self, vol):
-        return "volume {} (id {})".format(vol.display_name, vol.id)
+        return u"volume {} (id {})".format(vol.display_name, vol.id)
 
 
 class CinderBackups(CinderResources):
@@ -159,7 +159,7 @@ class CinderBackups(CinderResources):
         self.client.backups.delete(backup)
 
     def resource_str(self, backup):
-        return "backup {} (id {}) of volume {}".format(backup.name, backup.id, backup.volume_id)
+        return u"backup {} (id {}) of volume {}".format(backup.name, backup.id, backup.volume_id)
 
 
 class NeutronResources(base.Resources):
@@ -198,7 +198,7 @@ class NeutronRouters(NeutronResources):
 
     @staticmethod
     def resource_str(router):
-        return "router {} (id {})".format(router['name'], router['id'])
+        return u"router {} (id {})".format(router['name'], router['id'])
 
 
 class NeutronInterfaces(NeutronResources):
@@ -220,7 +220,7 @@ class NeutronInterfaces(NeutronResources):
 
     @staticmethod
     def resource_str(interface):
-        return "interface {} (id {})".format(interface['name'],
+        return u"interface {} (id {})".format(interface['name'],
                                              interface['id'])
 
 
@@ -244,7 +244,7 @@ class NeutronPorts(NeutronResources):
 
     @staticmethod
     def resource_str(port):
-        return "port {} (id {})".format(port['name'], port['id'])
+        return u"port {} (id {})".format(port['name'], port['id'])
 
 
 class NeutronNetworks(NeutronResources):
@@ -265,7 +265,7 @@ class NeutronNetworks(NeutronResources):
 
     @staticmethod
     def resource_str(net):
-        return "network {} (id {})".format(net['name'], net['id'])
+        return u"network {} (id {})".format(net['name'], net['id'])
 
 
 class NeutronSecgroups(NeutronResources):
@@ -293,7 +293,7 @@ class NeutronSecgroups(NeutronResources):
 
     @staticmethod
     def resource_str(secgroup):
-        return "security group {} (id {})".format(
+        return u"security group {} (id {})".format(
             secgroup['name'], secgroup['id'])
 
 
@@ -310,7 +310,7 @@ class NeutronFloatingIps(NeutronResources):
 
     @staticmethod
     def resource_str(floating_ip):
-        return "floating ip {} (id {})".format(
+        return u"floating ip {} (id {})".format(
             floating_ip['floating_ip_address'], floating_ip['id'])
 
 
@@ -326,7 +326,7 @@ class NeutronLbMembers(NeutronResources):
 
     @staticmethod
     def resource_str(member):
-        return "lb-member {} (id {})".format(member['address'], member['id'])
+        return u"lb-member {} (id {})".format(member['address'], member['id'])
 
 
 class NeutronLbPool(NeutronResources):
@@ -341,7 +341,7 @@ class NeutronLbPool(NeutronResources):
 
     @staticmethod
     def resource_str(pool):
-        return "lb-pool {} (id {})".format(pool['name'], pool['id'])
+        return u"lb-pool {} (id {})".format(pool['name'], pool['id'])
 
 
 class NeutronLbVip(NeutronResources):
@@ -356,7 +356,7 @@ class NeutronLbVip(NeutronResources):
 
     @staticmethod
     def resource_str(vip):
-        return "lb-vip {} (id {})".format(vip['name'], vip['id'])
+        return u"lb-vip {} (id {})".format(vip['name'], vip['id'])
 
 
 class NeutronLbHealthMonitor(NeutronResources):
@@ -371,7 +371,7 @@ class NeutronLbHealthMonitor(NeutronResources):
 
     @staticmethod
     def resource_str(health_monitor):
-        return "lb-health_monotor type {} (id {})".format(
+        return u"lb-health_monotor type {} (id {})".format(
             health_monitor['type'], health_monitor['id'])
 
 
@@ -387,7 +387,7 @@ class NeutronMeteringLabel(NeutronResources):
 
     @staticmethod
     def resource_str(metering_label):
-        return "meter-label {} (id {})".format(
+        return u"meter-label {} (id {})".format(
             metering_label['name'], metering_label['id'])
 
 
@@ -403,7 +403,7 @@ class NeutronFireWallPolicy(NeutronResources):
 
     @staticmethod
     def resource_str(firewall_policy):
-        return "Firewall policy {} (id {})".format(
+        return u"Firewall policy {} (id {})".format(
             firewall_policy['name'], firewall_policy['id'])
 
 
@@ -419,7 +419,7 @@ class NeutronFireWallRule(NeutronResources):
 
     @staticmethod
     def resource_str(firewall_rule):
-        return "Firewall rule {} (id {})".format(
+        return u"Firewall rule {} (id {})".format(
             firewall_rule['name'], firewall_rule['id'])
 
 
@@ -435,7 +435,7 @@ class NeutronFireWall(NeutronResources):
 
     @staticmethod
     def resource_str(firewall):
-        return "Firewall {} (id {})".format(firewall['name'], firewall['id'])
+        return u"Firewall {} (id {})".format(firewall['name'], firewall['id'])
 
 
 class NovaServers(base.Resources):
@@ -456,7 +456,7 @@ class NovaServers(base.Resources):
         self.client.servers.delete(server)
 
     def resource_str(self, server):
-        return "server {} (id {})".format(server.name, server.id)
+        return u"server {} (id {})".format(server.name, server.id)
 
 
 class GlanceImages(base.Resources):
@@ -476,7 +476,7 @@ class GlanceImages(base.Resources):
         self.client.images.delete(image.id)
 
     def resource_str(self, image):
-        return "image {} (id {})".format(image.name, image.id)
+        return u"image {} (id {})".format(image.name, image.id)
 
     def _owned_resource(self, res):
         # Only considering resources owned by project
@@ -503,7 +503,7 @@ class HeatStacks(base.Resources):
             self.client.stacks.delete(stack.id)
 
     def resource_str(self, stack):
-        return "stack {})".format(stack.id)
+        return u"stack {})".format(stack.id)
 
 
 class CeilometerAlarms(base.Resources):
@@ -530,7 +530,7 @@ class CeilometerAlarms(base.Resources):
         self.client.alarms.delete(alarm.alarm_id)
 
     def resource_str(self, alarm):
-        return "alarm {}".format(alarm.name)
+        return u"alarm {}".format(alarm.name)
 
 
 class KeystoneManager(object):
