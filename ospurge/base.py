@@ -47,8 +47,8 @@ def retry(service_name):
                         # someone else while ospurge is running and listed it.
                         # If this happens, We raise a Warning.
                         logging.warning(
-                            "Can not delete the resource because it does not"
-                            " exist : %s" % e
+                            u"Can not delete the resource because it does not"
+                            u" exist : %s" % e
                         )
                         # No need to retry deleting an non existing resource
                         break
@@ -56,9 +56,9 @@ def retry(service_name):
                         if n == constants.RETRIES:
                             raise exceptions.DeletionFailed(service_name)
                         n += 1
-                        logging.info("* Deletion failed - "
-                                     "Retrying in {} seconds - "
-                                     "Retry count {}".format(constants.TIMEOUT, n))
+                        logging.info(u"* Deletion failed - "
+                                     u"Retrying in {} seconds - "
+                                     u"Retry count {}".format(constants.TIMEOUT, n))
                         time.sleep(constants.TIMEOUT)
         return wrapper
     return factory
@@ -146,14 +146,14 @@ class Resources(object):
 
     def delete(self, resource):
         """Displays informational message about a resource deletion."""
-        logging.info("* Deleting {}.".format(self.resource_str(resource)))
+        logging.info(u"* Deleting {}.".format(self.resource_str(resource)))
 
     def purge(self):
         """Delete all resources."""
         # Purging is displayed and done only if self.list succeeds
         resources = self.list()
         c_name = self.__class__.__name__
-        logging.info("* Purging {}".format(c_name))
+        logging.info(u"* Purging {}".format(c_name))
         for resource in resources:
             retry(c_name)(self.delete)(resource)
 
@@ -162,7 +162,7 @@ class Resources(object):
         # Resources type and resources are displayed only if self.list succeeds
         resources = self.list()
         c_name = self.__class__.__name__
-        print("* Resources type: {}".format(c_name))
+        print(u"* Resources type: {}".format(c_name))
         for resource in resources:
             print(self.resource_str(resource))
-        print("")
+        print(u"")
