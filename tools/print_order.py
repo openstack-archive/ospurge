@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #  Licensed under the Apache License, Version 2.0 (the "License"); you may
 #  not use this file except in compliance with the License. You may obtain
 #  a copy of the License at
@@ -9,9 +10,14 @@
 #  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #  License for the specific language governing permissions and limitations
 #  under the License.
-import setuptools
+import operator
 
-setuptools.setup(
-    setup_requires=['pbr>=1.8'],
-    pbr=True,
+from ospurge import utils
+
+resource_managers = sorted(
+    [cls for cls in utils.get_all_resource_classes()],
+    key=operator.methodcaller('order')
 )
+
+for cls in resource_managers:
+    print("{} => {}".format(cls.__name__, cls.ORDER))
