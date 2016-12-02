@@ -1,0 +1,13 @@
+.idea/
+*~
+__pycache__/
+*.py[cod]
+AUTHORS
+ChangeLog
+build/
+dist/
+cover/
+*.egg-info/
+*.egg
+.tox/
+.testrepository/
