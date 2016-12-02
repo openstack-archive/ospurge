@@ -9,9 +9,23 @@
 #  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #  License for the specific language governing permissions and limitations
 #  under the License.
-import setuptools
+from typing import Any
+from typing import Dict
+from typing import Iterable
 
-setuptools.setup(
-    setup_requires=['pbr>=1.8'],
-    pbr=True,
-)
+from ospurge.resources import base
+
+
+class Servers(base.ServiceResource):
+    ORDER = 15
+
+    def list(self) -> Iterable:
+        return self.cloud.list_servers()
+
+    def delete(self, resource: Dict[str, Any]) -> None:
+        self.cloud.delete_server(resource['id'])
+
+    @staticmethod
+    def to_str(resource: Dict[str, Any]) -> str:
+        return "VM (id='{}', name='{}')".format(
+            resource['id'], resource['name'])

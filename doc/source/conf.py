@@ -11,8 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
 import openstackdocstheme
 
 copyright = u'2015, OpenStack contributors'

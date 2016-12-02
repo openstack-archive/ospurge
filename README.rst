@@ -1,7 +1,10 @@
 OpenStack project resources cleaner
 ===================================
 
-* ``ospurge`` is a standalone, client-side, operators tool that aims at
+What is OSPurge ?
+-----------------
+
+* ``ospurge`` is a standalone client-side tool that aims at
   deleting all resources, taking into account their interdependencies,
   in a specified OpenStack project.
 
@@ -18,61 +21,70 @@ Supported resources
 
 At the moment it is possible to purge the following resources from a project:
 
-* Ceilometer alarms
-* floating IP addresses
-* images / snapshots
-* instances
-* networks
-* routers
-* security groups
+* Floating IP
+* Glance Images
+* Instances
+* Networks
+* Routers
+* Security groups
 * Swift containers
 * Swift objects
-* volumes / snapshots
+* Volumes / Volume snapshots / Volume backups
 
 
-Error codes
------------
+Exit codes
+----------
 
-The following error codes are returned when ``ospurge`` encounters
-an error:
+The following codes are returned when ``ospurge`` exits:
 
-* ``Code 0``: Process exited sucessfully
-* ``Code 1``: Unknown error
-* ``Code 2``: Project doesn't exist
-* ``Code 3``: Authentication failed (e.g. bad username or password)
-* ``Code 4``: Resource deletion failed
-* ``Code 5``: Connection error while deleting a resource (e.g. service not
-  available)
-* ``Code 6``: Connection to endpoint failed (e.g. wrong authentication URL)
+* ``Code 0``: Process exited successfully
+* ``Code 1``: Something went wrong (check the logs)
 
 
 Installation
 ------------
 
-Create a Python virtual environment (requires the
-`virtualenvwrapper <https://virtualenvwrapper.readthedocs.org/>`_):
+Create a Python 3 virtual environment:
 
 .. code-block:: console
 
-    $ mkvirtualenv ospurge
+    $ python3 -m venv ospurge
+    $ source ospurge/bin/activate
 
 Install ``ospurge`` with ``pip``:
 
 .. code-block:: console
 
-    $ pip install ospurge
+    $ python3 -m pip install git+https://git.openstack.org/openstack/ospurge
+    $ OR, to checkout at commit 328f6
+    $ python3 -m pip install git+https://git.openstack.org/openstack/ospurge@328f6
 
-Available options can be displayed by using ``ospurge -h``:
+Available options can be displayed with ``ospurge -h``:
 
 .. code-block:: console
 
     $ ospurge -h
-    usage: ospurge [-h] [--verbose] [--dry-run] [--dont-delete-project]
-                   [--region-name REGION_NAME] [--endpoint-type ENDPOINT_TYPE]
-                   --username USERNAME --password PASSWORD --admin-project
-                   ADMIN_PROJECT [--admin-role-name ADMIN_ROLE_NAME] --auth-url
-                   AUTH_URL [--cleanup-project CLEANUP_PROJECT] [--own-project]
-                   [--insecure]
+    usage: ospurge [-h] [--verbose] [--dry-run] [--delete-shared-resources]
+                   (--purge-project ID_OR_NAME | --purge-own-project)
+                   [--os-cloud <name>] [--os-auth-type <name>]
+                   [--os-auth-url OS_AUTH_URL] [--os-domain-id OS_DOMAIN_ID]
+                   [--os-domain-name OS_DOMAIN_NAME]
+                   [--os-project-id OS_PROJECT_ID]
+                   [--os-project-name OS_PROJECT_NAME]
+                   [--os-project-domain-id OS_PROJECT_DOMAIN_ID]
+                   [--os-project-domain-name OS_PROJECT_DOMAIN_NAME]
+                   [--os-trust-id OS_TRUST_ID]
+                   [--os-default-domain-id OS_DEFAULT_DOMAIN_ID]
+                   [--os-default-domain-name OS_DEFAULT_DOMAIN_NAME]
+                   [--os-user-id OS_USER_ID] [--os-username OS_USERNAME]
+                   [--os-user-domain-id OS_USER_DOMAIN_ID]
+                   [--os-user-domain-name OS_USER_DOMAIN_NAME]
+                   [--os-password OS_PASSWORD] [--insecure]
+                   [--os-cacert <ca-certificate>] [--os-cert <certificate>]
+                   [--os-key <key>] [--timeout <seconds>]
+                   [--os-service-type <name>] [--os-service-name <name>]
+                   [--os-interface <name>] [--os-region-name <name>]
+                   [--os-endpoint-override <name>] [--os-api-version <name>]
 
     Purge resources from an Openstack project.
 
@@ -80,49 +92,105 @@ Available options can be displayed by using ``ospurge -h``:
       -h, --help            show this help message and exit
       --verbose             Makes output verbose
       --dry-run             List project's resources
-      --dont-delete-project
-                            Executes cleanup script without removing the project.
-                            Warning: all project resources will still be deleted.
-      --region-name REGION_NAME
-                            Region to use. Defaults to env[OS_REGION_NAME] or None
-      --endpoint-type ENDPOINT_TYPE
-                            Endpoint type to use. Defaults to
-                            env[OS_ENDPOINT_TYPE] or publicURL
-      --username USERNAME   If --own-project is set : a user name with access to
-                            the project being purged. If --cleanup-project is set
-                            : a user name with admin role in project specified in
-                            --admin-project. Defaults to env[OS_USERNAME]
-      --password PASSWORD   The user's password. Defaults to env[OS_PASSWORD].
-      --admin-project ADMIN_PROJECT
-                            Project name used for authentication. This project
-                            will be purged if --own-project is set. Defaults to
-                            env[OS_TENANT_NAME].
+      --delete-shared-resources
+                            Whether to delete shared resources (public images and
+                            external networks)
       --admin-role-name ADMIN_ROLE_NAME
-                                Name of admin role. Defaults to 'admin'.
-      --auth-url AUTH_URL   Authentication URL. Defaults to env[OS_AUTH_URL].
-      --cleanup-project CLEANUP_PROJECT
-                            ID or Name of project to purge. Not required if --own-
-                            project has been set. Using --cleanup-project requires
+                            Name of admin role. Defaults to 'admin'. This role
+                            will be temporarily granted on the project to purge to
+                            the authenticated user.
+      --purge-project ID_OR_NAME
+                            ID or Name of project to purge. This option requires
                             to authenticate with admin credentials.
-      --own-project         Delete resources of the project used to authenticate.
+      --purge-own-project   Purge resources of the project used to authenticate.
                             Useful if you don't have the admin credentials of the
-                            platform.
-      --insecure            Explicitly allow all OpenStack clients to perform
-                            insecure SSL (https) requests. The server's
-                            certificate will not be verified against any
-                            certificate authorities. This option should be used
-                            with caution.
+                            cloud.
+      --os-cloud <name>     Named cloud to connect to
+      --os-auth-type <name>, --os-auth-plugin <name>
+                            Authentication type to use
+
+    Authentication Options:
+      Options specific to the password plugin.
+
+      --os-auth-url OS_AUTH_URL
+                            Authentication URL
+      --os-domain-id OS_DOMAIN_ID
+                            Domain ID to scope to
+      --os-domain-name OS_DOMAIN_NAME
+                            Domain name to scope to
+      --os-project-id OS_PROJECT_ID, --os-tenant-id OS_PROJECT_ID
+                            Project ID to scope to
+      --os-project-name OS_PROJECT_NAME, --os-tenant-name OS_PROJECT_NAME
+                            Project name to scope to
+      --os-project-domain-id OS_PROJECT_DOMAIN_ID
+                            Domain ID containing project
+      --os-project-domain-name OS_PROJECT_DOMAIN_NAME
+                            Domain name containing project
+      --os-trust-id OS_TRUST_ID
+                            Trust ID
+      --os-default-domain-id OS_DEFAULT_DOMAIN_ID
+                            Optional domain ID to use with v3 and v2 parameters.
+                            It will be used for both the user and project domain
+                            in v3 and ignored in v2 authentication.
+      --os-default-domain-name OS_DEFAULT_DOMAIN_NAME
+                            Optional domain name to use with v3 API and v2
+                            parameters. It will be used for both the user and
+                            project domain in v3 and ignored in v2 authentication.
+      --os-user-id OS_USER_ID
+                            User id
+      --os-username OS_USERNAME, --os-user-name OS_USERNAME
+                            Username
+      --os-user-domain-id OS_USER_DOMAIN_ID
+                            User's domain id
+      --os-user-domain-name OS_USER_DOMAIN_NAME
+                            User's domain name
+      --os-password OS_PASSWORD
+                            User's password
+
+    API Connection Options:
+      Options controlling the HTTP API Connections
+
+      --insecure            Explicitly allow client to perform "insecure" TLS
+                            (https) requests. The server's certificate will not be
+                            verified against any certificate authorities. This
+                            option should be used with caution.
+      --os-cacert <ca-certificate>
+                            Specify a CA bundle file to use in verifying a TLS
+                            (https) server certificate. Defaults to
+                            env[OS_CACERT].
+      --os-cert <certificate>
+                            Defaults to env[OS_CERT].
+      --os-key <key>        Defaults to env[OS_KEY].
+      --timeout <seconds>   Set request timeout (in seconds).
+
+    Service Options:
+      Options controlling the specialization of the API Connection from
+      information found in the catalog
+
+      --os-service-type <name>
+                            Service type to request from the catalog
+      --os-service-name <name>
+                            Service name to request from the catalog
+      --os-interface <name>
+                            API Interface to use [public, internal, admin]
+      --os-region-name <name>
+                            Region of the cloud to use
+      --os-endpoint-override <name>
+                            Endpoint to use instead of the endpoint in the catalog
+      --os-api-version <name>
+                            Which version of the service API to use
+
 
 
 Example usage
 -------------
 
-To remove a project, credentials have to be
-provided. The usual OpenStack environment variables can be used. When
-launching the ``ospurge`` script, the project to be cleaned up has
-to be provided, by using either the ``--cleanup-project`` option or the
-``--own-project`` option. When the command returns, any resources associated
-to the project will have been definitively deleted.
+To remove a project, credentials have to be provided. The usual OpenStack
+environment variables can be used. When launching the ``ospurge`` script, the
+project to be cleaned up has to be provided, by using either the
+``--purge-project`` option or the ``--purge-own-project`` option. When the
+command returns, any resources that belong to the project will have been
+definitively deleted.
 
 * Setting OpenStack credentials:
 
@@ -133,110 +201,38 @@ to the project will have been definitively deleted.
     $ export OS_TENANT_NAME=admin
     $ export OS_AUTH_URL=http://localhost:5000/v2.0
 
-* Checking resources of the target project:
+* Removing resources:
 
 .. code-block:: console
 
-    $ ./ospurge --dry-run --cleanup-project demo
-    * Resources type: CinderSnapshots
+    $ ./ospurge --verbose --purge-project demo
+    WARNING:root:2016-10-27 20:59:12,001:Going to list and/or delete resources from project 'demo'
+    INFO:root:2016-10-27 20:59:12,426:Going to delete VM (id='be1cce96-fd4c-49fc-9029-db410d376258', name='cb63bb6c-de93-4213-9998-68c2a532018a')
+    INFO:root:2016-10-27 20:59:12,967:Waiting for check_prerequisite() in FloatingIPs
+    INFO:root:2016-10-27 20:59:15,169:Waiting for check_prerequisite() in FloatingIPs
+    INFO:root:2016-10-27 20:59:19,258:Going to delete Floating IP (id='14846ada-334a-4447-8763-829364bb0d18')
+    INFO:root:2016-10-27 20:59:19,613:Going to delete Snapshot (id='2e7aa42f-5596-49bf-976a-e572e6c96224', name='cb63bb6c-de93-4213-9998-68c2a532018a')
+    INFO:root:2016-10-27 20:59:19,953:Going to delete Volume Backup (id='64a8b6d8-021e-4680-af58-0a5a04d29ed2', name='cb63bb6c-de93-4213-9998-68c2a532018a'
+    INFO:root:2016-10-27 20:59:20,717:Going to delete Router Interface (id='7240a5df-eb83-447b-8966-f7ad2a583bb9', router_id='7057d141-29c7-4596-8312-16b441012083')
+    INFO:root:2016-10-27 20:59:27,009:Going to delete Router Interface (id='fbae389d-ff69-4649-95cb-5ec8a8a64d03', router_id='7057d141-29c7-4596-8312-16b441012083')
+    INFO:root:2016-10-27 20:59:28,672:Going to delete Router (id='7057d141-29c7-4596-8312-16b441012083', name='router1')
+    INFO:root:2016-10-27 20:59:31,365:Going to delete Port (id='09e452bf-804d-489a-889c-be0eda7ecbca', network_id='e282fc84-7c79-4d47-a94c-b74f7a775682)'
+    INFO:root:2016-10-27 20:59:32,398:Going to delete Security Group (id='7028fbd2-c998-428d-8d41-28293c3de052', name='6256fb6c-0118-4f18-8424-0f68aadb9457')
+    INFO:root:2016-10-27 20:59:33,668:Going to delete Network (id='dd33dd12-4c3e-4162-8a5c-23941922271f', name='private')
+    INFO:root:2016-10-27 20:59:36,119:Going to delete Image (id='39df8b40-3acd-404c-935c-d9f15732dfa6', name='cb63bb6c-de93-4213-9998-68c2a532018a')
+    INFO:root:2016-10-27 20:59:36,953:Going to delete Volume (id='f482283a-25a9-419e-af92-81ec8c62e1cd', name='cb63bb6c-de93-4213-9998-68c2a532018a')
+    INFO:root:2016-10-27 20:59:48,790:Going to delete Object 'cb63bb6c-de93-4213-9998-68c2a532018a.raw' from Container 'cb63bb6c-de93-4213-9998-68c2a532018a'
+    INFO:root:2016-10-27 20:59:48,895:Going to delete Container (name='6256fb6c-0118-4f18-8424-0f68aadb9457')
+    INFO:root:2016-10-27 20:59:48,921:Going to delete Container (name='volumebackups')
 
-    * Resources type: NovaServers
-    server vm0 (id 8b0896d9-bcf3-4360-824a-a81865ad2385)
-
-    * Resources type: NeutronFloatingIps
-
-    * Resources type: NeutronInterfaces
-
-    * Resources type: NeutronRouters
-
-    * Resources type: NeutronNetworks
-
-    * Resources type: NeutronSecgroups
-    security group custom (id 8c13e635-6fdc-4332-ba19-c22a7a85c7cc)
-
-    * Resources type: GlanceImages
-
-    * Resources type: SwiftObjects
-
-    * Resources type: SwiftContainers
-
-    * Resources type: CinderVolumes
-    volume vol0 (id ce1380ef-2d66-47a2-9dbf-8dd5d9cd506d)
-
-    * Resources type: CeilometerAlarms
-
-* Removing resources without deleting the project:
+* Projects can be deleted with the ``python-openstackclient`` command-line
+  interface:
 
 .. code-block:: console
 
-    $ ./ospurge --verbose --dont-delete-project --cleanup-project demo
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
-    INFO:root:* Granting role admin to user e7f562a29da3492baba2cc7c5a1f2d84 on project demo.
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone-admin.usr.lab0.aub.cw-labs.net
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
-    INFO:root:* Purging CinderSnapshots
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): cinder.usr.lab0.aub.cw-labs.net
-    INFO:root:* Purging NovaServers
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): nova.usr.lab0.aub.cw-labs.net
-    INFO:root:* Deleting server vm0 (id 8b0896d9-bcf3-4360-824a-a81865ad2385).
-    INFO:root:* Purging NeutronFloatingIps
-    INFO:root:* Purging NeutronInterfaces
-    INFO:root:* Purging NeutronRouters
-    INFO:root:* Purging NeutronNetworks
-    INFO:root:* Purging NeutronSecgroups
-    INFO:root:* Deleting security group custom (id 8c13e635-6fdc-4332-ba19-c22a7a85c7cc).
-    INFO:root:* Purging GlanceImages
-    INFO:root:* Purging SwiftObjects
-    INFO:root:* Purging SwiftContainers
-    INFO:root:* Purging CinderVolumes
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): keystone.usr.lab0.aub.cw-labs.net
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): cinder.usr.lab0.aub.cw-labs.net
-    INFO:root:* Deleting volume vol0 (id ce1380ef-2d66-47a2-9dbf-8dd5d9cd506d).
-    INFO:requests.packages.urllib3.connectionpool:Starting new HTTP connection (1): cinder.usr.lab0.aub.cw-labs.net
-    INFO:root:* Purging CeilometerAlarms
+   $ openstack project delete <project>
 
-* Checking that resources have been correctly removed:
-
-.. code-block:: console
-
-    $ ./ospurge --dry-run --cleanup-project demo
-    * Resources type: CinderSnapshots
-
-    * Resources type: NovaServers
-
-    * Resources type: NeutronFloatingIps
-
-    * Resources type: NeutronInterfaces
-
-    * Resources type: NeutronRouters
-
-    * Resources type: NeutronNetworks
-
-    * Resources type: NeutronSecgroups
-
-    * Resources type: GlanceImages
-
-    * Resources type: SwiftObjects
-
-    * Resources type: SwiftContainers
-
-    * Resources type: CinderVolumes
-
-    * Resources type: CeilometerAlarms
-
-* Removing project:
-
-.. code-block:: console
-
-    $ ./ospurge --cleanup-project demo
-    $ ./ospurge --cleanup-project demo
-    Project demo doesn't exist
-
-* Users can be deleted by using the ``python-openstackclient`` command-line
+* Users can be deleted with the ``python-openstackclient`` command-line
   interface:
 
 .. code-block:: console
@@ -244,10 +240,48 @@ to the project will have been definitively deleted.
    $ openstack user delete <user>
 
 
+How to extend
+-------------
+
+Given the ever-widening OpenStack ecosystem, OSPurge can't support every
+OpenStack services. We intend to support in-tree, only the 'core' services.
+Fortunately, OSPurge is easily extensible. All you have to do is add a new
+Python module in the ``resources`` package and define one or more Python
+class(es) that subclass ``ospurge.resources.base.ServiceResource``. Your module
+will automatically be loaded and your methods called. Have a look at the
+``main.main`` and ``main.runner`` functions to fully understand the mechanism.
+
+Note: We won't accept any patch that broaden what OSPurge supports, beyond
+the core services.
+
+
 How to contribute
 -----------------
 
-OSpurge is hosted on the OpenStack infrastructure and is using
-`Gerrit <https://review.openstack.org>`_ to manage contributions. You can
-contribute to the project by following the
+OSPurge is hosted on the OpenStack infrastructure and is using
+`Gerrit <https://review.openstack.org/#/q/project:openstack/ospurge>`_ to
+manage contributions. You can contribute to the project by following the
 `OpenStack Development workflow <http://docs.openstack.org/infra/manual/developers.html#development-workflow>`_.
+
+Start hacking right away with:
+
+.. code-block:: console
+
+   $ git clone git://git.openstack.org/openstack/ospurge
+
+
+Design decisions
+----------------
+* OSPurge depends on `os-client-config`_ to manage authentication. This way,
+  environment variables (OS_*) and CLI options are properly handled.
+
+* OSPurge is built on top of `shade`_. shade is a simple client library for
+  interacting with OpenStack clouds. With shade, OSPurge can focus on the
+  cleaning resources logic and not on properly building the various Python
+  OpenStack clients and dealing with their not-so-intuitive API.
+
+.. _shade: https://github.com/openstack-infra/shade/
+.. _os-client-config: https://github.com/openstack/os-client-config
+
+
+
