@@ -1,0 +1,9 @@
+Code-Review+2: Florent Flament <contact@florentflament.com>
+Code-Review+2: Jordan Pittier <jordan.pittier@scality.com>
+Workflow+1: Jordan Pittier <jordan.pittier@scality.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 26 Dec 2016 10:21:11 +0000
+Reviewed-on: https://review.openstack.org/406160
+Project: openstack/ospurge
+Branch: refs/heads/master
