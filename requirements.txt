@@ -1,3 +1,4 @@
 os-client-config>=1.22.0  # Apache-2.0
 pbr>=1.8 # Apache-2.0
 shade>=1.13.1
+typing;python_version<'3.5'
