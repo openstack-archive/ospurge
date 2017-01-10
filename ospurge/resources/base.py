@@ -116,7 +116,10 @@ class ServiceResource(BaseServiceResource, metaclass=CodingStyleMixin):
         if project_id:
             return project_id == self.cleanup_project_id
         else:
-            logging.warning("Can't determine owner of resource %s", resource)
+            # Uncomment the following line once Shade and all OpenStack
+            # services returns the resource owner. In the mean time no need
+            # to be worrying.
+            # logging.warning("Can't determine owner of resource %s", resource)
             return True
 
     @abc.abstractmethod
