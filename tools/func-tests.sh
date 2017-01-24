@@ -16,6 +16,13 @@ set -eo pipefail
 
 readonly PROGDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Try to detect whether we run in the OpenStack Gate.
+if [[ -d ~stack/devstack ]]; then
+    export DEVSTACK_DIR=~stack/devstack
+else
+    export DEVSTACK_DIR=~/devstack
+fi
+
 function assert_compute {
     if [[ $(nova list | wc -l) -lt 5 ]]; then
         echo "Less than one VM, someone cleaned our VM :("
@@ -56,7 +63,7 @@ function assert_volume {
 ########################
 ### Pre check
 ########################
-source ~/devstack/openrc admin admin
+source $DEVSTACK_DIR/openrc admin admin
 if [[ ! "$(openstack flavor list)" =~ 'm1.nano' ]]; then
     openstack flavor create --id 42 --ram 64 --disk 0 --vcpus 1 m1.nano
 fi
@@ -68,16 +75,16 @@ fi
 ########################
 pid=()
 
-(source ~/devstack/openrc admin admin && ${PROGDIR}/populate.sh) &
+(source $DEVSTACK_DIR/openrc admin admin && ${PROGDIR}/populate.sh) &
 pid+=($!)
 
-(source ~/devstack/openrc demo demo && ${PROGDIR}/populate.sh) &
+(source $DEVSTACK_DIR/openrc demo demo && ${PROGDIR}/populate.sh) &
 pid+=($!)
 
-(source ~/devstack/openrc demo invisible_to_admin && ${PROGDIR}/populate.sh) &
+(source $DEVSTACK_DIR/openrc demo invisible_to_admin && ${PROGDIR}/populate.sh) &
 pid+=($!)
 
-(source ~/devstack/openrc alt_demo alt_demo && ${PROGDIR}/populate.sh) &
+(source $DEVSTACK_DIR/openrc alt_demo alt_demo && ${PROGDIR}/populate.sh) &
 pid+=($!)
 
 for i in ${!pid[@]}; do
@@ -96,20 +103,20 @@ done
 ########################
 tox -e run -- --os-cloud devstack-admin --purge-own-project --verbose # purges admin/admin
 
-source ~/devstack/openrc demo demo
+source $DEVSTACK_DIR/openrc demo demo
 assert_compute && assert_network && assert_volume
 
 tox -e run -- --os-cloud devstack --purge-own-project --verbose # purges demo/demo
 
-source ~/devstack/openrc demo invisible_to_admin
+source $DEVSTACK_DIR/openrc demo invisible_to_admin
 assert_compute && assert_network && assert_volume
 
 tox -e run -- --os-auth-url http://localhost/identity_admin --os-username demo --os-project-name invisible_to_admin --os-password testtest --purge-own-project --verbose
 
-source ~/devstack/openrc alt_demo alt_demo
+source $DEVSTACK_DIR/openrc alt_demo alt_demo
 assert_compute && assert_network && assert_volume
 
-source ~/devstack/openrc admin admin
+source $DEVSTACK_DIR/openrc admin admin
 openstack project set --disable alt_demo
 tox -e run -- --os-auth-url http://localhost/identity_admin --os-username admin --os-project-name admin --os-password testtest --purge-project alt_demo --verbose
 openstack project set --enable alt_demo
