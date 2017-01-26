@@ -154,7 +154,6 @@ class CredentialsManager(object):
                         "now also disabled", self.options.purge_project)
 
 
-@utils.monkeypatch_oscc_logging_warning
 def runner(
         resource_mngr: ServiceResource, options: argparse.Namespace,
         exit: threading.Event
@@ -181,18 +180,29 @@ def runner(
     except Exception as exc:
         log = logging.error
         recoverable = False
-        if hasattr(exc, 'inner_exception'):
-            # inner_exception is a tuple (type, value, traceback)
-            # mypy complains: "Exception" has no attribute "inner_exception"
-            exc_info = exc.inner_exception  # type: ignore
-            if exc_info[0].__name__.lower().endswith('endpointnotfound'):
-                log = logging.info
-                recoverable = True
+
+        def is_exception_recoverable(exc):
+            if exc.__class__.__name__.lower().endswith('endpointnotfound'):
+                return True
+            elif hasattr(exc, 'inner_exception'):
+                # inner_exception is a tuple (type, value, traceback)
+                # mypy complains: "Exception" has no attribute
+                # "inner_exception"
+                exc_info = exc.inner_exception  # type: ignore
+                if exc_info[0].__name__.lower().endswith('endpointnotfound'):
+                    return True
+            return False
+
+        if is_exception_recoverable(exc):
+            log = logging.info
+            recoverable = True
+
         log("Can't deal with %s: %r", resource_mngr.__class__.__name__, exc)
         if not recoverable:
             exit.set()
 
 
+@utils.monkeypatch_oscc_logging_warning
 def main() -> None:
     parser = create_argument_parser()
 
