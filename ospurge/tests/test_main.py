@@ -105,7 +105,13 @@ class TestFunctions(unittest.TestCase):
         exit = mock.Mock()
 
         main.runner(resource_manager, mock.Mock(dry_run=True), exit)
+        self.assertEqual(1, resource_manager.list.call_count)
+        self.assertFalse(exit.set.called)
 
+        resource_manager = mock.Mock(
+            list=mock.Mock(side_effect=MyEndpointNotFound))
+        main.runner(resource_manager, mock.Mock(dry_run=True), exit)
+        self.assertEqual(1, resource_manager.list.call_count)
         self.assertFalse(exit.set.called)
 
     @mock.patch.object(main, 'os_client_config', autospec=True)

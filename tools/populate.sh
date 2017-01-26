@@ -42,6 +42,18 @@ function cleanup {
     fi
 
 }
+
+function wait_for_volume_to_be_available {
+    local vol_id=$1
+
+    vol_status=$(openstack volume show ${vol_id} | awk '/ status /{print $4}')
+    while [ ${vol_status} != "available" ]; do
+        echo "Status of volume $vol_id is $vol_status. Waiting 3 sec"
+        sleep 3
+        vol_status=$(openstack volume show ${vol_id} | awk '/ status /{print $4}')
+    done
+}
+
 # Check if needed environment variable OS_PROJECT_NAME is set and non-empty.
 : "${OS_PROJECT_NAME:?Need to set OS_PROJECT_NAME non-empty}"
 
@@ -52,7 +64,7 @@ EXTNET_NAME=${EXTNET_NAME:-public}
 # Name of flavor used to spawn a VM
 FLAVOR=${FLAVOR:-m1.nano}
 # Image used for the VM
-VMIMG_NAME=${VMIMG_NAME:-cirros-0.3.4-x86_64-uec}
+VMIMG_NAME=${VMIMG_NAME:-cirros-0.3.5-x86_64-disk}
 
 
 
@@ -61,10 +73,10 @@ VMIMG_NAME=${VMIMG_NAME:-cirros-0.3.4-x86_64-uec}
 ### Do that early to fail early
 ################################
 # Retrieve external network ID
-EXTNET_ID=$(neutron net-show $EXTNET_NAME | awk '/ id /{print $4}')
+EXTNET_ID=$(openstack network show $EXTNET_NAME  | awk '/ id /{print $4}')
 exit_if_empty "$EXTNET_ID" "Unable to retrieve ID of external network $EXTNET_NAME"
 
-exit_if_empty "$(nova flavor-list | grep ${FLAVOR})" "Flavor $FLAVOR is unknown to Nova"
+exit_if_empty "$(openstack flavor list | grep ${FLAVOR})" "Flavor $FLAVOR is unknown to Nova"
 
 # Look for the $VMIMG_NAME image and get its ID
 IMAGE_ID=$(openstack image list | awk "/ $VMIMG_NAME /{print \$2}")
@@ -80,17 +92,18 @@ trap cleanup SIGHUP SIGINT SIGTERM EXIT
 ### Cinder
 ###############################
 # Create a volume
-VOL_ID=$(cinder create --display-name ${UUID} 1 | awk '/ id /{print $4}')
+VOL_ID=$(openstack volume create --size 1 ${UUID} | awk '/ id /{print $4}')
 exit_on_failure "Unable to create volume"
 exit_if_empty "$VOL_ID" "Unable to retrieve ID of volume ${UUID}"
+wait_for_volume_to_be_available ${VOL_ID}
 
 # Snapshot the volume (note that it has to be detached, unless using --force)
-cinder snapshot-create --display-name ${UUID} $VOL_ID
+openstack volume snapshot create --volume $VOL_ID ${UUID}
 exit_on_failure "Unable to snapshot volume ${UUID}"
 
 # Backup volume
 # Don't exit on failure as Cinder Backup is not available on all clouds
-cinder backup-create --display-name ${UUID} $VOL_ID || true
+openstack volume backup create --name ${UUID} $VOL_ID || true
 
 
 
@@ -100,6 +113,7 @@ cinder backup-create --display-name ${UUID} $VOL_ID || true
 # Create a private network and check it exists
 NET_ID=$(neutron net-create ${UUID} | awk '/ id /{print $4}')
 exit_on_failure "Creation of network ${UUID} failed"
+echo "Network ${UUID} created, id $NET_ID"
 exit_if_empty "$NET_ID" "Unable to retrieve ID of network ${UUID}"
 
 # Add network's subnet
@@ -116,15 +130,15 @@ exit_on_failure "Unable to create router ${UUID}"
 exit_if_empty "$ROUT_ID" "Unable to retrieve ID of router ${UUID}"
 
 # Set router's gateway
-neutron router-gateway-set $ROUT_ID $EXTNET_ID
+openstack router set --external-gateway $EXTNET_ID $ROUT_ID
 exit_on_failure "Unable to set gateway to router ${UUID}"
 
 # Connect router on internal network
-neutron router-interface-add $ROUT_ID $SUBNET_ID
+openstack router add subnet $ROUT_ID $SUBNET_ID
 exit_on_failure "Unable to add interface on subnet ${UUID} to router ${UUID}"
 
 # Create a floating IP and retrieve its IP Address
-FIP_ADD=$(neutron floatingip-create $EXTNET_NAME | awk '/ floating_ip_address /{print $4}')
+FIP_ADD=$(openstack floating ip create $EXTNET_NAME | awk '/ floating_ip_address /{print $4}')
 exit_if_empty "$FIP_ADD" "Unable to create or retrieve floating IP"
 
 # Create a security group
@@ -142,7 +156,7 @@ neutron security-group-rule-create --direction ingress --protocol TCP \
 ### Nova
 ###############################
 # Launch a VM
-VM_ID=$(nova boot --flavor $FLAVOR --image $IMAGE_ID --nic net-id=$NET_ID ${UUID} | awk '/ id /{print $4}')
+VM_ID=$(openstack server create --flavor $FLAVOR --image $IMAGE_ID --nic net-id=$NET_ID ${UUID} | awk '/ id /{print $4}')
 exit_on_failure "Unable to boot VM ${UUID}"
 exit_if_empty "$VM_ID" "Unable to retrieve ID of VM ${UUID}"
 
@@ -152,7 +166,7 @@ exit_if_empty "$VM_ID" "Unable to retrieve ID of VM ${UUID}"
 ### Glance
 ###############################
 # Upload glance image
-glance image-create --name ${UUID} --disk-format raw --container-format bare --file ${UUID}.raw
+openstack image create --disk-format raw --container-format bare --file ${UUID}.raw ${UUID}
 exit_on_failure "Unable to create Glance iamge ${UUID}"
 
 
@@ -168,13 +182,8 @@ swift upload ${UUID} ${UUID}.raw || true
 ###############################
 ### Link resources
 ###############################
-# Wait for volume to be available
-VOL_STATUS=$(cinder show $VOL_ID | awk '/ status /{print $4}')
-while [ $VOL_STATUS != "available" ]; do
-    echo "Status of volume ${UUID} is $VOL_STATUS. Waiting 3 sec"
-    sleep 3
-    VOL_STATUS=$(cinder show $VOL_ID | awk '/ status /{print $4}')
-done
+wait_for_volume_to_be_available $VOL_ID
+
 
 # Wait for VM to be active
 VM_STATUS=$(nova show --minimal $VM_ID | awk '/ status /{print $4}')
@@ -188,12 +197,12 @@ done
 # This must be done before instance snapshot otherwise we could run into
 # ERROR (Conflict): Cannot 'attach_volume' while instance is in task_state
 # image_pending_upload
-nova volume-attach $VM_ID $VOL_ID
+openstack server add volume $VM_ID $VOL_ID
 exit_on_failure "Unable to attach volume $VOL_ID to VM $VM_ID"
 
 # Associate floating IP
 # It as far away from the network creation as possible, because associating
 # a FIP requires the network to be 'UP' (which could take several secs)
 # See https://github.com/openstack/nova/blob/1a30fda13ae78f4e40b848cacbf6278a359a91cb/nova/api/openstack/compute/floating_ips.py#L229
-nova floating-ip-associate $VM_ID $FIP_ADD
+openstack server add floating ip $VM_ID $FIP_ADD
 exit_on_failure "Unable to associate floating IP $FIP_ADD to VM ${UUID}"
