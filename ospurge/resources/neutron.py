@@ -40,10 +40,12 @@ class RouterInterfaces(base.ServiceResource):
     ORDER = 42
 
     def check_prerequisite(self) -> bool:
-        return (self.cloud.list_servers() == [] and
-                self.cloud.search_floating_ips(
-                    filters={'tenant_id': self.cleanup_project_id}
-        ) == [])
+        return (
+            self.cloud.list_servers() == [] and
+            self.cloud.search_floating_ips(
+                filters={'tenant_id': self.cleanup_project_id}
+            ) == []
+        )
 
     def list(self) -> Iterable:
         return self.cloud.list_ports(
