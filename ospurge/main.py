@@ -154,7 +154,6 @@ class CredentialsManager(object):
                         "now also disabled", self.options.purge_project)
 
 
-@utils.monkeypatch_oscc_logging_warning
 def runner(
         resource_mngr: ServiceResource, options: argparse.Namespace,
         exit: threading.Event
@@ -193,6 +192,7 @@ def runner(
             exit.set()
 
 
+@utils.monkeypatch_oscc_logging_warning
 def main() -> None:
     parser = create_argument_parser()
 
