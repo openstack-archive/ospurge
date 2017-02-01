@@ -5,6 +5,10 @@ AUTHORS
 ChangeLog
 build/
 dist/
-ospurge.egg-info/
-pbr-0.6-py2.7.egg/
+*.egg-info/
+*.egg/
+*.eggs/
 .tox
+.coverage
+.testrepository/
+cover/
