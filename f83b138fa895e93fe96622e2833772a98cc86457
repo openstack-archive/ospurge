@@ -1,0 +1,8 @@
+Code-Review+2: Jordan Pittier <jordan.pittier@scality.com>
+Workflow+1: Jordan Pittier <jordan.pittier@scality.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 27 Feb 2017 22:13:37 +0000
+Reviewed-on: https://review.openstack.org/425720
+Project: openstack/ospurge
+Branch: refs/heads/master
