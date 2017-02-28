@@ -140,24 +140,25 @@ class TestOrderedMeta(unittest.TestCase):
 
 class TestServiceResource(unittest.TestCase):
     def test_init_without_order_attr(self):
-        class Foo(base.ServiceResource):
+        class Foo5(base.ServiceResource):
             def list(self) -> Iterable:
                 pass
 
             def delete(self, resource: Dict[str, Any]) -> None:
                 pass
 
+            @staticmethod
             def to_str(resource: Dict[str, Any]) -> str:
                 pass
 
         self.assertRaisesRegex(ValueError, 'Class .*ORDER.*',
-                               Foo, mock.Mock())
+                               Foo5, mock.Mock())
 
     def test_instantiate_without_concrete_methods(self):
-        class Foo(base.ServiceResource):
+        class Foo6(base.ServiceResource):
             ORDER = 1
 
-        self.assertRaises(TypeError, Foo)
+        self.assertRaises(TypeError, Foo6)
 
     @mock.patch.multiple(base.ServiceResource, ORDER=12,
                          __abstractmethods__=set())
