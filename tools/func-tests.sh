@@ -19,9 +19,15 @@ readonly PROGDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Try to detect whether we run in the OpenStack Gate.
 if [[ -d ~stack/devstack ]]; then
     export DEVSTACK_DIR=~stack/devstack
+    GATE_RUN=1
 else
     export DEVSTACK_DIR=~/devstack
+    GATE_RUN=0
 fi
+
+#projectname_username
+invisible_to_admin_demo_pass=$(cat $DEVSTACK_DIR/accrc/invisible_to_admin/demo | sed -nr 's/.*OS_PASSWORD="(.*)"/\1/p')
+admin_admin_pass=$(cat $DEVSTACK_DIR/accrc/admin/admin | sed -nr 's/.*OS_PASSWORD="(.*)"/\1/p')
 
 function assert_compute {
     if [[ $(nova list | wc -l) -lt 5 ]]; then
@@ -52,10 +58,17 @@ function assert_network {
 }
 
 function assert_volume {
-    exit 0
-    if [[ $(openstack volume backup list | wc -l) -lt 5 ]]; then
-        echo "Less than one volume backup, someone cleaned our backup:("
-        exit 1
+    if [[ ${GATE_RUN} == 1 ]]; then
+        # The Cinder backup service is enabled in the Gate.
+        if [[ $(openstack volume backup list | wc -l) -lt 5 ]]; then
+            echo "Less than one backup, someone cleaned our backup:("
+            exit 1
+        fi
+    else
+        if [[ $(openstack volume list | wc -l) -lt 5 ]]; then
+            echo "Less than one volume, someone cleaned our volume:("
+            exit 1
+        fi
     fi
 }
 
@@ -112,14 +125,14 @@ tox -e run -- --os-cloud devstack --purge-own-project --verbose # purges demo/de
 source $DEVSTACK_DIR/openrc demo invisible_to_admin
 assert_compute && assert_network && assert_volume
 
-tox -e run -- --os-auth-url http://localhost/identity_admin --os-username demo --os-project-name invisible_to_admin --os-password testtest --purge-own-project --verbose
+tox -e run -- --os-auth-url http://localhost/identity_admin --os-username demo --os-project-name invisible_to_admin --os-password $invisible_to_admin_demo_pass --purge-own-project --verbose
 
 source $DEVSTACK_DIR/openrc alt_demo alt_demo
 assert_compute && assert_network && assert_volume
 
 source $DEVSTACK_DIR/openrc admin admin
 openstack project set --disable alt_demo
-tox -e run -- --os-auth-url http://localhost/identity_admin --os-username admin --os-project-name admin --os-password testtest --purge-project alt_demo --verbose
+tox -e run -- --os-auth-url http://localhost/identity_admin --os-username admin --os-project-name admin --os-password $admin_admin_pass --purge-project alt_demo --verbose
 openstack project set --enable alt_demo
 
 
@@ -137,7 +150,10 @@ if [[ $(neutron port-list | wc -l) -ne 1 ]]; then  # This also checks FIP
     exit 1
 fi
 
-if [[ $( cinder backup-list --all-tenants | wc -l) -ne 4 ]]; then
-    echo "Not all volume backups were cleaned up"
-    exit 1
+if [[ ${GATE_RUN} == 1 ]]; then
+    # The Cinder backup service is enabled in the Gate.
+    if [[ $( cinder backup-list --all-tenants | wc -l) -ne 4 ]]; then
+        echo "Not all volume backups were cleaned up"
+        exit 1
+    fi
 fi
