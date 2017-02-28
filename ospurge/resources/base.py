@@ -18,6 +18,7 @@ import time
 from typing import Any
 from typing import Dict
 from typing import Iterable
+from typing import Optional
 from typing import TYPE_CHECKING
 
 from ospurge import exceptions
@@ -30,7 +31,10 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class MatchSignaturesMeta(type):
-    def __init__(self, clsname, bases, clsdict):
+    def __init__(
+        self, clsname: str, bases: Optional[Any],
+        clsdict: Optional[Dict]
+    ) -> None:
         super().__init__(clsname, bases, clsdict)
         sup = super(self, self)  # type: ignore   # See python/mypy #857
         for name, value in clsdict.items():
@@ -48,7 +52,10 @@ class MatchSignaturesMeta(type):
 
 
 class OrderedMeta(type):
-    def __new__(cls, clsname, bases, clsdict):
+    def __new__(
+            cls, clsname: str, bases: Optional[Any],
+            clsdict: Optional[Dict]
+    ) -> type:
         ordered_methods = cls.ordered_methods
         allowed_next_methods = list(ordered_methods)
         for name, value in clsdict.items():
@@ -70,7 +77,7 @@ class OrderedMeta(type):
         return super().__new__(cls, clsname, bases, dict(clsdict))
 
     @classmethod
-    def __prepare__(cls, clsname, bases):
+    def __prepare__(cls, clsname: str, bases: Optional[Any]) -> Dict:
         return collections.OrderedDict()
 
 
@@ -81,8 +88,8 @@ class CodingStyleMixin(OrderedMeta, MatchSignaturesMeta, abc.ABCMeta):
 
 class BaseServiceResource(object):
     def __init__(self) -> None:
-        self.cloud = None  # type: Optional[shade.OpenStackCloud]
         self.cleanup_project_id = None  # type: Optional[str]
+        self.cloud = None  # type: Optional[shade.OpenStackCloud]
         self.options = None  # type: Optional[argparse.Namespace]
 
 
@@ -90,15 +97,16 @@ class ServiceResource(BaseServiceResource, metaclass=CodingStyleMixin):
     ORDER = None  # type: int
 
     def __init__(self, creds_manager: 'CredentialsManager') -> None:
+        super().__init__()
         if self.ORDER is None:
             raise ValueError(
                 'Class {}.{} must override the "ORDER" class attribute'.format(
                     self.__module__, self.__class__.__name__)  # type: ignore
             )
 
+        self.cleanup_project_id = creds_manager.project_id
         self.cloud = creds_manager.cloud
         self.options = creds_manager.options
-        self.cleanup_project_id = creds_manager.project_id
 
     @classmethod
     def order(cls) -> int:
