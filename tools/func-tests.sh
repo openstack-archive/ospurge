@@ -19,8 +19,10 @@ readonly PROGDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Try to detect whether we run in the OpenStack Gate.
 if [[ -d ~stack/devstack ]]; then
     export DEVSTACK_DIR=~stack/devstack
+    GATE_RUN=1
 else
     export DEVSTACK_DIR=~/devstack
+    GATE_RUN=0
 fi
 
 function assert_compute {
@@ -52,10 +54,17 @@ function assert_network {
 }
 
 function assert_volume {
-    exit 0
-    if [[ $(openstack volume backup list | wc -l) -lt 5 ]]; then
-        echo "Less than one volume backup, someone cleaned our backup:("
-        exit 1
+    if [[ ${GATE_RUN} == 1 ]]; then
+        # The Cinder backup service is enabled in the Gate.
+        if [[ $(openstack volume backup list | wc -l) -lt 5 ]]; then
+            echo "Less than one backup, someone cleaned our backup:("
+            exit 1
+        fi
+    else
+        if [[ $(openstack volume list | wc -l) -lt 5 ]]; then
+            echo "Less than one volume, someone cleaned our volume:("
+            exit 1
+        fi
     fi
 }
 
@@ -137,7 +146,10 @@ if [[ $(neutron port-list | wc -l) -ne 1 ]]; then  # This also checks FIP
     exit 1
 fi
 
-if [[ $( cinder backup-list --all-tenants | wc -l) -ne 4 ]]; then
-    echo "Not all volume backups were cleaned up"
-    exit 1
+if [[ ${GATE_RUN} == 1 ]]; then
+    # The Cinder backup service is enabled in the Gate.
+    if [[ $( cinder backup-list --all-tenants | wc -l) -ne 4 ]]; then
+        echo "Not all volume backups were cleaned up"
+        exit 1
+    fi
 fi
