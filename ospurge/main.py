@@ -62,6 +62,13 @@ def create_argument_parser() -> argparse.ArgumentParser:
              "temporarily granted on the project to purge to the "
              "authenticated user."
     )
+    parser.add_argument(
+        "--resource", choices=["Networks", "Ports", "SecurityGroups",
+                               "FloatingIPs", "Routers", "RouterInterfaces",
+                               "Servers", "Images", "Backups", "Snapshots",
+                               "Volumes"],
+        help="Name of Resource type to be checked, instead of all resources "
+    )
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
@@ -160,7 +167,7 @@ def runner(
 ) -> None:
     try:
 
-        if not options.dry_run:
+        if not (options.dry_run or options.resource):
             resource_mngr.wait_for_check_prerequisite(exit)
 
         for resource in resource_mngr.list():
@@ -175,7 +182,11 @@ def runner(
                 if options.dry_run:
                     continue
 
-                utils.call_and_ignore_notfound(resource_mngr.delete, resource)
+                if options.resource:
+                    utils.call_and_ignore_all(resource_mngr.delete, resource)
+                else:
+                    utils.call_and_ignore_notfound(resource_mngr.delete,
+                                                   resource)
 
     except Exception as exc:
         log = logging.error
@@ -196,7 +207,6 @@ def runner(
         if is_exception_recoverable(exc):
             log = logging.info
             recoverable = True
-
         log("Can't deal with %s: %r", resource_mngr.__class__.__name__, exc)
         if not recoverable:
             exit.set()
@@ -216,10 +226,17 @@ def main() -> None:
     creds_manager.ensure_enabled_project()
     creds_manager.ensure_role_on_project()
 
-    resource_managers = sorted(
-        [cls(creds_manager) for cls in utils.get_all_resource_classes()],
-        key=operator.methodcaller('order')
-    )
+    if options.resource:
+        resource_managers = sorted(
+            [cls(creds_manager)
+             for cls in utils.get_resource_classes(options.resource)],
+            key=operator.methodcaller('order')
+        )
+    else:
+        resource_managers = sorted(
+            [cls(creds_manager) for cls in utils.get_all_resource_classes()],
+            key=operator.methodcaller('order')
+        )
 
     # This is an `Event` used to signal whether one of the threads encountered
     # an unrecoverable error, at which point all threads should exit because

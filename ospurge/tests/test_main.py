@@ -56,10 +56,23 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(False, options.delete_shared_resources)
         self.assertEqual(True, options.purge_own_project)
 
+    def test_create_argument_parser_with_resource(self):
+        parser = main.create_argument_parser()
+        self.assertIsInstance(parser, argparse.ArgumentParser)
+
+        options = parser.parse_args([
+            '--resource', 'Networks', '--purge-project', 'foo'
+        ])
+        self.assertEqual(False, options.verbose)
+        self.assertEqual(False, options.dry_run)
+        self.assertEqual(False, options.delete_shared_resources)
+        self.assertEqual('foo', options.purge_project)
+        self.assertEqual('Networks', options.resource)
+
     def test_runner(self):
         resources = [mock.Mock(), mock.Mock(), mock.Mock()]
         resource_manager = mock.Mock(list=mock.Mock(return_value=resources))
-        options = mock.Mock(dry_run=False)
+        options = mock.Mock(dry_run=False, resource=False)
         exit = mock.Mock(is_set=mock.Mock(side_effect=[False, False, True]))
 
         main.runner(resource_manager, options, exit)
@@ -87,6 +100,15 @@ class TestFunctions(unittest.TestCase):
 
         resource_manager.wait_for_check_prerequisite.assert_not_called()
         resource_manager.delete.assert_not_called()
+
+    def test_runner_resource(self):
+        resources = [mock.Mock()]
+        resource_manager = mock.Mock(list=mock.Mock(return_value=resources))
+        options = mock.Mock(dry_run=False, resource=True)
+        exit = mock.Mock(is_set=mock.Mock(return_value=False))
+        main.runner(resource_manager, options, exit)
+        resource_manager.wait_for_check_prerequisite.assert_not_called()
+        resource_manager.delete.assert_called_once_with(mock.ANY)
 
     def test_runner_with_unrecoverable_exception(self):
         resource_manager = mock.Mock(list=mock.Mock(side_effect=Exception))
@@ -125,6 +147,7 @@ class TestFunctions(unittest.TestCase):
         m_tpe.return_value.__enter__.return_value.map.side_effect = \
             KeyboardInterrupt
         m_parse_args.return_value.purge_own_project = False
+        m_parse_args.return_value.resource = None
         m_shade.operator_cloud().get_project().enabled = False
 
         main.main()
@@ -147,6 +170,26 @@ class TestFunctions(unittest.TestCase):
         m_event.return_value.set.assert_called_once_with()
         m_event.return_value.is_set.assert_called_once_with()
         self.assertIsInstance(m_sys_exit.call_args[0][0], int)
+
+    @mock.patch.object(main, 'os_client_config', autospec=True)
+    @mock.patch.object(main, 'shade')
+    @mock.patch('argparse.ArgumentParser.parse_args')
+    @mock.patch('threading.Event', autospec=True)
+    @mock.patch('concurrent.futures.ThreadPoolExecutor', autospec=True)
+    @mock.patch('sys.exit', autospec=True)
+    def test_main_resource(self, m_sys_exit, m_tpe, m_event, m_parse_args,
+                           m_shade, m_oscc):
+        m_tpe.return_value.__enter__.return_value.map.side_effect = \
+            KeyboardInterrupt
+        m_parse_args.return_value.purge_own_project = False
+        m_parse_args.return_value.resource = "Networks"
+        m_shade.operator_cloud().get_project().enabled = False
+        main.main()
+        m_tpe.return_value.__enter__.assert_called_once_with()
+        executor = m_tpe.return_value.__enter__.return_value
+        map_args = executor.map.call_args[0]
+        for obj in map_args[1]:
+            self.assertIsInstance(obj, ServiceResource)
 
 
 @mock.patch.object(main, 'shade')

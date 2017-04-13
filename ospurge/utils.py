@@ -14,6 +14,7 @@ import functools
 import importlib
 import logging
 import pkgutil
+import sys
 from typing import Any
 from typing import Callable
 from typing import cast
@@ -40,6 +41,22 @@ def get_all_resource_classes() -> List:
             importlib.import_module(name)
 
     return base.ServiceResource.__subclasses__()
+
+
+def get_resource_classes(resources) -> List:
+    """
+    Import the  modules by subclass name  and return  the subclasses
+    of `ServiceResource` Abstract Base Class.
+    """
+    iter_modules = pkgutil.iter_modules(
+        ['ospurge/resources'], prefix='ospurge.resources.'
+    )
+    for (_, name, ispkg) in iter_modules:
+        if not ispkg:
+            importlib.import_module(name)
+
+    return [s for s in base.ServiceResource.__subclasses__()
+            if s.__name__ in resources]
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -74,6 +91,14 @@ def call_and_ignore_notfound(f: Callable, *args: List) -> None:
     try:
         f(*args)
     except shade.exc.OpenStackCloudResourceNotFound:
+        pass
+
+
+def call_and_ignore_all(f: Callable, *args: List) -> None:
+    try:
+        f(*args)
+    except shade.exc.OpenStackCloudException:
+        print(sys.exc_info())
         pass
 
 
