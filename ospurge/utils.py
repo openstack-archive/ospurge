@@ -9,6 +9,7 @@
 #  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #  License for the specific language governing permissions and limitations
 #  under the License.
+import sys
 import copy
 import functools
 import importlib
@@ -26,11 +27,11 @@ import shade
 from ospurge.resources import base
 
 
-def get_all_resource_classes() -> List:
+def get_all_resource_classes(resources) -> List:
     """
-    Import all the modules in the `resources` package and return all the
-    subclasses of the `ServiceResource` Abstract Base Class. This way we can
-    easily extend OSPurge by just adding a new file in the `resources` dir.
+    Import all the modules in the `resources` package and return all/subset of
+    the subclasses of the `ServiceResource` Abstract Base Class. This way we
+    can easily extend OSPurge by just adding a new file in the `resources` dir.
     """
     iter_modules = pkgutil.iter_modules(
         ['ospurge/resources'], prefix='ospurge.resources.'
@@ -38,8 +39,18 @@ def get_all_resource_classes() -> List:
     for (_, name, ispkg) in iter_modules:
         if not ispkg:
             importlib.import_module(name)
+    if resources:
+        return get_resource_classes(resources)
+    else:
+        return base.ServiceResource.__subclasses__()
 
-    return base.ServiceResource.__subclasses__()
+
+def get_resource_classes(resources) -> List:
+    """
+    Method to filter the subclasses of `ServiceResource` by subclass name.
+    """
+    return [s for s in base.ServiceResource.__subclasses__()
+            if s.__name__ in resources]
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -74,6 +85,14 @@ def call_and_ignore_notfound(f: Callable, *args: List) -> None:
     try:
         f(*args)
     except shade.exc.OpenStackCloudResourceNotFound:
+        pass
+
+
+def call_and_ignore_all(f: Callable, *args: List) -> None:
+    try:
+        f(*args)
+    except shade.exc.OpenStackCloudException:
+        print(sys.exc_info())
         pass
 
 
