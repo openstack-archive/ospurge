@@ -61,13 +61,11 @@ class TestFunctions(unittest.TestCase):
         self.assertIsInstance(parser, argparse.ArgumentParser)
 
         options = parser.parse_args([
-            '--resource', 'Networks', '--purge-project', 'foo'
+            '--resource', 'Networks', '--purge-project', 'foo',
+            '--resource', 'Volumes'
         ])
-        self.assertEqual(False, options.verbose)
-        self.assertEqual(False, options.dry_run)
-        self.assertEqual(False, options.delete_shared_resources)
         self.assertEqual('foo', options.purge_project)
-        self.assertEqual('Networks', options.resource)
+        self.assertEqual(['Networks', 'Volumes'], options.resource)
 
     def test_runner(self):
         resources = [mock.Mock(), mock.Mock(), mock.Mock()]

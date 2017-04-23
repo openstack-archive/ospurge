@@ -44,7 +44,7 @@ class TestUtils(unittest.TestCase):
         })
 
     def test_get_all_resource_classes(self):
-        classes = utils.get_all_resource_classes()
+        classes = utils.get_resource_classes()
         self.assertIsInstance(classes, typing.List)
         for klass in classes:
             self.assertTrue(issubclass(klass, ServiceResource))
@@ -60,20 +60,15 @@ class TestUtils(unittest.TestCase):
         def raiser():
             raise shade.exc.OpenStackCloudResourceNotFound("")
 
-        self.assertIsNone(utils.call_and_ignore_notfound(raiser))
+        self.assertIsNone(
+            utils.call_and_ignore_exc(
+                shade.exc.OpenStackCloudResourceNotFound, raiser
+            )
+        )
 
         m = mock.Mock()
-        utils.call_and_ignore_notfound(m, 42)
-        self.assertEqual([mock.call(42)], m.call_args_list)
-
-    def test_call_and_ignore_all(self):
-        def raiser():
-            raise shade.exc.OpenStackCloudException("")
-
-        self.assertIsNone(utils.call_and_ignore_all(raiser))
-
-        m = mock.Mock()
-        utils.call_and_ignore_all(m, 42)
+        utils.call_and_ignore_exc(
+            shade.exc.OpenStackCloudResourceNotFound, m, 42)
         self.assertEqual([mock.call(42)], m.call_args_list)
 
     @mock.patch('logging.getLogger', autospec=True)
