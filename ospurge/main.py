@@ -63,11 +63,10 @@ def create_argument_parser() -> argparse.ArgumentParser:
              "authenticated user."
     )
     parser.add_argument(
-        "--resource", choices=["Networks", "Ports", "SecurityGroups",
-                               "FloatingIPs", "Routers", "RouterInterfaces",
-                               "Servers", "Images", "Backups", "Snapshots",
-                               "Volumes"],
-        help="Name of Resource type to be checked, instead of all resources "
+        "--resource", action="append",
+        choices=[cls.__name__ for cls in utils.get_resource_classes()],
+        help="Purge only the specified resource type. Repeat to delete "
+             "several types at once."
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
@@ -179,14 +178,18 @@ def runner(
                 logging.info("Going to delete %s",
                              resource_mngr.to_str(resource))
 
+                # If we are in dry run mode, don't actually delete the resource
                 if options.dry_run:
                     continue
 
+                # If we want to delete only specific resources, many things
+                # can go wrong, so we basically ignore all exceptions.
                 if options.resource:
-                    utils.call_and_ignore_all(resource_mngr.delete, resource)
+                    exc = shade.OpenStackCloudException
                 else:
-                    utils.call_and_ignore_notfound(resource_mngr.delete,
-                                                   resource)
+                    exc = shade.OpenStackCloudResourceNotFound
+
+                utils.call_and_ignore_exc(exc, resource_mngr.delete, resource)
 
     except Exception as exc:
         log = logging.error
@@ -226,17 +229,11 @@ def main() -> None:
     creds_manager.ensure_enabled_project()
     creds_manager.ensure_role_on_project()
 
-    if options.resource:
-        resource_managers = sorted(
-            [cls(creds_manager)
-             for cls in utils.get_resource_classes(options.resource)],
-            key=operator.methodcaller('order')
-        )
-    else:
-        resource_managers = sorted(
-            [cls(creds_manager) for cls in utils.get_all_resource_classes()],
-            key=operator.methodcaller('order')
-        )
+    resource_managers = sorted(
+        [cls(creds_manager)
+         for cls in utils.get_resource_classes(options.resource)],
+        key=operator.methodcaller('order')
+    )
 
     # This is an `Event` used to signal whether one of the threads encountered
     # an unrecoverable error, at which point all threads should exit because
