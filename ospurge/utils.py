@@ -14,24 +14,27 @@ import functools
 import importlib
 import logging
 import pkgutil
-import sys
+import re
+
 from typing import Any
 from typing import Callable
 from typing import cast
 from typing import Dict
+from typing import Iterable
 from typing import List
+from typing import Optional
 from typing import TypeVar
-
-import shade
 
 from ospurge.resources import base
 
 
-def get_all_resource_classes() -> List:
+def get_resource_classes(resources: Optional[Iterable[str]]=None) -> List:
     """
     Import all the modules in the `resources` package and return all the
-    subclasses of the `ServiceResource` Abstract Base Class. This way we can
-    easily extend OSPurge by just adding a new file in the `resources` dir.
+    subclasses of the `ServiceResource` ABC that match the `resources` arg.
+
+    This way we can easily extend OSPurge by just adding a new file in the
+    `resources` dir.
     """
     iter_modules = pkgutil.iter_modules(
         ['ospurge/resources'], prefix='ospurge.resources.'
@@ -40,23 +43,17 @@ def get_all_resource_classes() -> List:
         if not ispkg:
             importlib.import_module(name)
 
-    return base.ServiceResource.__subclasses__()
+    all_classes = base.ServiceResource.__subclasses__()
 
+    # If we don't want to filter out which classes to return, use a global
+    # wildcard regex.
+    if not resources:
+        regex = re.compile(".*")
+    # Otherwise, build a regex by concatenation.
+    else:
+        regex = re.compile('|'.join(resources))
 
-def get_resource_classes(resources) -> List:
-    """
-    Import the  modules by subclass name  and return  the subclasses
-    of `ServiceResource` Abstract Base Class.
-    """
-    iter_modules = pkgutil.iter_modules(
-        ['ospurge/resources'], prefix='ospurge.resources.'
-    )
-    for (_, name, ispkg) in iter_modules:
-        if not ispkg:
-            importlib.import_module(name)
-
-    return [s for s in base.ServiceResource.__subclasses__()
-            if s.__name__ in resources]
+    return [c for c in all_classes if regex.match(c.__name__)]
 
 
 F = TypeVar('F', bound=Callable[..., Any])
@@ -87,19 +84,11 @@ def monkeypatch_oscc_logging_warning(f: F) -> F:
     return cast(F, wrapper)
 
 
-def call_and_ignore_notfound(f: Callable, *args: List) -> None:
+def call_and_ignore_exc(exc: type, f: Callable, *args: List) -> None:
     try:
         f(*args)
-    except shade.exc.OpenStackCloudResourceNotFound:
-        pass
-
-
-def call_and_ignore_all(f: Callable, *args: List) -> None:
-    try:
-        f(*args)
-    except shade.exc.OpenStackCloudException:
-        print(sys.exc_info())
-        pass
+    except exc as e:
+        logging.debug("The following exception was ignored: %r", e)
 
 
 def replace_project_info(config: Dict, new_project_id: str) -> Dict[str, Any]:
