@@ -98,8 +98,8 @@ pid+=($!)
 (source $DEVSTACK_DIR/openrc demo invisible_to_admin && ${PROGDIR}/populate.sh) &
 pid+=($!)
 
-(source $DEVSTACK_DIR/openrc alt_demo alt_demo && ${PROGDIR}/populate.sh) &
-pid+=($!)
+#(source $DEVSTACK_DIR/openrc alt_demo alt_demo && ${PROGDIR}/populate.sh) &
+#pid+=($!)
 
 for i in ${!pid[@]}; do
     wait ${pid[i]}
@@ -125,15 +125,15 @@ tox -e run -- --os-cloud devstack --purge-own-project --verbose # purges demo/de
 source $DEVSTACK_DIR/openrc demo invisible_to_admin
 assert_compute && assert_network && assert_volume
 
-tox -e run -- --os-auth-url http://localhost/identity_admin --os-username demo --os-project-name invisible_to_admin --os-password $invisible_to_admin_demo_pass --purge-own-project --verbose
+tox -e run -- --os-auth-url http://localhost/identity --os-username demo --os-project-name invisible_to_admin --os-password $invisible_to_admin_demo_pass --purge-own-project --verbose
 
-source $DEVSTACK_DIR/openrc alt_demo alt_demo
-assert_compute && assert_network && assert_volume
+#source $DEVSTACK_DIR/openrc alt_demo alt_demo
+#assert_compute && assert_network && assert_volume
 
 source $DEVSTACK_DIR/openrc admin admin
-openstack project set --disable alt_demo
-tox -e run -- --os-auth-url http://localhost/identity_admin --os-username admin --os-project-name admin --os-password $admin_admin_pass --purge-project alt_demo --verbose
-openstack project set --enable alt_demo
+#openstack project set --disable alt_demo
+#tox -e run -- --os-auth-url http://localhost/identity --os-username admin --os-project-name admin --os-password $admin_admin_pass --purge-project alt_demo --verbose
+#openstack project set --enable alt_demo
 
 
 
