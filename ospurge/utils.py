@@ -13,6 +13,7 @@ import copy
 import functools
 import importlib
 import logging
+import os
 import pkgutil
 import re
 
@@ -37,7 +38,8 @@ def get_resource_classes(resources: Optional[Iterable[str]]=None) -> List:
     `resources` dir.
     """
     iter_modules = pkgutil.iter_modules(
-        ['ospurge/resources'], prefix='ospurge.resources.'
+        [os.path.join(os.path.dirname(__file__), 'resources')],
+        prefix='ospurge.resources.'
     )
     for (_, name, ispkg) in iter_modules:
         if not ispkg:
