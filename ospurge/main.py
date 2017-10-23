@@ -22,14 +22,13 @@ import os_client_config
 import shade
 
 from ospurge import exceptions
-from ospurge.resources.base import ServiceResource
 from ospurge import utils
 
 if typing.TYPE_CHECKING:  # pragma: no cover
     from typing import Optional  # noqa: F401
 
 
-def configure_logging(verbose: bool) -> None:
+def configure_logging(verbose):
     log_level = logging.INFO if verbose else logging.WARNING
     logging.basicConfig(
         format='%(levelname)s:%(name)s:%(asctime)s:%(message)s',
@@ -39,7 +38,7 @@ def configure_logging(verbose: bool) -> None:
         'requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)
 
 
-def create_argument_parser() -> argparse.ArgumentParser:
+def create_argument_parser():
     parser = argparse.ArgumentParser(
         description="Purge resources from an Openstack project."
     )
@@ -84,7 +83,7 @@ def create_argument_parser() -> argparse.ArgumentParser:
 
 
 class CredentialsManager(object):
-    def __init__(self, options: argparse.Namespace) -> None:
+    def __init__(self, options):
         self.options = options
 
         self.revoke_role_after_purge = False
@@ -128,7 +127,7 @@ class CredentialsManager(object):
             or auth_args.get('project_id')
         )
 
-    def ensure_role_on_project(self) -> None:
+    def ensure_role_on_project(self):
         if self.operator_cloud and self.operator_cloud.grant_role(
                 self.options.admin_role_name,
                 project=self.options.purge_project, user=self.user_id
@@ -139,7 +138,7 @@ class CredentialsManager(object):
             )
             self.revoke_role_after_purge = True
 
-    def revoke_role_on_project(self) -> None:
+    def revoke_role_on_project(self):
         self.operator_cloud.revoke_role(
             self.options.admin_role_name, user=self.user_id,
             project=self.options.purge_project)
@@ -148,22 +147,19 @@ class CredentialsManager(object):
             self.user_id, self.options.purge_project
         )
 
-    def ensure_enabled_project(self) -> None:
+    def ensure_enabled_project(self):
         if self.operator_cloud and self.disable_project_after_purge:
             self.operator_cloud.update_project(self.project_id, enabled=True)
             logging.warning("Project '%s' was disabled before purge and it is "
                             "now enabled", self.options.purge_project)
 
-    def disable_project(self) -> None:
+    def disable_project(self):
         self.operator_cloud.update_project(self.project_id, enabled=False)
         logging.warning("Project '%s' was disabled before purge and it is "
                         "now also disabled", self.options.purge_project)
 
 
-def runner(
-        resource_mngr: ServiceResource, options: argparse.Namespace,
-        exit: threading.Event
-) -> None:
+def runner(resource_mngr, options, exit):
     try:
 
         if not (options.dry_run or options.resource):
@@ -216,7 +212,7 @@ def runner(
 
 
 @utils.monkeypatch_oscc_logging_warning
-def main() -> None:
+def main():
     parser = create_argument_parser()
 
     cloud_config = os_client_config.OpenStackConfig()
@@ -242,7 +238,7 @@ def main() -> None:
 
     # Dummy function to work around `ThreadPoolExecutor.map()` not accepting
     # a callable with arguments.
-    def partial_runner(resource_manager: ServiceResource) -> None:
+    def partial_runner(resource_manager):
         runner(resource_manager, options=options,
                exit=exit)  # pragma: no cover
 

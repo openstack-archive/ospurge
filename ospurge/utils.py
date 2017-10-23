@@ -17,19 +17,10 @@ import os
 import pkgutil
 import re
 
-from typing import Any
-from typing import Callable
-from typing import cast
-from typing import Dict
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import TypeVar
-
 from ospurge.resources import base
 
 
-def get_resource_classes(resources: Optional[Iterable[str]]=None) -> List:
+def get_resource_classes(resources=None):
     """
     Import all the modules in the `resources` package and return all the
     subclasses of the `ServiceResource` ABC that match the `resources` arg.
@@ -58,10 +49,7 @@ def get_resource_classes(resources: Optional[Iterable[str]]=None) -> List:
     return [c for c in all_classes if regex.match(c.__name__)]
 
 
-F = TypeVar('F', bound=Callable[..., Any])
-
-
-def monkeypatch_oscc_logging_warning(f: F) -> F:
+def monkeypatch_oscc_logging_warning(f):
     """
     Monkey-patch logging.warning() method to silence 'os_client_config' when
     it complains that a Keystone catalog entry is not found. This warning
@@ -71,29 +59,29 @@ def monkeypatch_oscc_logging_warning(f: F) -> F:
     oscc_target = 'os_client_config.cloud_config'
     orig_logging = logging.getLogger(oscc_target).warning
 
-    def logging_warning(msg: str, *args: Any, **kwargs: Any) -> None:
+    def logging_warning(msg: str, *args, **kwargs):
         if 'catalog entry not found' not in msg:
             orig_logging(msg, *args, **kwargs)
 
     @functools.wraps(f)
-    def wrapper(*args: list, **kwargs: dict) -> Any:
+    def wrapper(*args: list, **kwargs):
         try:
             setattr(logging.getLogger(oscc_target), 'warning', logging_warning)
             return f(*args, **kwargs)
         finally:
             setattr(logging.getLogger(oscc_target), 'warning', orig_logging)
 
-    return cast(F, wrapper)
+    return wrapper
 
 
-def call_and_ignore_exc(exc: type, f: Callable, *args: List) -> None:
+def call_and_ignore_exc(exc, f, *args):
     try:
         f(*args)
     except exc as e:
         logging.debug("The following exception was ignored: %r", e)
 
 
-def replace_project_info(config: Dict, new_project_id: str) -> Dict[str, Any]:
+def replace_project_info(config, new_project_id):
     """
     Replace all tenant/project info in a `os_client_config` config dict with
     a new project. This is used to bind/scope to another project.

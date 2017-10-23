@@ -9,19 +9,20 @@
 #  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #  License for the specific language governing permissions and limitations
 #  under the License.
+from typing import Any
+from typing import Dict
+from typing import Iterable
+
 from ospurge.resources import base
 
 
 class Servers(base.ServiceResource):
-    ORDER = 15
+    def list(self) -> Iterable:
+        ...
 
-    def list(self):
-        return self.cloud.list_servers()
-
-    def delete(self, resource):
-        self.cloud.delete_server(resource['id'])
+    def delete(self, resource: Dict[str, Any]) -> None:
+        ...
 
     @staticmethod
-    def to_str(resource):
-        return "VM (id='{}', name='{}')".format(
-            resource['id'], resource['name'])
+    def to_str(resource: Dict[str, Any]) -> str:
+        ...
