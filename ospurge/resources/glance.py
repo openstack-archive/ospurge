@@ -9,16 +9,12 @@
 #  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #  License for the specific language governing permissions and limitations
 #  under the License.
-from typing import Any
-from typing import Dict
-from typing import Iterable
-
 from ospurge.resources import base
 from ospurge.resources.base import BaseServiceResource
 
 
 class ListImagesMixin(BaseServiceResource):
-    def list_images_by_owner(self) -> Iterable[Dict[str, Any]]:
+    def list_images_by_owner(self):
         images = []
         for image in self.cloud.list_images():
             if image['owner'] != self.cleanup_project_id:
@@ -38,16 +34,16 @@ class ListImagesMixin(BaseServiceResource):
 class Images(base.ServiceResource, ListImagesMixin):
     ORDER = 53
 
-    def list(self) -> Iterable:
+    def list(self):
         return self.list_images_by_owner()
 
-    def should_delete(self, resource: Dict[str, Any]) -> bool:
+    def should_delete(self, resource):
         return resource['owner'] == self.cleanup_project_id
 
-    def delete(self, resource: Dict[str, Any]) -> None:
+    def delete(self, resource):
         self.cloud.delete_image(resource['id'])
 
     @staticmethod
-    def to_str(resource: Dict[str, Any]) -> str:
+    def to_str(resource):
         return "Image (id='{}', name='{}')".format(
             resource['id'], resource['name'])
