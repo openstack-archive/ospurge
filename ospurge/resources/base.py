@@ -11,7 +11,6 @@
 #  under the License.
 import abc
 import collections
-import inspect
 import logging
 import threading
 import time
@@ -20,6 +19,12 @@ from typing import Dict
 from typing import Iterable
 from typing import Optional
 from typing import TYPE_CHECKING
+
+import six
+try:
+    import funcsigs as inspect   # Python 2.7
+except ImportError:
+    import inspect
 
 from ospurge import exceptions
 
@@ -93,11 +98,12 @@ class BaseServiceResource(object):
         self.options = None  # type: Optional[argparse.Namespace]
 
 
-class ServiceResource(BaseServiceResource, metaclass=CodingStyleMixin):
+@six.add_metaclass(CodingStyleMixin)
+class ServiceResource(BaseServiceResource):
     ORDER = None  # type: int
 
     def __init__(self, creds_manager: 'CredentialsManager') -> None:
-        super().__init__()
+        super(ServiceResource, self).__init__()
         if self.ORDER is None:
             raise ValueError(
                 'Class {}.{} must override the "ORDER" class attribute'.format(
