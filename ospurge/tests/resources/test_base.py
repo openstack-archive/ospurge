@@ -11,6 +11,8 @@
 #  under the License.
 import time
 
+import six
+
 from ospurge import exceptions
 from ospurge.resources import base
 from ospurge.tests import mock
@@ -41,7 +43,7 @@ class WrongMethodDefOrder(Exception):
 
 @mock.patch('logging.warning', mock.Mock(side_effect=SignatureMismatch))
 class TestMatchSignaturesMeta(unittest.TestCase):
-    class Test(metaclass=base.MatchSignaturesMeta):
+    class Test(six.with_metaclass(base.MatchSignaturesMeta)):
         def a(self, arg1):
             pass
 
@@ -100,22 +102,22 @@ class TestOrderedMeta(unittest.TestCase):
         ordered_methods = ['a', 'b']
 
     def test_nominal(self):
-        class Foo1(metaclass=self.Test):
+        class Foo1(six.with_metaclass(self.Test)):
             def a(self):
                 pass
 
-        class Foo2(metaclass=self.Test):
+        class Foo2(six.with_metaclass(self.Test)):
             def b(self):
                 pass
 
-        class Foo3(metaclass=self.Test):
+        class Foo3(six.with_metaclass(self.Test)):
             def a(self):
                 pass
 
             def b(self):
                 pass
 
-        class Foo4(metaclass=self.Test):
+        class Foo4(six.with_metaclass(self.Test)):
             def a(self):
                 pass
 
@@ -127,7 +129,7 @@ class TestOrderedMeta(unittest.TestCase):
 
     def test_wrong_order(self):
         with self.assertRaises(WrongMethodDefOrder):
-            class Foo(metaclass=self.Test):
+            class Foo(six.with_metaclass(self.Test)):
                 def b(self):
                     pass
 

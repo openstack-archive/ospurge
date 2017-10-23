@@ -19,6 +19,7 @@ try:
     import funcsigs as inspect   # Python 2.7
 except ImportError:
     import inspect
+import six
 
 from ospurge import exceptions
 
@@ -30,7 +31,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 class MatchSignaturesMeta(type):
     def __init__(self, clsname, bases, clsdict):
-        super().__init__(clsname, bases, clsdict)
+        super(MatchSignaturesMeta, self).__init__(clsname, bases, clsdict)
         sup = super(self, self)  # type: ignore   # See python/mypy #857
         for name, value in clsdict.items():
             if name.startswith('_') or not callable(value):
@@ -68,7 +69,8 @@ class OrderedMeta(type):
             allowed_next_methods = allowed_next_methods[_slice]
 
         # Cast to dict is required. We can't pass an OrderedDict here.
-        return super().__new__(cls, clsname, bases, dict(clsdict))
+        return super(OrderedMeta, cls).__new__(cls, clsname, bases,
+                                               dict(clsdict))
 
     @classmethod
     def __prepare__(cls, clsname, bases):
@@ -87,11 +89,12 @@ class BaseServiceResource(object):
         self.options = None  # type: Optional[argparse.Namespace]
 
 
-class ServiceResource(BaseServiceResource, metaclass=CodingStyleMixin):
+class ServiceResource(six.with_metaclass(CodingStyleMixin,
+                                         BaseServiceResource)):
     ORDER = None  # type: int
 
     def __init__(self, creds_manager):
-        super().__init__()
+        super(ServiceResource, self).__init__()
         if self.ORDER is None:
             raise ValueError(
                 'Class {}.{} must override the "ORDER" class attribute'.format(
