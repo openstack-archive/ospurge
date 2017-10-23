@@ -13,11 +13,11 @@ import time
 from typing import Any
 from typing import Dict
 from typing import Iterable
-import unittest
-from unittest import mock
 
 from ospurge import exceptions
 from ospurge.resources import base
+from ospurge.tests import mock
+from ospurge.tests import unittest
 
 
 def generate_timeout_series(timeout):
