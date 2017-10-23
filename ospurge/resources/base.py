@@ -12,12 +12,7 @@
 import abc
 import collections
 import logging
-import threading
 import time
-from typing import Any
-from typing import Dict
-from typing import Iterable
-from typing import Optional
 from typing import TYPE_CHECKING
 
 try:
@@ -29,16 +24,12 @@ from ospurge import exceptions
 
 if TYPE_CHECKING:  # pragma: no cover
     import argparse  # noqa: F401
-    from ospurge.main import CredentialsManager  # noqa: F401
     import shade  # noqa: F401
     from typing import Optional  # noqa: F401
 
 
 class MatchSignaturesMeta(type):
-    def __init__(
-        self, clsname: str, bases: Optional[Any],
-        clsdict: Optional[Dict]
-    ) -> None:
+    def __init__(self, clsname, bases, clsdict):
         super().__init__(clsname, bases, clsdict)
         sup = super(self, self)  # type: ignore   # See python/mypy #857
         for name, value in clsdict.items():
@@ -57,10 +48,7 @@ class MatchSignaturesMeta(type):
 
 
 class OrderedMeta(type):
-    def __new__(
-            cls, clsname: str, bases: Optional[Any],
-            clsdict: Optional[Dict]
-    ) -> type:
+    def __new__(cls, clsname, bases, clsdict):
         ordered_methods = cls.ordered_methods
         allowed_next_methods = list(ordered_methods)
         for name, value in clsdict.items():
@@ -83,7 +71,7 @@ class OrderedMeta(type):
         return super().__new__(cls, clsname, bases, dict(clsdict))
 
     @classmethod
-    def __prepare__(cls, clsname: str, bases: Optional[Any]) -> Dict:
+    def __prepare__(cls, clsname, bases):
         return collections.OrderedDict()
 
 
@@ -93,7 +81,7 @@ class CodingStyleMixin(OrderedMeta, MatchSignaturesMeta, abc.ABCMeta):
 
 
 class BaseServiceResource(object):
-    def __init__(self) -> None:
+    def __init__(self):
         self.cleanup_project_id = None  # type: Optional[str]
         self.cloud = None  # type: Optional[shade.OpenStackCloud]
         self.options = None  # type: Optional[argparse.Namespace]
@@ -102,7 +90,7 @@ class BaseServiceResource(object):
 class ServiceResource(BaseServiceResource, metaclass=CodingStyleMixin):
     ORDER = None  # type: int
 
-    def __init__(self, creds_manager: 'CredentialsManager') -> None:
+    def __init__(self, creds_manager):
         super().__init__()
         if self.ORDER is None:
             raise ValueError(
@@ -115,17 +103,17 @@ class ServiceResource(BaseServiceResource, metaclass=CodingStyleMixin):
         self.options = creds_manager.options
 
     @classmethod
-    def order(cls) -> int:
+    def order(cls):
         return cls.ORDER
 
-    def check_prerequisite(self) -> bool:
+    def check_prerequisite(self):
         return True
 
     @abc.abstractmethod
-    def list(self) -> Iterable:
+    def list(self):
         raise NotImplementedError
 
-    def should_delete(self, resource: Dict[str, Any]) -> bool:
+    def should_delete(self, resource):
         project_id = resource.get('project_id', resource.get('tenant_id'))
         if project_id:
             return project_id == self.cleanup_project_id
@@ -137,15 +125,15 @@ class ServiceResource(BaseServiceResource, metaclass=CodingStyleMixin):
             return True
 
     @abc.abstractmethod
-    def delete(self, resource: Dict[str, Any]) -> None:
+    def delete(self, resource):
         raise NotImplementedError
 
     @staticmethod
     @abc.abstractmethod
-    def to_str(resource: Dict[str, Any]) -> str:
+    def to_str(resource):
         raise NotImplementedError
 
-    def wait_for_check_prerequisite(self, exit: threading.Event) -> None:
+    def wait_for_check_prerequisite(self, exit):
         timeout = time.time() + 120
         sleep = 2
         while time.time() < timeout:

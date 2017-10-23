@@ -10,9 +10,6 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 import time
-from typing import Any
-from typing import Dict
-from typing import Iterable
 
 from ospurge import exceptions
 from ospurge.resources import base
@@ -141,14 +138,14 @@ class TestOrderedMeta(unittest.TestCase):
 class TestServiceResource(unittest.TestCase):
     def test_init_without_order_attr(self):
         class Foo5(base.ServiceResource):
-            def list(self) -> Iterable:
+            def list(self):
                 pass
 
-            def delete(self, resource: Dict[str, Any]) -> None:
+            def delete(self, resource):
                 pass
 
             @staticmethod
-            def to_str(resource: Dict[str, Any]) -> str:
+            def to_str(resource):
                 pass
 
         self.assertRaisesRegex(ValueError, 'Class .*ORDER.*',
