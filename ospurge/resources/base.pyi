@@ -16,6 +16,8 @@ from typing import Dict
 from typing import Iterable
 from typing import Optional
 
+import six
+
 from ospurge.main import CredentialsManager  # noqa: F401
 
 
@@ -48,7 +50,7 @@ class BaseServiceResource(object):
         ...
 
 
-class ServiceResource(BaseServiceResource, metaclass=CodingStyleMixin):
+class ServiceResource(six.with_metaclass(CodingStyleMixin, BaseServiceResource)):
     def __init__(self, creds_manager: 'CredentialsManager') -> None:
         ...
 
