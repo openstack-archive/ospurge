@@ -19,6 +19,7 @@ try:
     import funcsigs as inspect   # Python 2.7
 except ImportError:
     import inspect
+import six
 
 from ospurge import exceptions
 
@@ -30,7 +31,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 class MatchSignaturesMeta(type):
     def __init__(self, clsname, bases, clsdict):
-        super().__init__(clsname, bases, clsdict)
+        super(MatchSignaturesMeta, self).__init__(clsname, bases, clsdict)
         sup = super(self, self)  # type: ignore   # See python/mypy #857
         for name, value in clsdict.items():
             if name.startswith('_') or not callable(value):
@@ -47,37 +48,43 @@ class MatchSignaturesMeta(type):
                                     value_name, prev_sig, val_sig)
 
 
-class OrderedMeta(type):
-    def __new__(cls, clsname, bases, clsdict):
-        ordered_methods = cls.ordered_methods
-        allowed_next_methods = list(ordered_methods)
-        for name, value in clsdict.items():
-            if name not in ordered_methods:
-                continue
+if six.PY3:
+    class OrderedMeta(type):
+        def __new__(cls, clsname, bases, clsdict):
+            ordered_methods = cls.ordered_methods
+            allowed_next_methods = list(ordered_methods)
+            for name, value in clsdict.items():
+                if name not in ordered_methods:
+                    continue
 
-            if name not in allowed_next_methods:
-                value_name = getattr(value, '__qualname__', value.__name__)
-                logging.warning(
-                    "Method %s not defined at the correct location. Methods "
-                    "in class %s must be defined in the following order %r",
-                    value_name, clsname, ordered_methods
-                )
-                continue  # pragma: no cover
+                if name not in allowed_next_methods:
+                    value_name = value.__qualname__
+                    logging.warning(
+                        "Method %s not defined at the correct location."
+                        " Methods in class %s must be defined in the following"
+                        " order %r",
+                        value_name, clsname, ordered_methods
+                    )
+                    continue  # pragma: no cover
 
-            _slice = slice(allowed_next_methods.index(name) + 1, None)
-            allowed_next_methods = allowed_next_methods[_slice]
+                _slice = slice(allowed_next_methods.index(name) + 1, None)
+                allowed_next_methods = allowed_next_methods[_slice]
 
-        # Cast to dict is required. We can't pass an OrderedDict here.
-        return super().__new__(cls, clsname, bases, dict(clsdict))
+            # Cast to dict is required. We can't pass an OrderedDict here.
+            return super().__new__(cls, clsname, bases, dict(clsdict))
 
-    @classmethod
-    def __prepare__(cls, clsname, bases):
-        return collections.OrderedDict()
+        @classmethod
+        def __prepare__(cls, clsname, bases):
+            return collections.OrderedDict()
 
-
-class CodingStyleMixin(OrderedMeta, MatchSignaturesMeta, abc.ABCMeta):
-    ordered_methods = ['order', 'check_prerequisite', 'list', 'should_delete',
-                       'delete', 'to_string']
+    class CodingStyleMixin(OrderedMeta, MatchSignaturesMeta, abc.ABCMeta):
+        ordered_methods = ['order', 'check_prerequisite', 'list',
+                           'should_delete', 'delete', 'to_string']
+else:   # pragma: no cover here
+    # OrderedMeta is not supported on Python 2. Class members are unordered in
+    # Python 2 and __prepare__() was introduced in Python 3.
+    class CodingStyleMixin(MatchSignaturesMeta, abc.ABCMeta):
+        pass
 
 
 class BaseServiceResource(object):
@@ -87,11 +94,12 @@ class BaseServiceResource(object):
         self.options = None  # type: Optional[argparse.Namespace]
 
 
-class ServiceResource(BaseServiceResource, metaclass=CodingStyleMixin):
+class ServiceResource(six.with_metaclass(CodingStyleMixin,
+                                         BaseServiceResource)):
     ORDER = None  # type: int
 
     def __init__(self, creds_manager):
-        super().__init__()
+        super(ServiceResource, self).__init__()
         if self.ORDER is None:
             raise ValueError(
                 'Class {}.{} must override the "ORDER" class attribute'.format(
