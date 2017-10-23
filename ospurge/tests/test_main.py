@@ -23,6 +23,14 @@ from ospurge.resources.base import ServiceResource
 from ospurge import utils
 
 
+try:
+    SimpleNamespace = types.SimpleNamespace   # Python 3.3+
+except AttributeError:
+    class SimpleNamespace(object):   # Python 2.7
+        def __init__(self, **attr):
+            self.__dict__.update(attr)
+
+
 class TestFunctions(unittest.TestCase):
     @mock.patch('logging.basicConfig', autospec=True)
     def test_configure_logging_verbose(self, m_basicConfig):
@@ -193,7 +201,7 @@ class TestFunctions(unittest.TestCase):
 @mock.patch.object(main, 'shade')
 class TestCredentialsManager(unittest.TestCase):
     def test_init_with_purge_own_project(self, m_shade):
-        _options = types.SimpleNamespace(
+        _options = SimpleNamespace(
             purge_own_project=True, purge_project=None)
         creds_mgr = main.CredentialsManager(_options)
 
@@ -219,7 +227,7 @@ class TestCredentialsManager(unittest.TestCase):
 
     @mock.patch.object(utils, 'replace_project_info')
     def test_init_with_purge_project(self, m_replace, m_shade):
-        _options = types.SimpleNamespace(
+        _options = SimpleNamespace(
             purge_own_project=False, purge_project=mock.sentinel.purge_project)
         creds_mgr = main.CredentialsManager(_options)
 
