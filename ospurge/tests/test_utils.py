@@ -12,11 +12,11 @@
 import logging
 import typing
 import unittest
-from unittest import mock
 
 import shade
 
 from ospurge.resources.base import ServiceResource
+from ospurge.tests import mock
 from ospurge import utils
 
 
