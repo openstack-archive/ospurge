@@ -47,8 +47,9 @@ class MatchSignaturesMeta(type):
                 prev_sig = inspect.signature(prev_dfn)
                 val_sig = inspect.signature(value)
                 if prev_sig != val_sig:
+                    value_name = getattr(value, '__qualname__', value.__name__)
                     logging.warning('Signature mismatch in %s. %s != %s',
-                                    value.__qualname__, prev_sig, val_sig)
+                                    value_name, prev_sig, val_sig)
 
 
 class OrderedMeta(type):
@@ -63,10 +64,11 @@ class OrderedMeta(type):
                 continue
 
             if name not in allowed_next_methods:
+                value_name = getattr(value, '__qualname__', value.__name__)
                 logging.warning(
                     "Method %s not defined at the correct location. Methods "
                     "in class %s must be defined in the following order %r",
-                    value.__qualname__, clsname, ordered_methods
+                    value_name, clsname, ordered_methods
                 )
                 continue  # pragma: no cover
 
