@@ -1,4 +1,5 @@
 os-client-config>=1.22.0  # Apache-2.0
 pbr>=1.8 # Apache-2.0
+six
 shade>=1.13.1
 typing>=3.5.2.2  # PSF

@@ -21,6 +21,8 @@ from typing import Iterable
 from typing import Optional
 from typing import TYPE_CHECKING
 
+import six
+
 from ospurge import exceptions
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -93,11 +95,12 @@ class BaseServiceResource(object):
         self.options = None  # type: Optional[argparse.Namespace]
 
 
-class ServiceResource(BaseServiceResource, metaclass=CodingStyleMixin):
+@six.add_metaclass(CodingStyleMixin)
+class ServiceResource(BaseServiceResource):
     ORDER = None  # type: int
 
     def __init__(self, creds_manager: 'CredentialsManager') -> None:
-        super().__init__()
+        super(ServiceResource, self).__init__()
         if self.ORDER is None:
             raise ValueError(
                 'Class {}.{} must override the "ORDER" class attribute'.format(
