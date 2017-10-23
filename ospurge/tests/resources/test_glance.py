@@ -10,11 +10,11 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 import unittest
-from unittest import mock
 
 import shade
 
 from ospurge.resources import glance
+from ospurge.tests import mock
 
 
 class TestListImagesMixin(unittest.TestCase):
