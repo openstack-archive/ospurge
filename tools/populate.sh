@@ -57,8 +57,11 @@ function wait_for_volume_to_be_available {
 # Check if needed environment variable OS_PROJECT_NAME is set and non-empty.
 : "${OS_PROJECT_NAME:?Need to set OS_PROJECT_NAME non-empty}"
 
-# Some random UUID + Unicode characters
-UUID="♫$(cat /proc/sys/kernel/random/uuid)✓"
+# Some random UUID
+# Commented to workaround a nova #1730756 with non-ASCII VM name:
+# https://bugs.launchpad.net/nova/+bug/1730756
+#UUID="♫$(cat /proc/sys/kernel/random/uuid)✓"
+UUID="$(cat /proc/sys/kernel/random/uuid)"
 # Name of external network
 EXTNET_NAME=${EXTNET_NAME:-public}
 # Name of flavor used to spawn a VM
