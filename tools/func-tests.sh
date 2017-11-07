@@ -125,7 +125,12 @@ tox -e run -- --os-cloud devstack --purge-own-project --verbose # purges demo/de
 source $DEVSTACK_DIR/openrc demo invisible_to_admin
 assert_compute && assert_network && assert_volume
 
-tox -e run -- --os-auth-url http://localhost/identity --os-username demo --os-project-name invisible_to_admin --os-password $invisible_to_admin_demo_pass --purge-own-project --verbose
+tox -e run -- \
+  --os-auth-url http://localhost/identity \
+  --os-username demo --os-project-name invisible_to_admin \
+  --os-password $invisible_to_admin_demo_pass \
+  --os-domain-id=$OS_PROJECT_DOMAIN_ID \
+  --purge-own-project --verbose
 
 #source $DEVSTACK_DIR/openrc alt_demo alt_demo
 #assert_compute && assert_network && assert_volume
