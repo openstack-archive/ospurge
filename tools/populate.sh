@@ -57,8 +57,8 @@ function wait_for_volume_to_be_available {
 # Check if needed environment variable OS_PROJECT_NAME is set and non-empty.
 : "${OS_PROJECT_NAME:?Need to set OS_PROJECT_NAME non-empty}"
 
-# Some random UUID + Unicode characters
-UUID="♫$(cat /proc/sys/kernel/random/uuid)✓"
+# Some random UUID
+UUID="$(cat /proc/sys/kernel/random/uuid)"
 # Name of external network
 EXTNET_NAME=${EXTNET_NAME:-public}
 # Name of flavor used to spawn a VM
