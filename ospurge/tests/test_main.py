@@ -13,13 +13,13 @@ import argparse
 import logging
 import types
 import unittest
-from unittest import mock
 
 import shade.exc
 
 from ospurge import exceptions
 from ospurge import main
 from ospurge.resources.base import ServiceResource
+from ospurge.tests import mock
 from ospurge import utils
 
 
