@@ -11,7 +11,6 @@
 #  under the License.
 import abc
 import collections
-import inspect
 import logging
 import threading
 import time
@@ -20,6 +19,11 @@ from typing import Dict
 from typing import Iterable
 from typing import Optional
 from typing import TYPE_CHECKING
+
+try:
+    import funcsigs as inspect   # Python 2.7
+except ImportError:
+    import inspect
 
 from ospurge import exceptions
 
