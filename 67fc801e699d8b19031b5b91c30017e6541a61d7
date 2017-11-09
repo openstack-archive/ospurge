@@ -1,0 +1,8 @@
+Code-Review+2: Jordan Pittier <jordan.pittier@gmail.com>
+Workflow+1: Jordan Pittier <jordan.pittier@gmail.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Thu, 09 Nov 2017 12:49:47 +0000
+Reviewed-on: https://review.openstack.org/514320
+Project: openstack/ospurge
+Branch: refs/heads/master
