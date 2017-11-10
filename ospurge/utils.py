@@ -59,12 +59,12 @@ def monkeypatch_oscc_logging_warning(f):
     oscc_target = 'os_client_config.cloud_config'
     orig_logging = logging.getLogger(oscc_target).warning
 
-    def logging_warning(msg: str, *args, **kwargs):
+    def logging_warning(msg, *args, **kwargs):
         if 'catalog entry not found' not in msg:
             orig_logging(msg, *args, **kwargs)
 
     @functools.wraps(f)
-    def wrapper(*args: list, **kwargs):
+    def wrapper(*args, **kwargs):
         try:
             setattr(logging.getLogger(oscc_target), 'warning', logging_warning)
             return f(*args, **kwargs)

@@ -30,7 +30,8 @@ class Objects(base.ServiceResource, glance.ListImagesMixin, ListObjectsMixin):
                 self.cloud.list_volume_backups() == [])
 
     def list(self):
-        yield from self.list_objects()
+        for item in self.list_objects():
+            yield item
 
     def delete(self, resource):
         self.cloud.delete_object(resource['container_name'], resource['name'])
