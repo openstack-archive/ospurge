@@ -45,7 +45,7 @@ class RouterInterfaces(base.ServiceResource):
 
     def list(self):
         return self.cloud.list_ports(
-            filters={'device_owner': 'network:router_interface',
+            filters={'device_owner': ['network:router_interface', 'network:router_interface_distributed'],
                      'tenant_id': self.cleanup_project_id}
         )
 
