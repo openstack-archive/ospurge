@@ -79,7 +79,8 @@ class TestRouterInterfaces(unittest.TestCase):
         self.assertIs(self.cloud.list_ports.return_value,
                       neutron.RouterInterfaces(self.creds_manager).list())
         self.cloud.list_ports.assert_called_once_with(
-            filters={'device_owner': 'network:router_interface',
+            filters={'device_owner': ['network:router_interface',
+                                      'network:router_interface_distributed'],
                      'tenant_id': self.creds_manager.project_id}
         )
 
@@ -144,6 +145,7 @@ class TestPorts(unittest.TestCase):
         self.cloud.list_ports.return_value = [
             {'device_owner': 'network:dhcp'},
             {'device_owner': 'network:router_interface'},
+            {'device_owner': 'network:router_interface_distributed'},
             {'device_owner': ''}
         ]
         ports = neutron.Ports(self.creds_manager).list()
