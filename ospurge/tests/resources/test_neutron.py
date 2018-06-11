@@ -76,12 +76,28 @@ class TestRouterInterfaces(unittest.TestCase):
         )
 
     def test_list(self):
-        self.assertIs(self.cloud.list_ports.return_value,
-                      neutron.RouterInterfaces(self.creds_manager).list())
-        self.cloud.list_ports.assert_called_once_with(
-            filters={'device_owner': 'network:router_interface',
-                     'tenant_id': self.creds_manager.project_id}
-        )
+        self.cloud.list_ports.return_value = []
+
+        self.assertIsInstance(
+            neutron.RouterInterfaces(self.creds_manager).list(), list)
+
+        self.cloud.list_ports.assert_has_calls([
+            mock.call(filters={
+                'device_owner': 'network:router_interface',
+                'tenant_id': self.creds_manager.project_id}),
+
+            mock.call(filters={
+                'device_owner': 'network:router_interface_distributed',
+                'tenant_id': self.creds_manager.project_id}),
+
+            mock.call(filters={
+                'device_owner': 'network:ha_router_replicated_interface',
+                'tenant_id': self.creds_manager.project_id}),
+
+            mock.call(filters={
+                'device_owner': 'network:router_gateway',
+                'tenant_id': self.creds_manager.project_id}),
+        ])
 
     def test_delete(self):
         iface = mock.MagicMock()

@@ -44,10 +44,24 @@ class RouterInterfaces(base.ServiceResource):
         )
 
     def list(self):
-        return self.cloud.list_ports(
-            filters={'device_owner': 'network:router_interface',
-                     'tenant_id': self.cleanup_project_id}
-        )
+        router_interfaces = self.cloud.list_ports(filters={
+            'tenant_id': self.cleanup_project_id,
+            'device_owner': 'network:router_interface'})
+
+        dist_router_interfaces = self.cloud.list_ports(filters={
+            'tenant_id': self.cleanup_project_id,
+            'device_owner': 'network:router_interface_distributed'})
+
+        ha_router_interfaces = self.cloud.list_ports(filters={
+            'tenant_id': self.cleanup_project_id,
+            'device_owner': 'network:ha_router_replicated_interface'})
+
+        router_gateways = self.cloud.list_ports(filters={
+            'tenant_id': self.cleanup_project_id,
+            'device_owner': 'network:router_gateway'})
+
+        return (router_interfaces + dist_router_interfaces +
+                ha_router_interfaces + router_gateways)
 
     def delete(self, resource):
         self.cloud.remove_router_interface({'id': resource['device_id']},
