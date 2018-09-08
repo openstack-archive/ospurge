@@ -24,15 +24,14 @@
 
 - project:
     templates:
+      - openstack-python-jobs
       - openstack-python35-jobs
       - build-openstack-sphinx-docs
     check:
       jobs:
-        - openstack-tox-pep8
         - openstack-tox-cover
         - ospurge-dsvm-functional
     gate:
       jobs:
-        - openstack-tox-pep8
         - openstack-tox-cover
         - ospurge-dsvm-functional
