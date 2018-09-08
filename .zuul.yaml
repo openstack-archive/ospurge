@@ -1,0 +1,38 @@
+- job:
+    name: ospurge-dsvm-base
+    parent: legacy-dsvm-base
+    timeout: 3600
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/ospurge    
+    irrelevant-files: &dsvm-irrelevant-files
+      - ^(test-|)requirements.txt$
+      - ^.*\.rst$
+      - ^.git.*$
+      - ^\.testr.conf$
+      - ^LICENSE$
+      - ^doc/.*$
+      - ^releasenotes/.*$
+      - ^setup.cfg$
+      - ^tox.ini$
+
+- job:
+    name: ospurge-dsvm-functional
+    parent: ospurge-dsvm-base
+    run: playbooks/legacy/ospurge-dsvm-functional/run.yaml
+    post-run: playbooks/legacy/ospurge-dsvm-functional/post.yaml
+
+- project:
+    templates:
+      - openstack-python35-jobs
+      - build-openstack-sphinx-docs
+    check:
+      jobs:
+        - openstack-tox-pep8
+        - openstack-tox-cover
+        - ospurge-dsvm-functional
+    gate:
+      jobs:
+        - openstack-tox-pep8
+        - openstack-tox-cover
+        - ospurge-dsvm-functional
