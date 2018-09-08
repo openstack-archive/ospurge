@@ -15,7 +15,7 @@
 export OSPURGE_DIR="$BASE/new/ospurge"
 
 cd $OSPURGE_DIR
-sudo chown -R jenkins:stack $OSPURGE_DIR
+sudo chown -R stack:stack $OSPURGE_DIR
 
 CLOUDS_YAML=/etc/openstack/clouds.yaml
 
@@ -23,13 +23,13 @@ if [ ! -e ${CLOUDS_YAML} ]; then
     # stable/liberty had clouds.yaml in the home/base directory
     sudo mkdir -p /etc/openstack
     sudo cp $BASE/new/.config/openstack/clouds.yaml ${CLOUDS_YAML}
-    sudo chown -R jenkins:stack /etc/openstack
+    sudo chown -R stack:stack /etc/openstack
 fi
 
 
 echo "Running OSpurge functional test suite"
 set +e
-sudo -E -H -u jenkins tox -e functional
+sudo -E -H -u stack tox -e functional
 EXIT_CODE=$?
 set -e
 

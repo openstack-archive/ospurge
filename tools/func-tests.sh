@@ -157,7 +157,7 @@ fi
 
 if [[ ${GATE_RUN} == 1 ]]; then
     # The Cinder backup service is enabled in the Gate.
-    if [[ $(cinder backup-list --all-tenants | wc -l) -ne 4 ]]; then
+    if [[ $(openstack volume backup list --all-projects | wc -l) -ne 4 ]]; then
         echo "Not all volume backups were cleaned up"
         exit 1
     fi
