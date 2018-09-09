@@ -29,12 +29,18 @@ fi
 invisible_to_admin_demo_pass=$(cat $DEVSTACK_DIR/accrc/invisible_to_admin/demo | sed -nr 's/.*OS_PASSWORD="(.*)"/\1/p')
 admin_admin_pass=$(cat $DEVSTACK_DIR/accrc/admin/admin | sed -nr 's/.*OS_PASSWORD="(.*)"/\1/p')
 
+function assert_stack {
+    if [[ $(openstack stack list | wc -l) -lt 1 ]]; then
+        echo "Less than one stack, someone cleaned our stack :("
+        exit 1
+    fi
+}
+
 function assert_compute {
     if [[ $(nova list | wc -l) -lt 5 ]]; then
         echo "Less than one VM, someone cleaned our VM :("
         exit 1
     fi
-
 }
 
 function assert_network {
@@ -118,12 +124,12 @@ done
 tox -e run -- --os-cloud devstack-admin --purge-own-project --verbose # purges admin/admin
 
 source $DEVSTACK_DIR/openrc demo demo
-assert_compute && assert_network && assert_volume
+assert_stack && assert_compute && assert_network && assert_volume
 
 tox -e run -- --os-cloud devstack --purge-own-project --verbose # purges demo/demo
 
 source $DEVSTACK_DIR/openrc demo invisible_to_admin
-assert_compute && assert_network && assert_volume
+assert_stack && assert_compute && assert_network && assert_volume
 
 tox -e run -- \
     --os-auth-url http://localhost/identity \
@@ -133,7 +139,7 @@ tox -e run -- \
     --purge-own-project --verbose
 
 #source $DEVSTACK_DIR/openrc alt_demo alt_demo
-#assert_compute && assert_network && assert_volume
+#assert_stack && assert_compute && assert_network && assert_volume
 
 source $DEVSTACK_DIR/openrc admin admin
 #openstack project set --disable alt_demo
