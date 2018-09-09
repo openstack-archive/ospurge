@@ -20,14 +20,13 @@
 
 - project:
     templates:
+      - openstack-python-jobs
       - openstack-python35-jobs
       - openstack-cover-jobs
       - build-openstack-docs-pti
     check:
       jobs:
-        - openstack-tox-pep8
         - ospurge-functional
     gate:
       jobs:
-        - openstack-tox-pep8
         - ospurge-functional
