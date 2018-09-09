@@ -1,0 +1,70 @@
+heat_template_version: 2013-05-23
+description: Hot Template to deploy a single server
+
+parameters:
+  public_net:
+    type: string
+    description: public net
+  image:
+    type: string
+    description: image
+  flavor:
+    type: string
+    description: flavor
+
+resources:
+  private_net:
+    type: OS::Neutron::Net
+    properties:
+      name: private-net
+  private_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: private_net }
+      cidr: 172.16.2.0/24
+      gateway_ip: 172.16.2.1
+  secgroup0:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      name: secgroup0
+      description: Ping and SSH
+      rules:
+        - protocol: icmp
+        - protocol: tcp
+          port_range_min: 22
+          port_range_max: 22
+  router0:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_net }
+  router0_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: router0 }
+      subnet_id: { get_resource: private_subnet }
+  server0_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net }
+      security_groups: [ get_resource: secgroup0 ]
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet }
+  server_0:
+    type: OS::Nova::Server
+    properties:
+      name: "server0"
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      networks:
+        - network: { get_resource: server0_port }
+  vol0:
+    type: OS::Cinder::Volume
+    properties:
+      size: 1
+  vol0_att:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: server0 }
+      volume_id: { get_resource: vol0 }
+      mountpoint: /dev/vdb

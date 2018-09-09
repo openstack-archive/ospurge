@@ -13,6 +13,7 @@
 
 # Be strict (but not too much: '-u' doesn't always play nice with devstack)
 set -eo pipefail
+set -x
 
 readonly PROGDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

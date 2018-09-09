@@ -17,6 +17,7 @@
 
 # Be strict
 set -ueo pipefail
+set -x
 
 function exit_on_failure {
     RET_CODE=$?
@@ -88,6 +89,16 @@ exit_if_empty "$IMAGE_ID" "Image $VMIMG_NAME could not be found"
 # Create a file that will be used to populate Glance and Swift
 dd if="/dev/zero" of="${UUID}.raw" bs=1M count=5
 trap cleanup SIGHUP SIGINT SIGTERM EXIT
+
+
+
+###############################
+### Heat
+###############################
+STACK_ID=$(openstack stack create --template heat-template.yaml --parameter public_net=$EXTNET_NAME \
+--parameter image=$IMAGE_ID --parameter flavor=$FLAVOR stack0 | awk '/ id /{print $4}')
+exit_on_failure "Unable to create heat stack"
+exit_if_empty "$STACK_ID" "Unable to retrieve ID of heat stack"
 
 
 
