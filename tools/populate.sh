@@ -92,6 +92,16 @@ trap cleanup SIGHUP SIGINT SIGTERM EXIT
 
 
 ###############################
+### Heat
+###############################
+STACK_ID=$(openstack stack create --template heat-template.yaml --parameter public_net=$EXTNET_NAME \
+--parameter image=$IMAGE_ID --parameter flavor=$FLAVOR stack0 | awk '/ id /{print $}')
+exit_on_failure "Unable to create heat stack"
+exit_if_empty "$STACK_ID" "Unable to retrieve ID of heat stack"
+
+
+
+###############################
 ### Cinder
 ###############################
 # Create a volume
