@@ -167,3 +167,8 @@ else
         exit 1
     fi
 fi
+
+if [[ $(openstack zone list --all-projects | wc -l) -ne 1 ]]; then  # This also checks FIP
+    echo "Not all zones were cleaned up"
+    exit 1
+fi

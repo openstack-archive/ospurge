@@ -30,6 +30,10 @@
           export DEVSTACK_GATE_TEMPEST=0
           export DEVSTACK_GATE_NEUTRON=1
           export BRANCH_OVERRIDE=default
+
+          export DEVSTACK_LOCAL_CONFIG="enable_plugin designate git://git.openstack.org/openstack/designate"
+          export DEVSTACK_LOCAL_CONFIG+=$'\n'"DESIGNATE_SERVICE_PORT_DNS=5322"
+
           export PROJECTS="openstack/ospurge $PROJECTS"
           if [ "$BRANCH_OVERRIDE" != "default" ] ; then
               export OVERRIDE_ZUUL_BRANCH=$BRANCH_OVERRIDE
