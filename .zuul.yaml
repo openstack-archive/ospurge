@@ -7,6 +7,8 @@
     required-projects:
       - openstack-infra/devstack-gate
       - openstack/ospurge
+      - openstack/designate
+      - openstack/python-designateclient
     irrelevant-files: &dsvm-irrelevant-files
       - ^(test-|)requirements.txt$
       - ^.*\.rst$
