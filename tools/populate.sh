@@ -181,6 +181,13 @@ exit_on_failure "Unable to create Glance iamge ${UUID}"
 swift upload ${UUID} ${UUID}.raw || true
 
 
+###############################
+### Designate
+###############################
+# Create Designate Zone
+openstack zone create --email hostmaster@example.com example.com.
+exit_on_failure "Unable to create Designate Zone ${UUID}"
+
 
 ###############################
 ### Link resources
