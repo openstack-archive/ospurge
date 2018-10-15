@@ -68,6 +68,8 @@ EXTNET_NAME=${EXTNET_NAME:-public}
 FLAVOR=${FLAVOR:-m1.nano}
 # Image used for the VM
 VMIMG_NAME=${VMIMG_NAME:-cirros-0.3.5-x86_64-disk}
+# Zone name used for the Designate Zone
+ZONE_NAME="${UUID//-/}.com."
 
 
 
@@ -180,6 +182,13 @@ exit_on_failure "Unable to create Glance iamge ${UUID}"
 # Don't exit on failure as Swift is not available on all clouds
 swift upload ${UUID} ${UUID}.raw || true
 
+
+###############################
+### Designate
+###############################
+# Create Designate Zone
+openstack zone create --email hostmaster@example.com ${ZONE_NAME}
+exit_on_failure "Unable to create Designate Zone ${ZONE_NAME}"
 
 
 ###############################
