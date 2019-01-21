@@ -20,6 +20,9 @@ class Backups(base.ServiceResource):
     def list(self) -> Iterable:
         ...
 
+    def wait_for_deletion(self, id: str) -> None:
+        ...
+
     def delete(self, resource: Dict[str, Any]) -> None:
         ...
 

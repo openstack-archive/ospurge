@@ -18,6 +18,28 @@ class Backups(base.ServiceResource):
     def list(self):
         return self.cloud.list_volume_backups()
 
+    # wait until a backup is deleted
+    # not waiting causes ospurge to occasionally fail when attempting to delete incremental backups
+    def wait_for_deletion(self, id):
+        logging.info("Waiting for deletion of backup with id " + str(id))
+        sleep = 1
+        while True:
+            backup = self.cloud.get_volume_backup(id)
+            if backup is None:
+                return 
+            else:
+                time.sleep(sleep)
+
+    def delete(self, resource):
+        # currently_deleting is a dict holding a value for all volumes
+        # that currently have a backup being deleted
+        if resource['volume_id'] in self.currently_deleting:
+            self.wait_for_deletion(self.currently_deleting[resource['volume_id']])
+
+        self.currently_deleting[resource['volume_id']] = resource['id'] 
+        self.cloud.delete_volume_backup(resource['id'])
+
+
     def delete(self, resource):
         self.cloud.delete_volume_backup(resource['id'])
 
