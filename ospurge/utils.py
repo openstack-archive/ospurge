@@ -17,24 +17,45 @@ import os
 import pkgutil
 import re
 
+import pkg_resources
+
 from ospurge.resources import base
 
 
-def get_resource_classes(resources=None):
-    """
-    Import all the modules in the `resources` package and return all the
-    subclasses of the `ServiceResource` ABC that match the `resources` arg.
+ENTRY_POINTS_NAME = 'ospurge_resources'
 
-    This way we can easily extend OSPurge by just adding a new file in the
-    `resources` dir.
-    """
+
+def load_ospurge_resource_modules():
+    """Import all the modules in the `resources` package."""
+    modules = {}
     iter_modules = pkgutil.iter_modules(
         [os.path.join(os.path.dirname(__file__), 'resources')],
         prefix='ospurge.resources.'
     )
     for (_, name, ispkg) in iter_modules:
         if not ispkg:
-            importlib.import_module(name)
+            modules[name] = importlib.import_module(name)
+    return modules
+
+
+def load_entry_points_modules(name=ENTRY_POINTS_NAME):
+    """Import all modules in the `name` entry point."""
+    entry_points = {}
+    for entry_point in pkg_resources.iter_entry_points(name):
+        entry_points[entry_point.name] = entry_point.load()
+    return entry_points
+
+
+def get_resource_classes(resources=None):
+    """
+    Load all ospurge resource and entry point modules and return all the
+    subclasses of the `ServiceResource` ABC that match the `resources` arg.
+
+    This way we can easily extend OSPurge by just adding a new file in the
+    `resources` dir or a package with `ENTRY_POINTS_NAME` entry point.
+    """
+    load_ospurge_resource_modules()
+    load_entry_points_modules()
 
     all_classes = base.ServiceResource.__subclasses__()
 
