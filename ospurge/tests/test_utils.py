@@ -10,8 +10,11 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 import logging
+import types
 import typing
 import unittest
+
+import six
 
 import shade
 
@@ -42,6 +45,24 @@ class TestUtils(unittest.TestCase):
                 'project_name': 'bar'
             }
         })
+
+    def test_load_ospurge_resource_modules(self):
+        modules = utils.load_ospurge_resource_modules()
+        self.assertIsInstance(modules, typing.Dict)
+        for name, module in six.iteritems(modules):
+            # assertIsInstance(name, typing.AnyStr) fails with:
+            # TypeError: Type variables cannot be used with isinstance().
+            self.assertIsInstance(name, six.string_types)
+            self.assertIsInstance(module, types.ModuleType)
+
+    def test_load_entry_points_modules(self):
+        modules = utils.load_entry_points_modules()
+        self.assertIsInstance(modules, typing.Dict)
+        for name, module in six.iteritems(modules):
+            # assertIsInstance(name, typing.AnyStr) fails with:
+            # TypeError: Type variables cannot be used with isinstance().
+            self.assertIsInstance(name, six.string_types)
+            self.assertIsInstance(module, types.ModuleType)
 
     def test_get_all_resource_classes(self):
         classes = utils.get_resource_classes()

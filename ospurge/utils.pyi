@@ -17,6 +17,15 @@ from typing import Iterable
 from typing import List
 from typing import Optional
 from typing import TypeVar
+from typing import AnyStr
+
+
+def load_ospurge_resource_modules() -> Dict:
+    ...
+
+
+def load_entry_points_modules(name: AnyStr) -> Dict:
+    ...
 
 
 def get_resource_classes(resources: Optional[Iterable[str]]=None) -> List:

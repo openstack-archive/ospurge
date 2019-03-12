@@ -245,10 +245,44 @@ How to extend
 
 Given the ever-widening OpenStack ecosystem, OSPurge can't support every
 OpenStack services. We intend to support in-tree, only the 'core' services.
-Fortunately, OSPurge is easily extensible. All you have to do is add a new
-Python module in the ``resources`` package and define one or more Python
-class(es) that subclass ``ospurge.resources.base.ServiceResource``. Your module
-will automatically be loaded and your methods called. Have a look at the
+Fortunately, OSPurge is easily extensible. There are 2 methods and you can
+chose the one you prefer:
+
+1: Add a new Python module in the ``resources`` package and define one or more
+Python class(es) that subclass ``ospurge.resources.base.ServiceResource``.
+Your module will automatically be loaded and your methods called.
+
+2: Create your standalone python modules and in your module's setup.py or
+setup.cfg file add an entry point to ``ospurge_resource`` pointing to the
+python module in which you subclass ``ospurge.resources.base.ServiceResource``.
+
+setup.py example::
+
+    from setuptools import setup
+
+    setup(
+        name='my_ospurge_extension',
+        entry_points={
+            'ospurge_resource': [
+                'foo = my_module.submodule_with_subclass',
+            ],
+        }
+    )
+
+setup.cfg example::
+
+    [entry_points]
+    ospurge_resource =
+        foo = my_module.submodule_with_subclass
+
+Once your module installed, it will automatically be loaded and your methods
+called.
+
+More examples on entry points:
+https://amir.rachum.com/blog/2017/07/28/python-entry-points/
+
+Have a look
+at the
 ``main.main`` and ``main.runner`` functions to fully understand the mechanism.
 
 Note: We won't accept any patch that broaden what OSPurge supports, beyond
