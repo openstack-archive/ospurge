@@ -10,14 +10,35 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 import logging
+import os
+import types
 import typing
 import unittest
+
+import pkg_resources
+
+import six
 
 import shade
 
 from ospurge.resources.base import ServiceResource
 from ospurge.tests import mock
 from ospurge import utils
+
+
+def register_test_entry_point():
+    test_resource_file = os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__), 'resources/entry_points.py'
+        )
+    )
+    distribution = pkg_resources.Distribution.from_filename(test_resource_file)
+    entry_point = pkg_resources.EntryPoint(
+        'foo', 'ospurge.tests.resources.entry_points', dist=distribution
+    )
+    distribution._ep_map = {utils.ENTRY_POINTS_NAME: {'foo': entry_point}}
+    pkg_resources.working_set.add(distribution, 'foo')
+    return entry_point
 
 
 class TestUtils(unittest.TestCase):
@@ -42,6 +63,25 @@ class TestUtils(unittest.TestCase):
                 'project_name': 'bar'
             }
         })
+
+    def test_load_ospurge_resource_modules(self):
+        modules = utils.load_ospurge_resource_modules()
+        self.assertIsInstance(modules, typing.Dict)
+        for name, module in six.iteritems(modules):
+            # assertIsInstance(name, typing.AnyStr) fails with:
+            # TypeError: Type variables cannot be used with isinstance().
+            self.assertIsInstance(name, six.string_types)
+            self.assertIsInstance(module, types.ModuleType)
+
+    def test_load_entry_points_modules(self):
+        register_test_entry_point()
+        modules = utils.load_entry_points_modules()
+        self.assertIsInstance(modules, typing.Dict)
+        for name, module in six.iteritems(modules):
+            # assertIsInstance(name, typing.AnyStr) fails with:
+            # TypeError: Type variables cannot be used with isinstance().
+            self.assertIsInstance(name, six.string_types)
+            self.assertIsInstance(module, types.ModuleType)
 
     def test_get_all_resource_classes(self):
         classes = utils.get_resource_classes()
