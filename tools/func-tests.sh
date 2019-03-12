@@ -79,7 +79,7 @@ function assert_volume {
 ########################
 source $DEVSTACK_DIR/openrc admin admin
 if [[ ! "$(openstack flavor list)" =~ 'm1.nano' ]]; then
-    openstack flavor create --id 42 --ram 64 --disk 0 --vcpus 1 m1.nano
+    openstack flavor create --id 42 --ram 64 --disk 1 --vcpus 1 m1.nano
 fi
 
 

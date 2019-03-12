@@ -67,7 +67,7 @@ EXTNET_NAME=${EXTNET_NAME:-public}
 # Name of flavor used to spawn a VM
 FLAVOR=${FLAVOR:-m1.nano}
 # Image used for the VM
-VMIMG_NAME=${VMIMG_NAME:-cirros-0.3.5-x86_64-disk}
+VMIMG_NAME=${VMIMG_NAME:-cirros-0.4.0-x86_64-disk}
 # Zone name used for the Designate Zone
 ZONE_NAME="${UUID//-/}.com."
 
