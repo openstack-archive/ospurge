@@ -12,6 +12,7 @@
 
 
 from ospurge.resources.base import ServiceResource
+from ospurge.resources import heat as heat_resource
 
 
 class Foo(ServiceResource):
@@ -26,3 +27,7 @@ class Foo(ServiceResource):
     @staticmethod
     def to_str(resource):
         return "Foo"
+
+
+# Monkey patch testing
+heat_resource.Stacks.ORDER = 9

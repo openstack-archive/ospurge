@@ -73,8 +73,7 @@ class TestUtils(unittest.TestCase):
             self.assertIsInstance(name, six.string_types)
             self.assertIsInstance(module, types.ModuleType)
 
-    def test_load_entry_points_modules(self):
-        register_test_entry_point()
+    def _tst_load_entry_points_modules(self):
         modules = utils.load_entry_points_modules()
         self.assertIsInstance(modules, typing.Dict)
         for name, module in six.iteritems(modules):
@@ -82,6 +81,23 @@ class TestUtils(unittest.TestCase):
             # TypeError: Type variables cannot be used with isinstance().
             self.assertIsInstance(name, six.string_types)
             self.assertIsInstance(module, types.ModuleType)
+
+    def _tst_resource_overriding(self, order_value=10):
+        classes = utils.get_resource_classes(['Stacks'])
+        self.assertTrue(len(classes) == 1)
+        stacks_class = classes[0]
+        self.assertTrue(stacks_class.ORDER == order_value)
+
+    def test_entry_points(self):
+        # these tests need to be in this order because
+        # register_test_entry_point() can not be undone
+        with self.subTest('Testing pre override'):
+            self._tst_resource_overriding(order_value=10)
+        register_test_entry_point()
+        with self.subTest('Testing post override'):
+            self._tst_resource_overriding(order_value=9)
+        with self.subTest('Testing entry points modules'):
+            self._tst_load_entry_points_modules()
 
     def test_get_all_resource_classes(self):
         classes = utils.get_resource_classes()

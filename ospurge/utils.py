@@ -54,8 +54,8 @@ def get_resource_classes(resources=None):
     This way we can easily extend OSPurge by just adding a new file in the
     `resources` dir or a package with `ENTRY_POINTS_NAME` entry point.
     """
-    load_ospurge_resource_modules()
     load_entry_points_modules()
+    load_ospurge_resource_modules()
 
     all_classes = base.ServiceResource.__subclasses__()
 
