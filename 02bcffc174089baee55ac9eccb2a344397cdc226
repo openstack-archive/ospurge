@@ -1,0 +1,9 @@
+Code-Review+1: Nolwenn Cauchois <nolwenn.cauchois@orange.com>
+Code-Review+2: Jordan Pittier <jordan.pittier@gmail.com>
+Workflow+1: Jordan Pittier <jordan.pittier@gmail.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Wed, 13 Mar 2019 17:15:46 +0000
+Reviewed-on: https://review.openstack.org/642783
+Project: openstack/ospurge
+Branch: refs/heads/master
