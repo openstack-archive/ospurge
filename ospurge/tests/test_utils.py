@@ -83,6 +83,17 @@ class TestUtils(unittest.TestCase):
             self.assertIsInstance(name, six.string_types)
             self.assertIsInstance(module, types.ModuleType)
 
+    def test_resource_overriding(self):
+        classes = utils.get_resource_classes('Stacks')
+        self.assertTrue(len(classes) == 1)
+        stacks_class = classes[0]
+        self.assertTrue(stacks_class.ORDER == 10)
+        register_test_entry_point()
+        classes = utils.get_resource_classes('Stacks')
+        self.assertTrue(len(classes) == 1)
+        stacks_class = classes[0]
+        self.assertTrue(stacks_class.ORDER == 9)
+
     def test_get_all_resource_classes(self):
         classes = utils.get_resource_classes()
         self.assertIsInstance(classes, typing.List)
