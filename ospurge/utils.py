@@ -19,6 +19,8 @@ import re
 
 import pkg_resources
 
+import six
+
 from ospurge.resources import base
 
 
@@ -54,8 +56,8 @@ def get_resource_classes(resources=None):
     This way we can easily extend OSPurge by just adding a new file in the
     `resources` dir or a package with `ENTRY_POINTS_NAME` entry point.
     """
-    load_ospurge_resource_modules()
     load_entry_points_modules()
+    load_ospurge_resource_modules()
 
     all_classes = base.ServiceResource.__subclasses__()
 
@@ -65,6 +67,8 @@ def get_resource_classes(resources=None):
         regex = re.compile(".*")
     # Otherwise, build a regex by concatenation.
     else:
+        if isinstance(resources, six.string_types):
+            resources = [resource.strip() for resource in resources.split(',')]
         regex = re.compile('|'.join(resources))
 
     return [c for c in all_classes if regex.match(c.__name__)]

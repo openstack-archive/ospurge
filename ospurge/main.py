@@ -161,7 +161,6 @@ class CredentialsManager(object):
 
 def runner(resource_mngr, options, exit):
     try:
-
         if not (options.dry_run or options.resource):
             resource_mngr.wait_for_check_prerequisite(exit)
 
