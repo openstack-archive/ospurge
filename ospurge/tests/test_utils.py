@@ -90,11 +90,13 @@ class TestUtils(unittest.TestCase):
             self.assertTrue(issubclass(klass, ServiceResource))
 
     def test_get_resource_classes(self):
-        config = "Networks"
-        classes = utils.get_resource_classes(config)
+        resources = ['Stacks', 'Networks']
+        classes = utils.get_resource_classes(resources)
+        self.assertTrue(len(classes) == 2)
         self.assertIsInstance(classes, typing.List)
         for klass in classes:
             self.assertTrue(issubclass(klass, ServiceResource))
+            self.assertIn(klass.__name__, resources)
 
     def test_call_and_ignore_notfound(self):
         def raiser():
