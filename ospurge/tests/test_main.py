@@ -235,15 +235,16 @@ class TestCredentialsManager(unittest.TestCase):
         self.assertEqual(m_shade.operator_cloud.return_value,
                          creds_mgr.operator_cloud)
 
-        creds_mgr.operator_cloud.get_project.assert_called_once_with(
-            _options.purge_project)
+        creds_mgr.operator_cloud.cloud_config.get_legacy_client. \
+            assert_called_once_with('identity')
 
         self.assertEqual(
             creds_mgr.operator_cloud.keystone_session.get_user_id.return_value,
             creds_mgr.user_id
         )
         self.assertEqual(
-            creds_mgr.operator_cloud.get_project()['id'],
+            creds_mgr.operator_cloud.cloud_config.get_legacy_client(
+            ).tenants.get().id,
             creds_mgr.project_id
         )
         self.assertFalse(creds_mgr.disable_project_after_purge)
@@ -258,7 +259,8 @@ class TestCredentialsManager(unittest.TestCase):
         creds_mgr.cloud.cloud_config.get_auth_args.assert_called_once_with()
 
     def test_init_with_project_not_found(self, m_shade):
-        m_shade.operator_cloud.return_value.get_project.return_value = None
+        m_shade.operator_cloud.return_value.cloud_config.get_legacy_client\
+            .return_value.tenants.get.return_value = None
         self.assertRaises(
             exceptions.OSProjectNotFound,
             main.CredentialsManager, mock.Mock(purge_own_project=False)
@@ -290,7 +292,8 @@ class TestCredentialsManager(unittest.TestCase):
             user=mock.ANY)
 
     def test_ensure_enabled_project(self, m_shade):
-        m_shade.operator_cloud().get_project().enabled = False
+        m_shade.operator_cloud().cloud_config.get_legacy_client().tenants\
+            .get().enabled = False
         creds_manager = main.CredentialsManager(
             mock.Mock(purge_own_project=False))
         creds_manager.ensure_enabled_project()
