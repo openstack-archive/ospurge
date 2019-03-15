@@ -18,6 +18,8 @@ import sys
 import threading
 import typing
 
+from openstack import connection
+
 import os_client_config
 import shade
 
@@ -83,24 +85,27 @@ def create_argument_parser():
 
 
 class CredentialsManager(object):
-    def __init__(self, options):
+    def __init__(self, options, config):
         self.options = options
+        self.config = config
 
         self.revoke_role_after_purge = False
         self.disable_project_after_purge = False
 
         self.cloud = None  # type: Optional[shade.OpenStackCloud]
-        self.operator_cloud = None  # type: Optional[shade.OperatorCloud]
+        self.connection = None  # type: Optional[connection.Connection]
 
         if options.purge_own_project:
-            self.cloud = shade.openstack_cloud(argparse=options)
+            self.cloud = shade.openstack_cloud(argparse=options, config=config)
             self.user_id = self.cloud.keystone_session.get_user_id()
             self.project_id = self.cloud.keystone_session.get_project_id()
         else:
-            self.operator_cloud = shade.operator_cloud(argparse=options)
-            self.user_id = self.operator_cloud.keystone_session.get_user_id()
+            self.connection = connection.Connection(
+                config=config.get_one(argparse=options)
+            )
+            self.user_id = self.connection.identity.get_user_id()
 
-            project = self.operator_cloud.get_project(options.purge_project)
+            project = self.connection.get_project(options.purge_project)
             if not project:
                 raise exceptions.OSProjectNotFound(
                     "Unable to find project '{}'".format(options.purge_project)
@@ -115,7 +120,7 @@ class CredentialsManager(object):
             # we want to purge, not the project we authenticated to.
             self.cloud = shade.openstack_cloud(
                 **utils.replace_project_info(
-                    self.operator_cloud.cloud_config.config,
+                    self.connection.cloud_config.config,
                     self.project_id
                 )
             )
@@ -128,7 +133,7 @@ class CredentialsManager(object):
         )
 
     def ensure_role_on_project(self):
-        if self.operator_cloud and self.operator_cloud.grant_role(
+        if self.connection and self.connection.grant_role(
                 self.options.admin_role_name,
                 project=self.options.purge_project, user=self.user_id
         ):
@@ -139,7 +144,7 @@ class CredentialsManager(object):
             self.revoke_role_after_purge = True
 
     def revoke_role_on_project(self):
-        self.operator_cloud.revoke_role(
+        self.connection.revoke_role(
             self.options.admin_role_name, user=self.user_id,
             project=self.options.purge_project)
         logging.warning(
@@ -148,13 +153,13 @@ class CredentialsManager(object):
         )
 
     def ensure_enabled_project(self):
-        if self.operator_cloud and self.disable_project_after_purge:
-            self.operator_cloud.update_project(self.project_id, enabled=True)
+        if self.connection and self.disable_project_after_purge:
+            self.connection.update_project(self.project_id, enabled=True)
             logging.warning("Project '%s' was disabled before purge and it is "
                             "now enabled", self.options.purge_project)
 
     def disable_project(self):
-        self.operator_cloud.update_project(self.project_id, enabled=False)
+        self.connection.update_project(self.project_id, enabled=False)
         logging.warning("Project '%s' was disabled before purge and it is "
                         "now also disabled", self.options.purge_project)
 
@@ -221,7 +226,7 @@ def main():
     options = parser.parse_args()
     configure_logging(options.verbose)
 
-    creds_manager = CredentialsManager(options=options)
+    creds_manager = CredentialsManager(options=options, config=cloud_config)
     creds_manager.ensure_enabled_project()
     creds_manager.ensure_role_on_project()
 
