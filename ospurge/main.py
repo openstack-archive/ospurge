@@ -100,12 +100,14 @@ class CredentialsManager(object):
             self.operator_cloud = shade.operator_cloud(argparse=options)
             self.user_id = self.operator_cloud.keystone_session.get_user_id()
 
-            project = self.operator_cloud.get_project(options.purge_project)
+            keystone_client = self.operator_cloud.cloud_config.\
+                get_legacy_client('identity')
+            project = keystone_client.tenants.get(options.purge_project)
             if not project:
                 raise exceptions.OSProjectNotFound(
                     "Unable to find project '{}'".format(options.purge_project)
                 )
-            self.project_id = project['id']
+            self.project_id = project.id
 
             # If project is not enabled, we must disable it after purge.
             self.disable_project_after_purge = not project.enabled
