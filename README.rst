@@ -301,7 +301,7 @@ Start hacking right away with:
 
 .. code-block:: console
 
-   $ git clone git://git.openstack.org/openstack/ospurge
+   $ git clone https://git.openstack.org/openstack/ospurge
 
 
 Design decisions
