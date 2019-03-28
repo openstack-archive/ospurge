@@ -13,7 +13,20 @@ from typing import Any
 from typing import Dict
 from typing import Iterable
 
+from cinderclient.v3.groups import Group
+from cinderclient.v3.group_snapshots import GroupSnapshot
+
 from ospurge.resources import base
+
+
+class CinderMixin(base.BaseServiceResource):
+    @property
+    def groups_support(self) -> bool:
+        ...
+
+    @property
+    def cinder_client(self) -> object:
+        ...
 
 
 class Backups(base.ServiceResource):
@@ -28,8 +41,26 @@ class Backups(base.ServiceResource):
         ...
 
 
-class Snapshots(base.ServiceResource):
+class GroupSnapshots(base.ServiceResource, CinderMixin):
     def list(self) -> Iterable:
+        ...
+
+    def should_delete(self, resource: GroupSnapshot) -> bool:
+        ...
+
+    def delete(self, resource: GroupSnapshot) -> None:
+        ...
+
+    @staticmethod
+    def to_str(resource: GroupSnapshot) -> str:
+        ...
+
+
+class Snapshots(base.ServiceResource, CinderMixin):
+    def list(self) -> Iterable:
+        ...
+
+    def should_delete(self, resource: Dict[str, Any]) -> bool:
         ...
 
     def delete(self, resource: Dict[str, Any]) -> None:
@@ -40,7 +71,25 @@ class Snapshots(base.ServiceResource):
         ...
 
 
-class Volumes(base.ServiceResource):
+class VolumeGroups(base.ServiceResource, CinderMixin):
+    def check_prerequisite(self) -> bool:
+        ...
+
+    def list(self) -> Iterable:
+        ...
+
+    def should_delete(self, resource: Group) -> bool:
+        ...
+
+    def delete(self, resource: Group) -> None:
+        ...
+
+    @staticmethod
+    def to_str(resource: Group) -> str:
+        ...
+
+
+class Volumes(base.ServiceResource, CinderMixin):
     def check_prerequisite(self) -> bool:
         ...
 
