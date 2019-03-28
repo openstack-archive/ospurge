@@ -9,7 +9,38 @@
 #  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #  License for the specific language governing permissions and limitations
 #  under the License.
+
+import logging
+
 from ospurge.resources import base
+
+
+VOLUME_PROJECT_ID_KEY = 'os-vol-tenant-attr:tenant_id'
+SNAPSHOT_PROJECT_ID_KEY = 'os-extended-snapshot-attributes:project_id'
+
+
+class CinderMixin(base.BaseServiceResource):
+
+    @property
+    def groups_support(self):
+        groups_support = False
+        volume_api_version = self.cloud.cloud_config.get_api_version(
+            'volume')
+        try:
+            if float(volume_api_version) >= 3.13:
+                groups_support = True
+        except (TypeError, ValueError):
+            pass
+        return groups_support
+
+    @property
+    def cinder_client(self):
+        """Cinder Legacy Client
+
+        We need this because volume groups are not yet implemented in shade nor
+        in openstacksdk.
+        """
+        return self.cloud.cloud_config.get_legacy_client('volume')
 
 
 class Backups(base.ServiceResource):
@@ -17,6 +48,23 @@ class Backups(base.ServiceResource):
 
     def list(self):
         return self.cloud.list_volume_backups()
+
+    def should_delete(self, resource):
+        # Backups do not have the resource owner information.
+        if self.cloud.volume_exists(resource['volume_id']):
+            return self.cloud.get_volume(
+                resource['volume_id']
+            )[VOLUME_PROJECT_ID_KEY] == self.cleanup_project_id
+        else:
+            # Cinder allows to delete volumes while we have a backup so we
+            # can't check we own the volume, therefore we trust the default
+            # mechanism which is not 100% sure.
+            # See comments in the base class's method.
+            logging.warning(
+                "Backup of non exist volume is going to be deleted %s(%s)",
+                resource.name, resource.id
+            )
+            return super(Backups, self).should_delete(resource)
 
     def delete(self, resource):
         self.cloud.delete_volume_backup(resource['id'])
@@ -27,11 +75,53 @@ class Backups(base.ServiceResource):
             resource['id'], resource['name'])
 
 
-class Snapshots(base.ServiceResource):
+class GroupSnapshots(base.ServiceResource, CinderMixin):
     ORDER = 36
 
     def list(self):
+        if self.groups_support:
+            return self.cinder_client.group_snapshots.list()
+        else:
+            return []
+
+    def should_delete(self, resource):
+        return super(GroupSnapshots, self).should_delete(
+            resource.to_dict()
+        )
+
+    def delete(self, resource):
+        self.cinder_client.group_snapshots.delete(resource.id)
+
+    @staticmethod
+    def to_str(resource):
+        return "Group Snapshots (id='{}', name='{}')".format(
+            resource.id, resource.name)
+
+
+class Snapshots(base.ServiceResource, CinderMixin):
+    ORDER = 39
+
+    def check_prerequisite(self):
+        # Volumes can not be deleted when in volume groups.
+        # They have to be deleted first.
+        if self.groups_support:
+            return self.cinder_client.group_snapshots.list() == []
+        else:
+            return True
+
+    def list(self):
         return self.cloud.list_volume_snapshots()
+
+    def should_delete(self, resource):
+        # SNAPSHOT_PROJECT_ID_KEY might not exist depending on the platform
+        # version.
+        if SNAPSHOT_PROJECT_ID_KEY in resource:
+            return resource[SNAPSHOT_PROJECT_ID_KEY] == self.cleanup_project_id
+        else:
+            # A snapshot can normally not be deleted when the volume exists.
+            return self.cloud.get_volume(
+                resource['volume_id']
+            )[VOLUME_PROJECT_ID_KEY] == self.cleanup_project_id
 
     def delete(self, resource):
         self.cloud.delete_volume_snapshot(resource['id'])
@@ -42,19 +132,49 @@ class Snapshots(base.ServiceResource):
             resource['id'], resource['name'])
 
 
-class Volumes(base.ServiceResource):
+class VolumeGroups(base.ServiceResource, CinderMixin):
+    ORDER = 42
+
+    def check_prerequisite(self):
+        if self.groups_support:
+            return self.cinder_client.group_snapshots.list() == []
+        else:
+            return True
+
+    def list(self):
+        if self.groups_support:
+            return self.cinder_client.groups.list()
+        else:
+            return []
+
+    def should_delete(self, resource):
+        return super(VolumeGroups, self).should_delete(resource.to_dict())
+
+    def delete(self, resource):
+        self.cinder_client.groups.delete(resource.id, delete_volumes=True)
+
+    @staticmethod
+    def to_str(resource):
+        return "Group Volumes (id='{}', name='{}')".format(
+            resource.id, resource.name)
+
+
+class Volumes(base.ServiceResource, CinderMixin):
     ORDER = 65
 
     def check_prerequisite(self):
+        groups_prerequisite = True
+        if self.groups_support:
+            groups_prerequisite = self.cinder_client.groups.list() == []
         return (self.cloud.list_volume_snapshots() == [] and
-                self.cloud.list_servers() == [])
+                self.cloud.list_servers() == [] and
+                groups_prerequisite)
 
     def list(self):
         return self.cloud.list_volumes()
 
     def should_delete(self, resource):
-        attr = 'os-vol-tenant-attr:tenant_id'
-        return resource[attr] == self.cleanup_project_id
+        return resource[VOLUME_PROJECT_ID_KEY] == self.cleanup_project_id
 
     def delete(self, resource):
         self.cloud.delete_volume(resource['id'])
